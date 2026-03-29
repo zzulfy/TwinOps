@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>浏览器控制台错误检查指南</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .step {
+            background: #f0f8ff;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #0066cc;
+        }
+        .step h3 {
+            margin-top: 0;
+            color: #0066cc;
+        }
+        .code {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .important {
+            background: #fff3cd;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+        }
+        .success {
+            background: #d4edda;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #28a745;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #dc3545;
+            color: #721c24;
+        }
+        .warning {
+            background: #fff3cd;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            border-left: 4px solid #ffc107;
+            color: #856404;
+        }
+        button {
+            background: #0066cc;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0052a3;
+        }
+        .btn-secondary {
+            background: #6c757d;
+        }
+        .btn-secondary:hover {
+            background: #545b62;
+        }
+        iframe {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 浏览器控制台错误检查指南</h1>
+
+        <div class="success">
+            <h3>✅ 服务器状态检查</h3>
+            <p>服务器正在运行在 <strong>http://localhost:8090/</strong></p>
+            <p>项目文件已准备完毕，包括：</p>
+            <ul>
+                <li>Three.js 场景初始化代码</li>
+                <li>模型加载函数 (GLTFLoader + DRACOLoader)</li>
+                <li>3 个模型文件 (base.glb, devices.glb, lines.gltf)</li>
+                <li>DRACO 压缩库</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>步骤 1：打开应用程序</h3>
+            <p>请点击以下按钮在新标签页中打开应用程序：</p>
+            <button onclick="openApp()">打开应用程序</button>
+            <p class="code">访问地址：http://localhost:8090/</p>
+        </div>
+
+        <div class="step">
+            <h3>步骤 2：打开浏览器控制台</h3>
+            <p>根据您使用的浏览器，使用以下快捷键打开控制台：</p>
+            <ul>
+                <li><strong>Chrome/Edge/Opera：</strong> F12 或 Ctrl + Shift + I</li>
+                <li><strong>Firefox：</strong> F12 或 Ctrl + Shift + I 或 Ctrl + Shift + K</li>
+                <li><strong>Safari：</strong> Cmd + Opt + C (需先在偏好设置中启用开发工具)</li>
+            </ul>
+            <p>打开控制台后，请切换到 <strong>Console（控制台）</strong> 标签页。</p>
+        </div>
+
+        <div class="step">
+            <h3>步骤 3：检查控制台错误</h3>
+            <p>在应用程序加载过程中，请检查控制台是否有以下错误：</p>
+
+            <div class="error">
+                <h4>❌ 模型加载失败</h4>
+                <p>如果您看到类似以下错误，说明模型加载失败：</p>
+                <p class="code">模型加载失败: /models/base.glb Error: Failed to load...</p>
+                <p class="code">模型加载失败: /models/devices.glb Error: Failed to load...</p>
+                <p class="code">模型加载失败: /models/lines.gltf Error: Failed to load...</p>
+            </div>
+
+            <div class="error">
+                <h4>❌ Three.js 场景初始化错误</h4>
+                <p>如果您看到类似以下错误，说明 Three.js 场景初始化失败：</p>
+                <p class="code">Uncaught TypeError: Cannot read property 'add' of null</p>
+                <p class="code">Uncaught ReferenceError: THREE is not defined</p>
+            </div>
+
+            <div class="warning">
+                <h4>⚠️ 常见警告</h4>
+                <p>以下警告可能是正常的，不影响功能：</p>
+                <p class="code">THREE.WebGLRenderer: Context lost.</p>
+                <p class="code">DeprecationWarning: ...</p>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>步骤 4：验证模型加载成功</h3>
+            <p>如果模型加载成功，您应该看到以下控制台信息：</p>
+            <div class="success">
+                <p class="code">开始加载建筑模型: /models/base.glb</p>
+                <p class="code">建筑模型加载成功</p>
+                <p class="code">开始加载设备模型: /models/devices.glb</p>
+                <p class="code">设备模型加载成功</p>
+                <p class="code">开始加载线路模型: /models/lines.gltf</p>
+                <p class="code">线路模型加载成功</p>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>步骤 5：检查 3D 场景</h3>
+            <p>在应用程序中，您应该看到：</p>
+            <ul>
+                <li>数据中心的 3D 建筑模型</li>
+                <li>设备模型（服务器机柜、网络设备、电源柜）</li>
+                <li>设备名称标签</li>
+                <li>动画效果（道路箭头流动）</li>
+                <li>可交互的 3D 场景（可旋转、缩放）</li>
+            </ul>
+        </div>
+
+        <div class="important">
+            <h3>🔍 重点关注区域</h3>
+            <p>如果您看到任何红色的错误信息（ERROR），请特别关注。尤其是：</p>
+            <ul>
+                <li>模型加载相关的错误</li>
+                <li>Three.js 相关的错误</li>
+                <li>网络请求失败的错误</li>
+                <li>GLTF/DRACO 解码错误</li>
+            </ul>
+        </div>
+
+        <div class="step">
+            <h3>手动检查方法</h3>
+            <p>您也可以直接在浏览器中按 F12 打开开发者工具，切换到 Console 标签页，刷新页面查看是否有错误。</p>
+        </div>
+    </div>
+
+    <script>
+        function openApp() {
+            window.open('http://localhost:8090/', '_blank');
+        }
+
+        // 简单的服务器状态检查
+        function checkServer() {
+            fetch('http://localhost:8090/')
+                .then(response => {
+                    if (response.ok) {
+                        console.log('✅ 服务器响应正常');
+                    } else {
+                        console.error('❌ 服务器响应异常:', response.status);
+                    }
+                })
+                .catch(error => {
+                    console.error('❌ 服务器连接失败:', error);
+                });
+        }
+
+        // 页面加载时检查服务器状态
+        window.addEventListener('load', () => {
+            checkServer();
+        });
+    </script>
+</body>
+</html>

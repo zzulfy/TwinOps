@@ -1,0 +1,101 @@
+# TwinOps Frontend
+
+Frontend workspace for the TwinOps data center digital twin application.
+
+## Stack
+
+- Vue 3 + TypeScript
+- Vite
+- Three.js
+- ECharts
+- GSAP and Tween.js
+
+## Directory Overview
+
+- src: application source code
+- public: runtime static assets (models, textures, fonts, draco, favicon)
+- docs: production build output
+- screenshots: curated project screenshots
+- test and check scripts: smoke and visual validation scripts
+
+## Environment
+
+- Node.js 20+
+- npm 9+
+
+## Install
+
+npm install
+
+## Local Development
+
+npm run dev
+
+Default dev port is configured by Vite. You can override host and port:
+
+npm run dev -- --host 127.0.0.1 --port 8090 --strictPort
+
+## Build and Preview
+
+- npm run type-check
+- npm run build
+- npm run preview
+
+### Chunking Notes
+
+- Vendor dependencies are split by deterministic groups in `vite.config.ts`:
+	- `vendor-vue`
+	- `vendor-3d-core` (Three.js core, gsap, tween)
+	- `vendor-3d-addons` (three/examples addon modules)
+	- `vendor-charts-deferred` (ECharts)
+	- `vendor-utils` (lodash, axios, mitt, autofit)
+	- `vendor-misc`
+- If bundle warnings appear, adjust grouping before raising `chunkSizeWarningLimit`.
+- Optional bundle report can be enabled with:
+	- Windows PowerShell: `$env:ANALYZE='true'; npm run build`
+	- Bash: `ANALYZE=true npm run build`
+
+### Deferred Loading Conventions
+
+- Keep startup-critical path focused on shell render and base Three.js scene bootstrap.
+- Defer chart runtime by loading ECharts inside `useEcharts` via dynamic import.
+- Defer non-critical Three addons and model loaders (`three/examples`) until needed.
+- For deferred module failures, keep shell interactive and show local fallback message instead of hard-failing the page.
+
+## Quality Commands
+
+- npm run lint
+- npm run format
+- npm run lint:style
+- npm run smoke:shell (requires a running app URL, defaults to `http://127.0.0.1:8090/`)
+
+## Smoke Check Examples
+
+- node test-scene-status.mjs
+- node test-popup.mjs
+- node test-device-popup.mjs
+
+## Asset Path Rules
+
+Keep runtime assets in public and reference them with root-based paths:
+
+- /models/...
+- /textures/...
+- /fonts/...
+- /js/draco/...
+- /favicon.png
+
+## Design Token Conventions
+
+- Shared tokens live in `src/assets/design-tokens.css`.
+- Shell and layout components should consume tokens instead of hard-coded visual constants.
+- Token categories:
+	- Color and state (`--tw-color-*`, `--tw-state-*`)
+	- Surface/background (`--tw-bg-*`)
+	- Border/radius (`--tw-border-*`, `--tw-radius-*`)
+	- Spacing/shadow (`--tw-space-*`, `--tw-shadow-*`)
+- When introducing new visual primitives, add tokens first, then migrate component usage.
+
+## Notes
+
+Generated PNG screenshots from local test runs are ignored by repository .gitignore. Keep only curated screenshots under screenshots when needed for documentation.
