@@ -1,0 +1,3 @@
+?? frontend/openspec/changes/improve-device-scale-module-scroll-visibility/tasks.md
+?? frontend/src/components/WidgetPanel04.vue
+?? frontend/tmp-verify-device-scale-scroll.mjs

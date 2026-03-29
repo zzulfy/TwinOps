@@ -26,3 +26,7 @@ coverage
 
 *.tsbuildinfo
 stats.html
+
+# Generated screenshot outputs from local visual tests
+/*.png
+/frontend/*.png
