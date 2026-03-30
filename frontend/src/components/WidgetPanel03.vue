@@ -1,18 +1,20 @@
 <template>
   <LayoutPanel title="资源利用率监测">
-    <div v-if="loadError" class="chart-fallback">{{ loadError }}</div>
+    <div v-if="loadError || apiError" class="chart-fallback">{{ loadError || apiError }}</div>
     <div v-else class="container" ref="container"></div>
   </LayoutPanel>
 </template>
 <script setup lang="ts">
-import { nextTick, onMounted } from "vue";
+import { nextTick, onMounted, ref } from "vue";
 import useEcharts from "@/hooks/useEcharts";
 import LayoutPanel from "./LayoutPanel.vue";
 import { CHART_MOTION } from "@/utils/chartMotion";
+import { fetchDashboardSummary } from "@/api/backend";
 
 const { container, setOption, loadError } = useEcharts();
+const apiError = ref<string | null>(null);
 
-const generateOptions = () => ({
+const generateOptions = (labels: string[], values: number[]) => ({
   animation: true,
   animationDuration: CHART_MOTION.appearDuration,
   animationEasing: CHART_MOTION.easing,
@@ -53,7 +55,7 @@ const generateOptions = () => ({
       color: "#9f9d97",
       margin: 10,
     },
-    data: [...Array(30).keys()],
+    data: labels,
   },
   yAxis: {
     type: "value" as const,
@@ -74,7 +76,7 @@ const generateOptions = () => ({
       emphasis: {
         focus: "series" as const,
       },
-      data: Array.from({ length: 30 }).map(() => Math.random() * 90 + 10),
+      data: values,
       type: "bar" as const,
       itemStyle: {
         color: {
@@ -97,8 +99,14 @@ const generateOptions = () => ({
 
 onMounted(() => {
   nextTick(async () => {
-    const options = generateOptions();
-    await setOption(options);
+    try {
+      const summary = await fetchDashboardSummary();
+      const options = generateOptions(summary.resourceUsage.labels, summary.resourceUsage.values);
+      await setOption(options);
+      apiError.value = null;
+    } catch (error) {
+      apiError.value = `图表数据加载失败: ${error instanceof Error ? error.message : String(error)}`;
+    }
   });
 });
 </script>

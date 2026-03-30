@@ -1,48 +1,20 @@
 <template>
   <LayoutPanel title="设备故障变化率">
-    <div v-if="loadError" class="chart-fallback">{{ loadError }}</div>
+    <div v-if="loadError || apiError" class="chart-fallback">{{ loadError || apiError }}</div>
     <div v-else class="container" ref="container"></div>
   </LayoutPanel>
 </template>
 <script setup lang="ts">
-import { nextTick, onMounted } from "vue";
+import { nextTick, onMounted, ref } from "vue";
 import useEcharts from "@/hooks/useEcharts";
 import LayoutPanel from "./LayoutPanel.vue";
 import { CHART_MOTION } from "@/utils/chartMotion";
+import { fetchDashboardSummary } from "@/api/backend";
 
 const { container, setOption, loadError } = useEcharts();
+const apiError = ref<string | null>(null);
 
-// 生成分钟级时间数据
-const generateMinuteData = () => {
-  const data = [];
-  const now = new Date();
-  // 生成过去 60 分钟的时间数据
-  for (let i = 60; i >= 0; i -= 1) {
-    const time = new Date(now.getTime() - i * 60 * 1000);
-    const minutes = String(time.getMinutes()).padStart(2, "0");
-    data.push(`${time.getHours()}:${minutes}`);
-  }
-  return data;
-};
-
-// 生成故障变化率数据（0-100%）
-const generateRateData = () => {
-  const data = [];
-  const baseRate = 5; // 基础故障率
-  // 生成过去 60 分钟的故障变化率数据
-  for (let i = 60; i >= 0; i -= 1) {
-    // 模拟故障变化率，带有一定随机性
-    const randomVariation = Math.random() * 10 - 5;
-    const rate = Math.max(
-      0,
-      Math.min(100, baseRate + randomVariation + Math.sin(i / 10) * 5)
-    );
-    data.push(rate.toFixed(1));
-  }
-  return data;
-};
-
-const generateOptions = () => ({
+const generateOptions = (labels: string[], values: number[]) => ({
   animation: true,
   animationDuration: CHART_MOTION.appearDuration,
   animationEasing: CHART_MOTION.easing,
@@ -88,7 +60,7 @@ const generateOptions = () => ({
       fontSize: 12,
       interval: 9, // 每隔 10 个数据点显示一个标签，避免重叠
     },
-    data: generateMinuteData(),
+    data: labels,
   },
   yAxis: {
     type: "value" as const,
@@ -138,15 +110,21 @@ const generateOptions = () => ({
           global: false,
         },
       },
-      data: generateRateData(),
+      data: values,
     },
   ],
 });
 
 onMounted(() => {
   nextTick(async () => {
-    const options = generateOptions();
-    await setOption(options);
+    try {
+      const summary = await fetchDashboardSummary();
+      const options = generateOptions(summary.faultRate.labels, summary.faultRate.values);
+      await setOption(options);
+      apiError.value = null;
+    } catch (error) {
+      apiError.value = `图表数据加载失败: ${error instanceof Error ? error.message : String(error)}`;
+    }
   });
 });
 </script>

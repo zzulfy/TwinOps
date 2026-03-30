@@ -1,6 +1,8 @@
 <template>
   <LayoutPanel title="设备规模">
     <div class="weather-scroll-area">
+      <div v-if="errorMessage" class="panel-message">{{ errorMessage }}</div>
+      <div v-else-if="source.length === 0" class="panel-message">暂无设备规模数据</div>
       <div class="weather-monitor">
         <div
           v-for="(item, index) in source"
@@ -19,64 +21,22 @@
   </LayoutPanel>
 </template>
 <script setup lang="ts">
+import { onMounted, ref } from "vue";
 import LayoutPanel from "./LayoutPanel.vue";
+import { fetchDashboardSummary } from "@/api/backend";
 
-const source = [
-  {
-    icon: "fa-solid fa-server",
-    label: "服务器机柜",
-    value: "23",
-    unit: "个",
-  },
-  {
-    icon: "fa-solid fa-network-wired",
-    label: "网络设备",
-    value: "23",
-    unit: "个",
-  },
-  {
-    icon: "fa-solid fa-bolt",
-    label: "电源柜",
-    value: "23",
-    unit: "个",
-  },
-  {
-    icon: "fa-solid fa-temperature-three-quarters",
-    label: "温湿度传感器",
-    value: "11",
-    unit: "个",
-  },
-  {
-    icon: "fa-solid fa-snowflake",
-    label: "空调系统",
-    value: "63",
-    unit: "个",
-  },
-  {
-    icon: "fa-solid fa-shield-alt",
-    label: "防火墙",
-    value: "23",
-    unit: "个",
-  },
-  {
-    icon: "fa-solid fa-ethernet",
-    label: "交换机",
-    value: "12",
-    unit: "个",
-  },
-  {
-    icon: "fa-solid fa-database",
-    label: "存储设备",
-    value: "12",
-    unit: "个",
-  },
-  {
-    icon: "fa-solid fa-video",
-    label: "监控设备",
-    value: "13",
-    unit: "个",
-  },
-];
+const source = ref<Array<{ icon: string; label: string; value: string; unit: string }>>([]);
+const errorMessage = ref("");
+
+onMounted(async () => {
+  try {
+    const summary = await fetchDashboardSummary();
+    source.value = summary.deviceScale;
+    errorMessage.value = "";
+  } catch (error) {
+    errorMessage.value = `设备规模加载失败: ${error instanceof Error ? error.message : String(error)}`;
+  }
+});
 </script>
 
 <style lang="scss" scoped>
@@ -98,6 +58,16 @@ const source = [
   padding-top: 10px;
   padding-right: 4px;
   padding-bottom: 6px;
+}
+
+.panel-message {
+  padding: 10px;
+  font-size: 13px;
+  color: var(--tw-color-text-secondary);
+  border: 1px solid var(--tw-border-soft);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  margin-bottom: 8px;
 }
 
 .weather-monitor {

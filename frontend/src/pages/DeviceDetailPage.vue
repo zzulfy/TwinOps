@@ -6,7 +6,9 @@
       <div class="subtitle">全面监控各个设备的运行状态</div>
     </div>
 
-    <div class="page-body">
+    <div v-if="errorMessage" class="status-message error">{{ errorMessage }}</div>
+    <div v-else-if="allDevicesData.length === 0" class="status-message">暂无设备数据</div>
+    <div v-else class="page-body">
       <div v-for="device in allDevicesData" :key="device.name" class="device-card-wrapper">
         <DeviceDetailPanel :device-data="device" embedded @close="goBack" />
       </div>
@@ -15,86 +17,26 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import DeviceDetailPanel from "@/components/DeviceDetailPanel.vue";
-
-interface DeviceAlarm {
-  id: number;
-  name: string;
-  type: "warning" | "error" | "info";
-  time: string;
-}
-
-interface DeviceData {
-  name: string;
-  type: string;
-  status: "normal" | "warning" | "error";
-  serialNumber: string;
-  location: string;
-  temperature: number;
-  humidity: number;
-  voltage: number;
-  current: number;
-  power: number;
-  cpuLoad: number;
-  memoryUsage: number;
-  diskUsage: number;
-  networkTraffic: number;
-  alarms: DeviceAlarm[];
-}
+import { fetchDevices, type DeviceData } from "@/api/backend";
 
 const router = useRouter();
+const allDevicesData = ref<DeviceData[]>([]);
+const errorMessage = ref<string>("");
 
 const goBack = () => {
   router.push({ name: "dashboard" });
 };
 
-const createFallbackData = (name: string): DeviceData => {
-  const isServer = name.includes("服务器");
-  const isNetwork = name.includes("网络") || name.includes("交换机");
-  const isPower = name.includes("电源");
-
-  const type = isServer ? "服务器机柜" : isNetwork ? "网络设备" : isPower ? "电源柜" : "其他设备";
-
-  return {
-    name,
-    type,
-    status: isPower ? "warning" : "normal",
-    serialNumber: `1000${Math.floor(Math.random() * 9000)}`,
-    location: "数据中心 A 区",
-    temperature: Math.floor(Math.random() * 30) + 20,
-    humidity: Math.floor(Math.random() * 40) + 40,
-    voltage: Math.floor(Math.random() * 20) + 220,
-    current: Math.floor(Math.random() * 10) + 5,
-    power: Math.floor(Math.random() * 2000) + 1000,
-    cpuLoad: Math.floor(Math.random() * 60) + 20,
-    memoryUsage: Math.floor(Math.random() * 50) + 30,
-    diskUsage: Math.floor(Math.random() * 40) + 40,
-    networkTraffic: Math.floor(Math.random() * 1000) + 500,
-    alarms: [
-      { id: 1, name: "状态巡检提醒", type: "info", time: "08:30" },
-      { id: 2, name: "阈值波动提醒", type: "warning", time: "10:12" },
-    ],
-  };
-};
-
-const allDevicesData = computed<DeviceData[]>(() => {
-  const deviceNames = [
-    "服务器机柜 A",
-    "网络交换机 B",
-    "主备电源柜 C",
-    "冷却水塔 D",
-    "核心路由器 E",
-    "综合存储阵列 F",
-    "边缘计算节点 G",
-    "负载均衡器 H",
-    "备份电源组 I",
-    "温湿度采集器 J",
-    "监控摄像单元 K",
-    "安全网关 L",
-  ];
-  return deviceNames.map(createFallbackData);
+onMounted(async () => {
+  try {
+    allDevicesData.value = await fetchDevices();
+    errorMessage.value = "";
+  } catch (error) {
+    errorMessage.value = `设备数据加载失败: ${error instanceof Error ? error.message : String(error)}`;
+  }
 });
 </script>
 
@@ -150,6 +92,18 @@ const allDevicesData = computed<DeviceData[]>(() => {
   gap: 24px;
   padding-bottom: 48px;
   max-width: 100%;
+}
+
+.status-message {
+  padding: 16px;
+  border-radius: 10px;
+  color: var(--tw-color-text-primary);
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--tw-border-soft);
+}
+
+.status-message.error {
+  color: #9f4040;
 }
 
 .device-card-wrapper {

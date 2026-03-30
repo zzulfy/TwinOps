@@ -1,6 +1,8 @@
 <template>
   <LayoutPanel title="预警情况">
     <div class="wrap">
+      <div v-if="errorMessage" class="panel-message">{{ errorMessage }}</div>
+      <div v-else-if="list.length === 0" class="panel-message">暂无预警数据</div>
       <div class="item-list" ref="container">
         <div
           class="item"
@@ -22,9 +24,9 @@
   </LayoutPanel>
 </template>
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch, inject } from "vue";
+import { ref, onMounted, onUnmounted, watch, inject } from "vue";
 import LayoutPanel from "./LayoutPanel.vue";
-import AlarmDeviceList from "./AlarmDeviceList.vue";
+import { fetchAlarmList } from "@/api/backend";
 
 interface EventsType {
   startWarming: () => void;
@@ -61,84 +63,8 @@ watch(showAlarmList, (newVal) => {
   }
 });
 
-const list = ref<AlarmItem[]>([
-  {
-    name: "1# 服务器机柜",
-    event: "温度过高",
-    type: 1,
-    time: "08:21",
-  },
-  {
-    name: "2# 服务器机柜",
-    event: "内存过载",
-    type: 3,
-    time: "12:53",
-  },
-  {
-    name: "3# 服务器机柜",
-    event: "硬盘故障",
-    type: 1,
-    time: "16:42",
-  },
-  {
-    name: "1# 网络设备",
-    event: "网络异常",
-    type: 3,
-    time: "08:32",
-  },
-  {
-    name: "6# 网络设备",
-    event: "丢包率过高",
-    type: 2,
-    time: "17:43",
-  },
-  {
-    name: "1# 电源柜",
-    event: "电压波动",
-    type: 2,
-    time: "09:44",
-  },
-  {
-    name: "2# 电源柜",
-    event: "电流过高",
-    type: 3,
-    time: "12:53",
-  },
-  {
-    name: "3# 电源柜",
-    event: "电压波动",
-    type: 2,
-    time: "09:44",
-  },
-  {
-    name: "4# 电源柜",
-    event: "电流过高",
-    type: 3,
-    time: "12:53",
-  },
-  {
-    name: "5# 电源柜",
-    event: "电压波动",
-    type: 2,
-    time: "09:44",
-  },
-  {
-    name: "6# 电源柜",
-    event: "电流过高",
-    type: 3,
-    time: "12:53",
-  },
-]);
-
-const alarmDevices = computed(() =>
-  list.value.map((item, index) => ({
-    id: index,
-    name: item.name,
-    event: item.event,
-    type: item.type,
-    time: item.time,
-  }))
-);
+const list = ref<AlarmItem[]>([]);
+const errorMessage = ref("");
 
 const container = ref();
 
@@ -156,8 +82,23 @@ const generateTypeColor = (type: 1 | 2 | 3, gradual = false) => {
 
 let timer: number | null = null;
 onMounted(() => {
+  fetchAlarmList()
+    .then((data) => {
+      list.value = data.map((item) => ({
+        name: item.name,
+        event: item.event,
+        type: item.type,
+        time: item.time,
+      }));
+      errorMessage.value = "";
+    })
+    .catch((error) => {
+      errorMessage.value = `预警数据加载失败: ${error instanceof Error ? error.message : String(error)}`;
+    });
+
   if (timer) window.clearInterval(timer);
   timer = setInterval(() => {
+    if (!container.value || list.value.length === 0) return;
     container.value.classList.add("scroll");
     setTimeout(() => {
       if (!timer) return;
@@ -192,6 +133,17 @@ onUnmounted(() => {
   height: 100%;
   overflow: hidden;
 }
+
+.panel-message {
+  padding: 10px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--tw-color-text-secondary);
+  border: 1px solid var(--tw-border-soft);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
 .item-list {
   display: flex;
   flex-direction: column;

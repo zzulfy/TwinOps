@@ -1,0 +1,1 @@
+const r="http://127.0.0.1:8080",t=async e=>{const s=await fetch(`${r}${e}`);if(!s.ok)throw new Error(`HTTP ${s.status}`);const a=await s.json();if(!a.success)throw new Error(a.message||"request failed");return a.data},c=async()=>t("/api/devices"),o=async()=>t("/api/dashboard/summary"),n=async()=>t("/api/alarms?limit=20");export{n as a,c as b,o as f};

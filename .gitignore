@@ -30,3 +30,11 @@ stats.html
 # Generated screenshot outputs from local visual tests
 /*.png
 /frontend/*.png
+
+# OpenSpec/opsx local scratch artifacts
+/.opsx/
+/.opsx-*
+
+# Backend (Maven/Java) build artifacts
+/backend/target/
+/backend/*.log

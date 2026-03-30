@@ -1,20 +1,34 @@
 schema: spec-driven
 
-# Project context (optional)
-# This is shown to AI when creating artifacts.
-# Add your tech stack, conventions, style guides, domain knowledge, etc.
-# Example:
-#   context: |
-#     Tech stack: TypeScript, React, Node.js
-#     We use conventional commits
-#     Domain: e-commerce platform
+context: |
+	Project: TwinOps digital twin dashboard.
+	Current state: Frontend pages and components are considered complete for this phase.
+	New work focus: Introduce backend modules and replace frontend fixed/mock data with backend APIs.
 
-# Per-artifact rules (optional)
-# Add custom rules for specific artifacts.
-# Example:
-#   rules:
-#     proposal:
-#       - Keep proposals under 500 words
-#       - Always include a "Non-goals" section
-#     tasks:
-#       - Break tasks into chunks of max 2 hours
+	Tech stack baseline:
+	- Frontend: Vue 3 + TypeScript + Vite
+	- Backend: Java (Spring Boot preferred)
+	- Database: MySQL
+
+	Domain constraints:
+	- Dashboard, device detail, alarm list, and metrics charts must be backend-driven.
+	- Seed/sample data must be inserted into MySQL (not generated in frontend runtime).
+	- Device naming used by 3D labels and backend records must stay consistent.
+
+rules:
+	proposal:
+		- Clearly separate scope into backend module introduction and frontend data-source switching.
+		- Include explicit non-goals to avoid redesigning completed frontend UI.
+		- List impacted frontend data hotspots (device detail, device scale, alarms, chart metrics).
+	design:
+		- Describe backend module boundaries: device, telemetry, alarm, and dashboard aggregation.
+		- Include API contract sketches (request/response shape) for frontend integration.
+		- Include MySQL schema overview and seed data strategy (idempotent inserts/upserts).
+		- Explain data consistency strategy between 3D labels and device master records.
+	specs:
+		- Use testable requirements with concrete scenarios for API behavior and seeded data availability.
+		- Cover failure/empty-data behavior for frontend consumption.
+	tasks:
+		- Order tasks as: schema/migration -> seed data -> backend APIs -> frontend API wiring -> validation.
+		- Each task should have clear verification criteria and expected output artifacts.
+		- Include at least one task for local data validation against MySQL seeded records.
