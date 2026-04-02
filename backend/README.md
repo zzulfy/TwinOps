@@ -52,6 +52,23 @@ mvn spring-boot:run
 - `PATCH /api/alarms/{id}/status`
 - `GET /api/dashboard/summary`
 
+### Alarm Status Workflow
+
+- Supported status values: `new`, `acknowledged`, `resolved`
+- Query alarms by status:
+  - `GET /api/alarms?status=acknowledged&limit=20`
+- Update alarm status:
+  - `PATCH /api/alarms/{id}/status`
+  - Body:
+
+```json
+{
+  "status": "acknowledged"
+}
+```
+
+- Validation rule: `status` must be one of `new|acknowledged|resolved`.
+
 ## 7. Frontend Integration
 
 Frontend should set:

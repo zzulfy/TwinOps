@@ -62,6 +62,26 @@ npm run dev -- --host 127.0.0.1 --port 8090 --strictPort
 - Defer non-critical Three addons and model loaders (`three/examples`) until needed.
 - For deferred module failures, keep shell interactive and show local fallback message instead of hard-failing the page.
 
+## Dashboard Data Consistency Conventions
+
+- `fetchDashboardSummary` uses shared in-flight fetch behavior to keep multiple summary consumers aligned on one snapshot.
+- Dashboard shell supports manual refresh with forced summary fetch, and displays the latest successful update timestamp.
+- Summary consumers should react to shared refresh state, avoiding ad-hoc competing refresh flows.
+
+## Alarm Workflow UX
+
+- Alarm panel supports status tabs: `new`, `acknowledged`, `resolved`.
+- Status actions:
+  - `new` -> `acknowledged`
+  - `acknowledged` -> `resolved`
+- State transitions call `PATCH /api/alarms/{id}/status`, with inline error feedback and state rollback on failure.
+
+## Device Aggregate Filter UX
+
+- `/devices` keeps aggregate all-device rendering as default behavior.
+- Device list supports keyword filter (`name` / `deviceCode`) and status filter (`normal` / `warning` / `error`).
+- Clearing filters restores full aggregate list without route or data-source changes.
+
 ## Quality Commands
 
 - npm run lint

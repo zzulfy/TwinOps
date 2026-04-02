@@ -21,14 +21,15 @@
   </LayoutPanel>
 </template>
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { inject, onMounted, ref, watch } from "vue";
 import LayoutPanel from "./LayoutPanel.vue";
 import { fetchDashboardSummary } from "@/api/backend";
 
 const source = ref<Array<{ icon: string; label: string; value: string; unit: string }>>([]);
 const errorMessage = ref("");
+const dashboardSummaryVersion = inject("dashboardSummaryVersion", ref(0));
 
-onMounted(async () => {
+const loadSummary = async () => {
   try {
     const summary = await fetchDashboardSummary();
     source.value = summary.deviceScale;
@@ -36,6 +37,14 @@ onMounted(async () => {
   } catch (error) {
     errorMessage.value = `设备规模加载失败: ${error instanceof Error ? error.message : String(error)}`;
   }
+};
+
+onMounted(async () => {
+  await loadSummary();
+});
+
+watch(dashboardSummaryVersion, async () => {
+  await loadSummary();
 });
 </script>
 

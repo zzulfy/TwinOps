@@ -5,7 +5,7 @@
   </LayoutPanel>
 </template>
 <script setup lang="ts">
-import { nextTick, onMounted, ref } from "vue";
+import { inject, nextTick, onMounted, ref, watch } from "vue";
 import useEcharts from "@/hooks/useEcharts";
 import LayoutPanel from "./LayoutPanel.vue";
 import { CHART_MOTION } from "@/utils/chartMotion";
@@ -13,6 +13,7 @@ import { fetchDashboardSummary } from "@/api/backend";
 
 const { container, setOption, loadError } = useEcharts();
 const apiError = ref<string | null>(null);
+const dashboardSummaryVersion = inject("dashboardSummaryVersion", ref(0));
 
 const generateOptions = (labels: string[], values: number[]) => ({
   animation: true,
@@ -115,17 +116,25 @@ const generateOptions = (labels: string[], values: number[]) => ({
   ],
 });
 
+const loadChart = async () => {
+  try {
+    const summary = await fetchDashboardSummary();
+    const options = generateOptions(summary.faultRate.labels, summary.faultRate.values);
+    await setOption(options);
+    apiError.value = null;
+  } catch (error) {
+    apiError.value = `图表数据加载失败: ${error instanceof Error ? error.message : String(error)}`;
+  }
+};
+
 onMounted(() => {
   nextTick(async () => {
-    try {
-      const summary = await fetchDashboardSummary();
-      const options = generateOptions(summary.faultRate.labels, summary.faultRate.values);
-      await setOption(options);
-      apiError.value = null;
-    } catch (error) {
-      apiError.value = `图表数据加载失败: ${error instanceof Error ? error.message : String(error)}`;
-    }
+    await loadChart();
   });
+});
+
+watch(dashboardSummaryVersion, async () => {
+  await loadChart();
 });
 </script>
 

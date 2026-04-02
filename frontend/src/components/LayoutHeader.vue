@@ -14,6 +14,17 @@
       ></div>
     </div>
     <div class="header-right">
+      <button
+        v-if="showSummaryActions"
+        class="summary-refresh"
+        :disabled="refreshing"
+        @click="emit('refresh-summary')"
+      >
+        {{ refreshing ? "刷新中..." : "刷新看板" }}
+      </button>
+      <span v-if="showSummaryActions && summaryUpdatedAt" class="summary-updated">
+        更新于 {{ summaryUpdatedAt }}
+      </span>
       <span>{{ currentTime }}</span>
       <span>{{ currentDate }}</span>
       <span>{{ currentDay }}</span>
@@ -22,6 +33,22 @@
 </template>
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
+
+withDefaults(
+  defineProps<{
+    showSummaryActions?: boolean;
+    summaryUpdatedAt?: string;
+    refreshing?: boolean;
+  }>(),
+  {
+    showSummaryActions: false,
+    summaryUpdatedAt: "",
+    refreshing: false,
+  },
+);
+const emit = defineEmits<{
+  (event: "refresh-summary"): void;
+}>();
 
 // 获取当前时间
 const currentTime = ref("");
@@ -67,7 +94,7 @@ onUnmounted(() => {
 </script>
 <style lang="scss" scoped>
 @mixin font-color() {
-  background: linear-gradient(0deg, var(--tw-color-text-muted) 0%, var(--tw-color-text-primary) 95%);
+  background: linear-gradient(0deg, #8eb6ee 0%, #dceaff 95%);
   background-clip: text;
   -webkit-text-fill-color: transparent;
 }
@@ -96,9 +123,9 @@ onUnmounted(() => {
   height: 80px;
   padding: 0 16px;
   background:
-    linear-gradient(180deg, rgba(247, 252, 255, 0.95) 0%, rgba(233, 243, 252, 0.92) 100%),
-    radial-gradient(circle at 50% -40%, rgba(81, 145, 207, 0.12) 0%, transparent 45%);
-  border-bottom: 1px solid rgba(109, 158, 198, 0.28);
+    linear-gradient(180deg, rgba(12, 27, 48, 0.95) 0%, rgba(8, 21, 40, 0.95) 100%),
+    radial-gradient(circle at 50% -40%, rgba(56, 142, 234, 0.24) 0%, transparent 52%);
+  border-bottom: 1px solid rgba(83, 137, 201, 0.42);
 
   &::before {
     position: absolute;
@@ -106,9 +133,10 @@ onUnmounted(() => {
     height: 64px;
     pointer-events: none;
     content: "";
-    background: linear-gradient(90deg, rgba(220, 236, 250, 0.62) 0%, rgba(232, 244, 254, 0.54) 45%, rgba(214, 232, 248, 0.6) 100%);
-    border: 1px solid rgba(104, 151, 192, 0.22);
+    background: linear-gradient(90deg, rgba(25, 45, 73, 0.8) 0%, rgba(19, 37, 62, 0.76) 45%, rgba(17, 33, 57, 0.8) 100%);
+    border: 1px solid rgba(86, 140, 204, 0.34);
     border-radius: 12px;
+    box-shadow: inset 0 0 0 1px rgba(153, 201, 255, 0.1);
   }
 
   &::after {
@@ -119,7 +147,7 @@ onUnmounted(() => {
     width: 500px;
     height: 100px;
     content: "";
-    background: radial-gradient(circle, rgba(88, 153, 217, 0.22) 0%, rgba(255, 255, 255, 0.1) 35%, transparent 74%);
+    background: radial-gradient(circle, rgba(52, 148, 245, 0.34) 0%, rgba(96, 172, 255, 0.14) 35%, transparent 74%);
     filter: blur(1px);
     animation: light-go 3s ease-in-out infinite forwards;
   }
@@ -156,7 +184,7 @@ onUnmounted(() => {
     grid-gap: 6px;
     align-items: center;
     font-size: 18px;
-    color: var(--tw-color-text-primary);
+    color: #b8d5fc;
     opacity: 0.9;
     .message {
       display: flex;
@@ -164,6 +192,7 @@ onUnmounted(() => {
       overflow: hidden;
       font-size: 14px;
       opacity: 0.9;
+      letter-spacing: 0.3px;
       &::after {
         width: auto;
         text-wrap: nowrap;
@@ -180,7 +209,37 @@ onUnmounted(() => {
     display: flex;
     grid-gap: 14px;
     font-size: 14px;
-    color: var(--tw-color-text-primary);
+    color: #d2e5ff;
+    align-items: center;
+
+    .summary-refresh {
+      height: 28px;
+      padding: 0 10px;
+      font-size: 12px;
+      color: #dff0ff;
+      cursor: pointer;
+      background: linear-gradient(120deg, var(--tw-cta-start) 0%, var(--tw-cta-end) 100%);
+      border: 1px solid var(--tw-cta-border);
+      border-radius: 999px;
+      box-shadow: var(--tw-cta-shadow);
+      transition: all var(--tw-motion-duration-fast) var(--tw-motion-ease-standard);
+
+      &:hover:not(:disabled) {
+        transform: translateY(-1px);
+      }
+
+      &:disabled {
+        opacity: 0.66;
+        cursor: not-allowed;
+      }
+    }
+
+    .summary-updated {
+      font-size: 12px;
+      color: #9fc5f7;
+      text-shadow: none;
+    }
+
     span {
       position: relative;
       display: flex;
@@ -193,8 +252,8 @@ onUnmounted(() => {
         width: 2px;
         height: 10px;
         content: "";
-        background-color: #fff;
-        opacity: 0.2;
+        background-color: #84b9f4;
+        opacity: 0.44;
       }
     }
   }

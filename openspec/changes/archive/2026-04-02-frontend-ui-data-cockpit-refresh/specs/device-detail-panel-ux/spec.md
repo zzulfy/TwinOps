@@ -1,8 +1,4 @@
-## Purpose
-
-Define white-theme visual consistency and content accessibility for the device detail panel.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: White-theme detail panel visual consistency
 The device detail panel SHALL use cockpit-style visual language consistent with the dashboard shell, including high-contrast surfaces, clearer section framing, and readable typography hierarchy.

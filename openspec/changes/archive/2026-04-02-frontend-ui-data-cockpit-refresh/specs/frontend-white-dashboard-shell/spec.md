@@ -1,8 +1,4 @@
-## Purpose
-
-Define white-first dashboard shell visual presentation and its readability characteristics across layouts and responsive contexts.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: White-first dashboard shell
 The frontend SHALL provide a cockpit-style dashboard shell as the primary board presentation, including high-contrast background layering, elevated panel surfaces, and restrained semantic status accents.

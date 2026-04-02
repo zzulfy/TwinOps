@@ -1,7 +1,5 @@
-## Purpose
+## MODIFIED Requirements
 
-Define the aggregate device list-view behavior and route resolution expectations for device browsing.
-## Requirements
 ### Requirement: Aggregate device list display
 The device detail view SHALL render all available devices by default as an aggregate list or grid, and SHALL provide client-side search and status filters without changing the default all-device behavior.
 
@@ -32,4 +30,3 @@ The device detail route SHALL resolve correctly without requiring an individual 
 - **WHEN** users enter `/devices` directly from URL or refresh
 - **THEN** the page resolves without error and displays the full available device set
 - **AND** the page behavior is consistent with dashboard-entry navigation
-

@@ -1,6 +1,11 @@
 <template>
   <div class="layout">
-    <LayoutHeader />
+    <LayoutHeader
+      :show-summary-actions="true"
+      :summary-updated-at="summaryUpdatedAt"
+      :refreshing="refreshingSummary"
+      @refresh-summary="refreshSummary"
+    />
     <LayoutFooter />
     <LayoutLoading :loading="loading" />
     <div class="layout-main">
@@ -17,7 +22,7 @@
 </template>
 
 <script setup lang="ts">
-import { provide, ref, watchEffect } from "vue";
+import { onMounted, provide, ref, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import LayoutHeader from "@/components/LayoutHeader.vue";
 import LayoutFooter from "@/components/LayoutFooter.vue";
@@ -26,6 +31,7 @@ import WidgetPanel01 from "@/components/WidgetPanel01.vue";
 import WidgetPanel04 from "@/components/WidgetPanel04.vue";
 import WidgetPanel06 from "@/components/WidgetPanel06.vue";
 import { useDataCenter } from "@/hooks/useDataCenter";
+import { fetchDashboardSummary } from "@/api/backend";
 
 const router = useRouter();
 const threeContainer = ref<HTMLElement | null>(null);
@@ -36,6 +42,23 @@ watchEffect(() => {
 });
 
 const showMask = ref(false);
+const summaryUpdatedAt = ref("");
+const refreshingSummary = ref(false);
+const dashboardSummaryVersion = ref(0);
+
+const formatTime = (date: Date) =>
+  `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}:${date.getSeconds().toString().padStart(2, "0")}`;
+
+const refreshSummary = async () => {
+  try {
+    refreshingSummary.value = true;
+    await fetchDashboardSummary({ force: true });
+    summaryUpdatedAt.value = formatTime(new Date());
+    dashboardSummaryVersion.value += 1;
+  } finally {
+    refreshingSummary.value = false;
+  }
+};
 
 const goToDetailPage = () => {
   router.push({ name: "device-detail" });
@@ -51,6 +74,11 @@ provide("mask", {
 });
 
 provide("events", { startWarming, stopWarming, enableControls, disableControls });
+provide("dashboardSummaryVersion", dashboardSummaryVersion);
+
+onMounted(async () => {
+  await refreshSummary();
+});
 </script>
 
 <style lang="scss" scoped>
@@ -60,8 +88,8 @@ provide("events", { startWarming, stopWarming, enableControls, disableControls }
   height: 100%;
   overflow: hidden;
   background:
-    radial-gradient(circle at 14% 14%, rgba(84, 147, 208, 0.12) 0%, transparent 38%),
-    radial-gradient(circle at 86% 16%, rgba(79, 178, 139, 0.1) 0%, transparent 34%),
+    radial-gradient(circle at 14% 14%, rgba(69, 157, 255, 0.22) 0%, transparent 42%),
+    radial-gradient(circle at 86% 16%, rgba(70, 215, 160, 0.16) 0%, transparent 38%),
     linear-gradient(138deg, var(--tw-bg-ink) 5%, var(--tw-bg-deep) 52%, var(--tw-bg-haze) 100%);
 
   &::before {
@@ -69,9 +97,9 @@ provide("events", { startWarming, stopWarming, enableControls, disableControls }
     inset: 0;
     pointer-events: none;
     content: "";
-    background-image:
-      linear-gradient(rgba(57, 88, 118, 0.08) 1px, transparent 1px),
-      linear-gradient(90deg, rgba(57, 88, 118, 0.07) 1px, transparent 1px);
+      background-image:
+        linear-gradient(rgba(75, 120, 170, 0.16) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(75, 120, 170, 0.12) 1px, transparent 1px);
     background-size: 54px 54px;
     opacity: 0.32;
   }
@@ -95,7 +123,7 @@ provide("events", { startWarming, stopWarming, enableControls, disableControls }
 
       :deep(.layout-panel) {
         border-color: var(--tw-panel-edge);
-        box-shadow: 0 8px 24px rgba(67, 93, 118, 0.16), inset 0 0 0 1px rgba(255, 255, 255, 0.6);
+        box-shadow: var(--tw-shadow-panel), inset 0 0 0 1px rgba(139, 196, 255, 0.14);
       }
     }
 
@@ -106,9 +134,9 @@ provide("events", { startWarming, stopWarming, enableControls, disableControls }
       z-index: 2;
       width: calc(100% - clamp(330px, 24vw, 430px) - 40px);
       height: 100%;
-      border: 1px solid rgba(118, 151, 183, 0.34);
+      border: 1px solid rgba(90, 140, 204, 0.5);
       border-radius: var(--tw-radius-lg);
-      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.62), 0 14px 28px rgba(57, 78, 101, 0.16);
+      box-shadow: inset 0 0 0 1px rgba(126, 190, 255, 0.22), 0 16px 30px rgba(4, 11, 23, 0.5);
 
       &::before {
         position: absolute;
@@ -122,7 +150,7 @@ provide("events", { startWarming, stopWarming, enableControls, disableControls }
         background:
           radial-gradient(circle at 32% 20%, var(--tw-glow-cyan) 0%, transparent 44%),
           radial-gradient(circle at 76% 76%, var(--tw-glow-lime) 0%, transparent 48%),
-          radial-gradient(circle, transparent 40%, rgba(28, 53, 80, 0.14) 85%);
+          radial-gradient(circle, transparent 40%, rgba(7, 17, 34, 0.46) 88%);
       }
     }
 
@@ -136,18 +164,18 @@ provide("events", { startWarming, stopWarming, enableControls, disableControls }
       font-family: Douyu;
       font-size: 13px;
       letter-spacing: 1px;
-      color: var(--tw-color-text-primary);
+      color: #deecff;
       cursor: pointer;
-      background: linear-gradient(120deg, rgba(255, 255, 255, 0.88) 0%, rgba(239, 247, 255, 0.96) 100%);
-      border: 1px solid rgba(107, 149, 190, 0.44);
+      background: linear-gradient(120deg, var(--tw-cta-start) 0%, var(--tw-cta-end) 100%);
+      border: 1px solid var(--tw-cta-border);
       border-radius: 999px;
-      box-shadow: 0 6px 16px rgba(49, 96, 145, 0.2);
+      box-shadow: var(--tw-cta-shadow);
       transition: all var(--tw-motion-duration-base) var(--tw-motion-ease-standard);
 
       &:hover {
         transform: translateY(-1px);
-        box-shadow: 0 10px 20px rgba(49, 96, 145, 0.26);
-        border-color: rgba(73, 126, 176, 0.6);
+        box-shadow: 0 14px 24px rgba(11, 75, 150, 0.56);
+        border-color: rgba(170, 218, 255, 0.8);
       }
     }
 
@@ -158,7 +186,7 @@ provide("events", { startWarming, stopWarming, enableControls, disableControls }
       z-index: 9998;
       width: 100%;
       height: 100%;
-      background-color: rgba(225, 235, 244, 0.34);
+      background-color: rgba(8, 18, 34, 0.42);
       backdrop-filter: blur(2px);
       pointer-events: none;
     }
