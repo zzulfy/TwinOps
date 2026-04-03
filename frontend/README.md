@@ -68,6 +68,22 @@ npm run dev -- --host 127.0.0.1 --port 8090 --strictPort
 - Dashboard shell supports manual refresh with forced summary fetch, and displays the latest successful update timestamp.
 - Summary consumers should react to shared refresh state, avoiding ad-hoc competing refresh flows.
 
+## Admin Authentication and Protected Routes
+
+- New route: `/login` for admin sign-in.
+- Protected routes include `/`, `/devices`, `/devices/:deviceCode`, and `/analysis`.
+- Unauthenticated navigation to protected pages redirects to `/login?redirect=<target>`.
+- Login state uses backend-issued token and frontend local session storage.
+
+## Analysis Center Module
+
+- New route: `/analysis`.
+- Features:
+  - Create analysis reports by `deviceCode` + metric summary.
+  - Render report list and report detail.
+  - Show `status`, `confidence`, `riskLevel`, `prediction`, and `recommendedAction`.
+  - Surface explicit failed-state message when backend marks report as `failed`.
+
 ## Alarm Workflow UX
 
 - Alarm panel supports status tabs: `new`, `acknowledged`, `resolved`.
@@ -76,11 +92,12 @@ npm run dev -- --host 127.0.0.1 --port 8090 --strictPort
   - `acknowledged` -> `resolved`
 - State transitions call `PATCH /api/alarms/{id}/status`, with inline error feedback and state rollback on failure.
 
-## Device Aggregate Filter UX
+## Device List + Watchlist UX
 
-- `/devices` keeps aggregate all-device rendering as default behavior.
-- Device list supports keyword filter (`name` / `deviceCode`) and status filter (`normal` / `warning` / `error`).
-- Clearing filters restores full aggregate list without route or data-source changes.
+- `/devices` is list-first: keyword filter (`name` / `deviceCode`) + status filter (`normal` / `warning` / `error`).
+- New focused route: `/devices/:deviceCode` for single-device detail rendering.
+- Watchlist supports pin/unpin and persists through backend watchlist APIs.
+- Both list and watchlist can navigate directly to focused detail page.
 
 ## Quality Commands
 

@@ -15,10 +15,8 @@ const router = useRouter();
 
 const handleLabelClick = () => {
   router.push({
-    name: "device-detail",
-    query: {
-      name: props.name,
-    },
+    name: "devices",
+    query: { keyword: props.name },
   });
 };
 </script>

@@ -22,6 +22,8 @@
       >
         {{ refreshing ? "刷新中..." : "刷新看板" }}
       </button>
+      <button v-if="showSummaryActions" class="summary-refresh" @click="emit('go-analysis')">分析中心</button>
+      <button v-if="showSummaryActions" class="summary-refresh" @click="emit('logout')">退出登录</button>
       <span v-if="showSummaryActions && summaryUpdatedAt" class="summary-updated">
         更新于 {{ summaryUpdatedAt }}
       </span>
@@ -48,6 +50,8 @@ withDefaults(
 );
 const emit = defineEmits<{
   (event: "refresh-summary"): void;
+  (event: "go-analysis"): void;
+  (event: "logout"): void;
 }>();
 
 // 获取当前时间

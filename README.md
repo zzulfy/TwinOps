@@ -21,32 +21,43 @@ TwinOps 由 `frontend`、`backend`、`openspec` 三个核心部分组成：
 
 ## 技术实现方案（Technical Implementation Plan）
 
-### 0) 系统架构图（Architecture Diagram）
+### 0) 新版本系统架构图（Architecture Diagram v2）
 
 ```mermaid
 flowchart LR
     U[Operator / Browser] --> F[Frontend<br/>Vue 3 + Vite]
-    F -->|HTTP /api/*| C[Controller Layer]
+    F -->|Hash Router| R[Routes<br/>/login / /analysis /devices /devices/:deviceCode]
+    R -->|HTTP /api/*| C[Controller Layer]
     C --> S[Service Layer]
     S --> M[Mapper Layer<br/>MyBatis-Plus]
     M --> D[(MySQL)]
 
     subgraph Frontend
+      P0[LoginPage]
       P1[DashboardPage]
-      P2[DeviceDetailPage]
+      P2[AnalysisCenterPage]
+      P3[DeviceDetailPage]
       API[src/api/backend.ts]
+      P0 --> API
       P1 --> API
       P2 --> API
+      P3 --> API
     end
 
     subgraph Backend Modular Monolith
       C
       S
       M
+      AU[auth]
+      AN[analysis]
+      WL[watchlist]
       DM[device]
       TM[telemetry]
       AM[alarm]
       GM[dashboard]
+      C --> AU
+      C --> AN
+      C --> WL
       C --> DM
       C --> TM
       C --> AM
@@ -54,16 +65,47 @@ flowchart LR
     end
 ```
 
+### 0.1) 关键业务链路图（Auth + Analysis + Device Navigation）
+
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant FE as Frontend
+    participant BE as Backend
+    participant DB as MySQL
+
+    Admin->>FE: Login (/login)
+    FE->>BE: POST /api/auth/login
+    BE->>DB: validate admin session
+    DB-->>BE: session/token state
+    BE-->>FE: token + admin identity
+
+    Admin->>FE: Submit prediction request
+    FE->>BE: POST /api/analysis/reports
+    BE->>BE: LLM adapter + timeout/retry
+    BE->>DB: persist report(status/confidence/risk)
+    BE-->>FE: report result (success/failed)
+
+    Admin->>FE: Pin device
+    FE->>BE: POST /api/watchlist
+    BE->>DB: upsert watchlist item
+    BE-->>FE: watchlist items
+    Admin->>FE: Open /devices/:deviceCode
+```
+
 ### 1) 架构分层与模块职责
 
-- 前端采用 page + component + hook 结构，路由基于 hash mode，主路径包含 `/`（dashboard）与 `/devices`（设备详情）。
-- 后端采用 modular monolith 组织方式，领域模块包含 `device`、`telemetry`、`alarm`、`dashboard`，并通过 `Controller -> Service -> Mapper(BaseMapper)` 完成数据访问与业务编排。
+- 前端采用 page + component + hook 结构，路由基于 hash mode，核心路径包含 `/login`、`/`（dashboard）、`/analysis`、`/devices`、`/devices/:deviceCode`。
+- 后端采用 modular monolith 组织方式，领域模块扩展为 `auth`、`analysis`、`watchlist`、`device`、`telemetry`、`alarm`、`dashboard`，并通过 `Controller -> Service -> Mapper(BaseMapper)` 完成数据访问与业务编排。
 - 数据库层使用 MySQL，初始化脚本位于 `backend/sql`，按 schema/seed/verify 顺序执行，保证 demo 与开发环境可重复初始化。
 
 ### 2) 前后端契约与数据流
 
 - API 统一返回 `ApiResponse<T> { success, message, data }`，frontend 的 `src/api/backend.ts` 按该 contract 进行解析与异常抛出。
-- 领域 DTO 字段命名与 frontend 消费保持一致（如 `deviceCode`、`faultRate`、`resourceUsage`），避免 ad-hoc 字段转换导致语义漂移。
+- 认证域基于 admin token session：`/api/auth/login -> token`，受保护 API 通过 `Authorization: Bearer <token>` 访问。
+- 分析域通过 `analysis_reports` 持久化预测结果，支持 `success/failed` 显式状态，保障 LLM 故障可观测。
+- 设备域采用 list-first + focused-detail 模式：`/devices` 聚合检索，`/devices/:deviceCode` 聚焦详情，`watchlist` 提供快捷导航。
+- 领域 DTO 字段命名与 frontend 消费保持一致（如 `deviceCode`、`faultRate`、`resourceUsage`、`riskLevel`、`confidence`），避免 ad-hoc 字段转换导致语义漂移。
 - backend 查询风格统一使用 `QueryWrapper`，并在 service 层明确排序与 limit 规则，保证 dashboard 与列表视图可预测性。
 - 告警工作流支持前端状态流转：`new -> acknowledged -> resolved`，并通过 `PATCH /api/alarms/{id}/status` 回写 backend。
 
@@ -85,6 +127,7 @@ flowchart LR
 2. 增量交付优先：以小步可回滚的前端改造推进功能（告警工作流、summary 刷新、设备筛选）。  
 3. 一致性优先：dashboard summary 采用 shared fetch，避免多组件并发请求造成数据快照不一致。  
 4. 明确错误反馈：对请求失败提供可见错误提示与状态回滚，避免“成功假象”。  
+5. AI 可降级优先：analysis 模块采用 timeout/retry/failure persistence，确保 LLM 失败不拖垮主链路。  
 
 ## 开发环境与依赖
 
@@ -131,6 +174,69 @@ npm run format
 - 告警面板支持状态筛选：`new / acknowledged / resolved`。
 - 告警面板支持状态操作：`new -> acknowledged`、`acknowledged -> resolved`。
 - 设备详情页支持按 `name/deviceCode` 搜索，并支持按 `status(normal/warning/error)` 过滤。
+
+## 本次扩展模块（Admin + Analysis + Device Navigation）
+
+- 新增 **Admin Authentication**：
+  - frontend 新增 `/login` 页面与 route guard；
+  - backend 新增 `/api/auth/login`、`/api/auth/logout`、`/api/auth/me`。
+- 新增 **AI Analysis Center**：
+  - frontend 新增 `/analysis` 页面，支持报告列表与详情展示；
+  - backend 新增 `/api/analysis/reports` 系列接口，支持预测报告创建/查询；
+  - LLM 调用采用 adapter + timeout/retry + failure persistence。
+- 新增 **Device List + Watchlist Navigation**：
+  - 路由改造为 `/devices`（列表）与 `/devices/:deviceCode`（聚焦详情）；
+  - backend 新增 `/api/watchlist` 持久化关注列表；
+  - frontend 支持 pin/unpin 并从列表/关注列表直达详情。
+
+### Auth API 示例
+
+```http
+POST /api/auth/login
+Content-Type: application/json
+
+{
+  "username": "admin",
+  "password": "admin123456"
+}
+```
+
+失败响应示例（invalid credentials）：
+
+```json
+{
+  "success": false,
+  "message": "invalid admin credentials",
+  "data": null
+}
+```
+
+### Analysis API 示例
+
+```http
+POST /api/analysis/reports
+Authorization: Bearer <admin-token>
+Content-Type: application/json
+
+{
+  "deviceCode": "DEV001",
+  "metricSummary": "cpu overload risk in next 2h"
+}
+```
+
+超时失败状态示例：
+
+```json
+{
+  "success": true,
+  "message": "ok",
+  "data": {
+    "id": 12,
+    "status": "failed",
+    "errorMessage": "llm timeout after 5s"
+  }
+}
+```
 
 ## Backend Quick Start
 

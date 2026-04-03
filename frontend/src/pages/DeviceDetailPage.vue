@@ -2,8 +2,8 @@
   <div class="device-page">
     <div class="page-header">
       <button class="back-btn" @click="goBack">返回看板</button>
-      <div class="title">所有设备详情</div>
-      <div class="subtitle">全面监控各个设备的运行状态</div>
+      <div class="title">设备列表与详情</div>
+      <div class="subtitle">搜索、关注并快速进入单设备详情</div>
     </div>
 
     <div class="filter-bar">
@@ -25,26 +25,81 @@
 
     <div v-if="errorMessage" class="status-message error">{{ errorMessage }}</div>
     <div v-else-if="allDevicesData.length === 0" class="status-message">暂无设备数据</div>
-    <div v-else-if="filteredDevices.length === 0" class="status-message">筛选结果为空，请调整条件</div>
-    <div v-else class="page-body">
-      <div v-for="device in filteredDevices" :key="device.deviceCode" class="device-card-wrapper">
-        <DeviceDetailPanel :device-data="device" embedded @close="goBack" />
+    <div v-else class="device-layout">
+      <div class="list-panel">
+        <div class="list-title">设备列表</div>
+        <div v-if="filteredDevices.length === 0" class="status-message">筛选结果为空，请调整条件</div>
+        <div
+          v-for="device in filteredDevices"
+          :key="device.deviceCode"
+          class="list-item"
+          :class="{ active: currentDevice?.deviceCode === device.deviceCode }"
+        >
+          <div class="list-item-main" @click="openDevice(device.deviceCode)">
+            <div class="name">{{ device.name }}</div>
+            <div class="meta">{{ device.deviceCode }} · {{ device.status }}</div>
+          </div>
+          <button class="pin-btn" @click="toggleWatch(device.deviceCode)">
+            {{ watchSet.has(device.deviceCode) ? "取消关注" : "关注" }}
+          </button>
+        </div>
+      </div>
+
+      <div class="watch-panel">
+        <div class="list-title">关注列表</div>
+        <div v-if="watchList.length === 0" class="empty-watch">暂无关注设备</div>
+        <div
+          v-for="item in watchList"
+          :key="item.deviceCode"
+          class="watch-item"
+          @click="openDevice(item.deviceCode)"
+        >
+          {{ item.deviceCode }}
+        </div>
+      </div>
+
+      <div class="detail-panel">
+        <div v-if="notFound" class="status-message error">
+          未找到设备 {{ route.params.deviceCode }}，请从左侧列表重新选择。
+        </div>
+        <div v-else-if="currentDevice">
+          <DeviceDetailPanel :device-data="currentDevice" embedded @close="goBackToList" />
+        </div>
+        <div v-else class="status-message">请从列表或关注列表选择设备查看详情。</div>
       </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { useRouter } from "vue-router";
+import { computed, onMounted, ref, watch } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import DeviceDetailPanel from "@/components/DeviceDetailPanel.vue";
-import { fetchDevices, type DeviceData } from "@/api/backend";
+import {
+  fetchDevices,
+  fetchWatchlist,
+  pinWatchlistDevice,
+  type DeviceData,
+  type WatchlistItem,
+  unpinWatchlistDevice,
+} from "@/api/backend";
 
 const router = useRouter();
+const route = useRoute();
 const allDevicesData = ref<DeviceData[]>([]);
 const errorMessage = ref<string>("");
 const keyword = ref("");
 const selectedStatus = ref<"" | DeviceData["status"]>("");
+const watchList = ref<WatchlistItem[]>([]);
+const currentDeviceCode = ref<string>("");
+
+const watchSet = computed(() => new Set(watchList.value.map((item) => item.deviceCode)));
+const currentDevice = computed(() =>
+  allDevicesData.value.find((device) => device.deviceCode === currentDeviceCode.value),
+);
+const notFound = computed(
+  () => Boolean(currentDeviceCode.value) && !currentDevice.value && allDevicesData.value.length > 0,
+);
 
 const filteredDevices = computed(() => {
   const normalizedKeyword = keyword.value.toLowerCase();
@@ -62,15 +117,53 @@ const goBack = () => {
   router.push({ name: "dashboard" });
 };
 
+const goBackToList = () => {
+  router.push({ name: "devices" });
+};
+
 const clearFilters = () => {
   keyword.value = "";
   selectedStatus.value = "";
 };
 
+const openDevice = (deviceCode: string) => {
+  router.push({ name: "device-focus", params: { deviceCode } });
+};
+
+const loadWatchlist = async () => {
+  watchList.value = await fetchWatchlist();
+};
+
+const toggleWatch = async (deviceCode: string) => {
+  if (watchSet.value.has(deviceCode)) {
+    watchList.value = await unpinWatchlistDevice(deviceCode);
+    return;
+  }
+  watchList.value = await pinWatchlistDevice(deviceCode);
+};
+
+const syncRouteState = () => {
+  const routeCode = typeof route.params.deviceCode === "string" ? route.params.deviceCode : "";
+  currentDeviceCode.value = routeCode;
+  if (typeof route.query.keyword === "string") {
+    keyword.value = route.query.keyword;
+  }
+};
+
+watch(
+  () => route.params.deviceCode,
+  () => syncRouteState(),
+  { immediate: true },
+);
+
 onMounted(async () => {
   try {
     allDevicesData.value = await fetchDevices();
+    await loadWatchlist();
     errorMessage.value = "";
+    if (!currentDeviceCode.value && filteredDevices.value.length > 0) {
+      currentDeviceCode.value = filteredDevices.value[0].deviceCode;
+    }
   } catch (error) {
     errorMessage.value = `设备数据加载失败: ${error instanceof Error ? error.message : String(error)}`;
   }
@@ -168,13 +261,11 @@ onMounted(async () => {
   color: var(--tw-color-text-secondary);
 }
 
-.page-body {
+.device-layout {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(420px, 1fr));
+  grid-template-columns: minmax(320px, 28%) minmax(200px, 18%) 1fr;
   align-items: start;
-  gap: 24px;
-  padding-bottom: 48px;
-  max-width: 100%;
+  gap: 14px;
 }
 
 .status-message {
@@ -197,5 +288,75 @@ onMounted(async () => {
   border-radius: 16px;
   overflow: visible;
   display: flex;
+}
+
+.list-panel,
+.watch-panel,
+.detail-panel {
+  border: 1px solid var(--tw-border-soft);
+  border-radius: 12px;
+  background: rgba(12, 28, 48, 0.82);
+  padding: 12px;
+  min-height: 72vh;
+}
+
+.list-title {
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #dceaff;
+}
+
+.list-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  border: 1px solid rgba(126, 161, 192, 0.2);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
+}
+
+.list-item.active {
+  border-color: rgba(124, 185, 255, 0.9);
+  box-shadow: inset 0 0 0 1px rgba(124, 185, 255, 0.34);
+}
+
+.list-item-main {
+  cursor: pointer;
+}
+
+.name {
+  color: #eaf3ff;
+  font-weight: 700;
+}
+
+.meta {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #9fc5f7;
+}
+
+.pin-btn {
+  height: 28px;
+  padding: 0 10px;
+  cursor: pointer;
+  color: #e3f0ff;
+  border-radius: 14px;
+  border: 1px solid var(--tw-cta-border);
+  background: linear-gradient(120deg, var(--tw-cta-start) 0%, var(--tw-cta-end) 100%);
+}
+
+.watch-item {
+  border: 1px solid rgba(126, 161, 192, 0.2);
+  border-radius: 8px;
+  padding: 8px;
+  margin-bottom: 8px;
+  cursor: pointer;
+  color: #dbe9ff;
+}
+
+.empty-watch {
+  color: #9fc5f7;
+  font-size: 13px;
 }
 </style>

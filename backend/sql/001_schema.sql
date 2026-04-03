@@ -45,3 +45,28 @@ CREATE TABLE IF NOT EXISTS alarms (
   KEY idx_alarm_device_time (device_code, occurred_at),
   KEY idx_alarm_status_time (status, occurred_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS analysis_reports (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  device_code VARCHAR(64) NOT NULL,
+  metric_summary TEXT NOT NULL,
+  prediction TEXT NULL,
+  confidence DECIMAL(5,2) NULL,
+  risk_level VARCHAR(32) NULL,
+  recommended_action TEXT NULL,
+  status VARCHAR(32) NOT NULL,
+  error_message VARCHAR(255) NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  KEY idx_analysis_device_time (device_code, created_at),
+  KEY idx_analysis_status_time (status, created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS admin_watchlist (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  admin_username VARCHAR(64) NOT NULL,
+  device_code VARCHAR(64) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_admin_watch_device (admin_username, device_code),
+  KEY idx_watch_device (device_code)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

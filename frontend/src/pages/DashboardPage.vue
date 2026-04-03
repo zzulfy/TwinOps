@@ -5,6 +5,8 @@
       :summary-updated-at="summaryUpdatedAt"
       :refreshing="refreshingSummary"
       @refresh-summary="refreshSummary"
+      @go-analysis="goToAnalysis"
+      @logout="logout"
     />
     <LayoutFooter />
     <LayoutLoading :loading="loading" />
@@ -15,7 +17,7 @@
         <WidgetPanel06 />
       </div>
       <div class="main-right" ref="threeContainer"></div>
-      <button class="detail-entry" @click="goToDetailPage">查看设备详情</button>
+      <button class="detail-entry" @click="goToDetailPage">设备列表</button>
       <div class="mask" v-if="showMask"></div>
     </div>
   </div>
@@ -31,7 +33,7 @@ import WidgetPanel01 from "@/components/WidgetPanel01.vue";
 import WidgetPanel04 from "@/components/WidgetPanel04.vue";
 import WidgetPanel06 from "@/components/WidgetPanel06.vue";
 import { useDataCenter } from "@/hooks/useDataCenter";
-import { fetchDashboardSummary } from "@/api/backend";
+import { fetchDashboardSummary, logoutAdmin } from "@/api/backend";
 
 const router = useRouter();
 const threeContainer = ref<HTMLElement | null>(null);
@@ -61,7 +63,16 @@ const refreshSummary = async () => {
 };
 
 const goToDetailPage = () => {
-  router.push({ name: "device-detail" });
+  router.push({ name: "devices" });
+};
+
+const goToAnalysis = () => {
+  router.push({ name: "analysis-center" });
+};
+
+const logout = async () => {
+  await logoutAdmin();
+  router.push({ name: "login" });
 };
 
 provide("mask", {

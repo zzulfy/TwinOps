@@ -5,12 +5,12 @@ Define dedicated device detail page routing and navigation patterns separate fro
 ## Requirements
 
 ### Requirement: Dedicated device detail route
-The frontend SHALL provide a dedicated device detail page route separate from the overview dashboard route.
+The frontend SHALL provide dedicated list and detail routes for device browsing, with detail route bound to explicit device identity context.
 
-#### Scenario: User navigates to dedicated detail page
-- **WHEN** the user selects a device detail navigation action
-- **THEN** the application routes to a dedicated device detail page
-- **AND** the overview dashboard remains a separate navigable page
+#### Scenario: Admin navigates from list to detail
+- **WHEN** admin selects a device from list or watchlist
+- **THEN** app navigates to `/devices/:deviceCode`
+- **AND** detail page renders selected device data
 
 ### Requirement: Dashboard detail entry button
 The dashboard SHALL include a visible action button that navigates to the dedicated device detail page.
@@ -29,9 +29,9 @@ Device label interactions SHALL navigate to the dedicated detail page with selec
 - **AND** the detail page receives selected device identity context for rendering
 
 ### Requirement: Navigation fallback resilience
-The detail page SHALL render a valid default state when route context is partially missing.
+The detail page SHALL render a valid fallback state when device context is missing or invalid.
 
-#### Scenario: Detail page opens directly without prior dashboard state
-- **WHEN** the detail route is accessed via refresh or direct URL
-- **THEN** the page renders with fallback device context or selection prompt
-- **AND** the app does not crash due to missing transient state
+#### Scenario: Invalid deviceCode route
+- **WHEN** `/devices/:deviceCode` references a non-existent device
+- **THEN** page shows clear not-found fallback
+- **AND** provides navigation path back to `/devices`
