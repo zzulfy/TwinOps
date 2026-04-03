@@ -6,13 +6,16 @@
     <AlarmDeviceList
       v-if="showAlarmList"
       :devices="alarmDevices"
+      :loading="alarmLoading"
+      :error-message="alarmErrorMessage"
       @close="showAlarmList = false"
       @click.stop
     />
   </div>
 </template>
 <script setup lang="ts">
-import { reactive, computed, inject, ref, onMounted } from "vue";
+import { reactive, computed, inject, ref, onMounted, watch } from "vue";
+import { fetchAlarmList, type AlarmListItem } from "@/api/backend";
 import AlarmDeviceList from "./AlarmDeviceList.vue";
 
 interface EventsType {
@@ -26,6 +29,9 @@ const state = reactive({
 
 const events = inject<EventsType | undefined>("events");
 const showAlarmList = ref(false);
+const alarmDevices = ref<AlarmListItem[]>([]);
+const alarmLoading = ref(false);
+const alarmErrorMessage = ref("");
 
 // 初始化时自动开启告警
 onMounted(() => {
@@ -34,96 +40,34 @@ onMounted(() => {
   }
 });
 
-interface AlarmItem {
-  name: string;
-  event: string;
-  type: 1 | 2 | 3;
-  time: string;
-}
+const loadAlarmDevices = async () => {
+  try {
+    alarmLoading.value = true;
+    alarmDevices.value = await fetchAlarmList("new", 20);
+    alarmErrorMessage.value = "";
+  } catch (error) {
+    alarmErrorMessage.value = `告警数据加载失败: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
+    alarmDevices.value = [];
+  } finally {
+    alarmLoading.value = false;
+  }
+};
 
-const list = ref<AlarmItem[]>([
-  {
-    name: "1# 服务器机柜",
-    event: "温度过高",
-    type: 1,
-    time: "08:21",
-  },
-  {
-    name: "2# 服务器机柜",
-    event: "内存过载",
-    type: 3,
-    time: "12:53",
-  },
-  {
-    name: "3# 服务器机柜",
-    event: "硬盘故障",
-    type: 1,
-    time: "16:42",
-  },
-  {
-    name: "1# 网络设备",
-    event: "网络异常",
-    type: 3,
-    time: "08:32",
-  },
-  {
-    name: "6# 网络设备",
-    event: "丢包率过高",
-    type: 2,
-    time: "17:43",
-  },
-  {
-    name: "1# 电源柜",
-    event: "电压波动",
-    type: 2,
-    time: "09:44",
-  },
-  {
-    name: "2# 电源柜",
-    event: "电流过高",
-    type: 3,
-    time: "12:53",
-  },
-  {
-    name: "3# 电源柜",
-    event: "电压波动",
-    type: 2,
-    time: "09:44",
-  },
-  {
-    name: "4# 电源柜",
-    event: "电流过高",
-    type: 3,
-    time: "12:53",
-  },
-  {
-    name: "5# 电源柜",
-    event: "电压波动",
-    type: 2,
-    time: "09:44",
-  },
-  {
-    name: "6# 电源柜",
-    event: "电流过高",
-    type: 3,
-    time: "12:53",
-  },
-]);
-
-const alarmDevices = computed(() =>
-  list.value.map((item, index) => ({
-    id: index,
-    name: item.name,
-    event: item.event,
-    type: item.type,
-    time: item.time,
-  }))
-);
+watch(showAlarmList, async (visible) => {
+  if (!visible) {
+    return;
+  }
+  await loadAlarmDevices();
+});
 
 const warmingStyle = computed(() => {
   const style: Record<string, string> = {};
   style.cursor = "pointer";
-  style.color = state.isWarming ? "var(--tw-state-normal)" : "var(--tw-color-text-secondary)";
+  style.color = state.isWarming
+    ? "var(--tw-state-normal)"
+    : "var(--tw-color-text-on-light)";
   return style;
 });
 </script>
@@ -138,7 +82,11 @@ const warmingStyle = computed(() => {
   justify-content: center;
   width: 100%;
   height: 100px;
-  background: linear-gradient(180deg, var(--tw-bg-footer-start) 0%, var(--tw-bg-footer-end) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--tw-bg-footer-start) 0%,
+    var(--tw-bg-footer-end) 100%
+  );
   border-top: 1px solid var(--tw-border-soft);
   .item {
     position: relative;
@@ -148,13 +96,19 @@ const warmingStyle = computed(() => {
     width: 220px;
     height: 52px;
     letter-spacing: 1px;
-    font-family: Douyu;
-    color: var(--tw-color-text-secondary);
+    font-family: var(--tw-font-title);
+    color: var(--tw-color-text-on-light);
     cursor: pointer;
-    background: linear-gradient(120deg, rgba(255, 255, 255, 0.82) 0%, rgba(239, 247, 255, 0.9) 56%, rgba(228, 240, 252, 0.95) 100%);
+    background: linear-gradient(
+      120deg,
+      rgba(255, 255, 255, 0.82) 0%,
+      rgba(239, 247, 255, 0.9) 56%,
+      rgba(228, 240, 252, 0.95) 100%
+    );
     border: 1px solid var(--tw-border-strong);
     border-radius: var(--tw-radius-sm);
-    transition: all var(--tw-motion-duration-base) var(--tw-motion-ease-standard);
+    transition: all var(--tw-motion-duration-base)
+      var(--tw-motion-ease-standard);
 
     &::before {
       position: absolute;
@@ -164,11 +118,17 @@ const warmingStyle = computed(() => {
       content: "";
       background: var(--tw-state-danger);
       border-radius: 50%;
-      box-shadow: 0 0 10px color-mix(in srgb, var(--tw-state-danger) 88%, transparent);
+      box-shadow: 0 0 10px
+        color-mix(in srgb, var(--tw-state-danger) 88%, transparent);
     }
 
     &:hover {
-      background: linear-gradient(120deg, rgba(255, 255, 255, 0.92) 0%, rgba(245, 251, 255, 0.98) 56%, rgba(235, 246, 255, 1) 100%);
+      background: linear-gradient(
+        120deg,
+        rgba(255, 255, 255, 0.92) 0%,
+        rgba(245, 251, 255, 0.98) 56%,
+        rgba(235, 246, 255, 1) 100%
+      );
       box-shadow: 0 8px 16px rgba(66, 108, 147, 0.24);
       transform: translateY(-2px);
       border-color: rgba(95, 140, 183, 0.54);

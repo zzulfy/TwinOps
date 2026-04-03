@@ -28,7 +28,7 @@ const handleLabelClick = () => {
   width: 135px;
   height: 40px;
   font-weight: bolder;
-  color: #fff;
+  color: var(--tw-color-text-on-dark);
   pointer-events: all;
   cursor: pointer;
   background-image: url(@/assets/label_bg.png);

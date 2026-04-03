@@ -37,7 +37,8 @@ import { fetchDashboardSummary, logoutAdmin } from "@/api/backend";
 
 const router = useRouter();
 const threeContainer = ref<HTMLElement | null>(null);
-const { loading, startWarming, stopWarming, enableControls, disableControls } = useDataCenter(threeContainer);
+const { loading, startWarming, stopWarming, enableControls, disableControls } =
+  useDataCenter(threeContainer);
 
 watchEffect(() => {
   // threeContainer is bound via template ref.
@@ -49,7 +50,10 @@ const refreshingSummary = ref(false);
 const dashboardSummaryVersion = ref(0);
 
 const formatTime = (date: Date) =>
-  `${date.getHours().toString().padStart(2, "0")}:${date.getMinutes().toString().padStart(2, "0")}:${date.getSeconds().toString().padStart(2, "0")}`;
+  `${date.getHours().toString().padStart(2, "0")}:${date
+    .getMinutes()
+    .toString()
+    .padStart(2, "0")}:${date.getSeconds().toString().padStart(2, "0")}`;
 
 const refreshSummary = async () => {
   try {
@@ -84,7 +88,12 @@ provide("mask", {
   },
 });
 
-provide("events", { startWarming, stopWarming, enableControls, disableControls });
+provide("events", {
+  startWarming,
+  stopWarming,
+  enableControls,
+  disableControls,
+});
 provide("dashboardSummaryVersion", dashboardSummaryVersion);
 
 onMounted(async () => {
@@ -98,19 +107,33 @@ onMounted(async () => {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  background:
-    radial-gradient(circle at 14% 14%, rgba(69, 157, 255, 0.22) 0%, transparent 42%),
-    radial-gradient(circle at 86% 16%, rgba(70, 215, 160, 0.16) 0%, transparent 38%),
-    linear-gradient(138deg, var(--tw-bg-ink) 5%, var(--tw-bg-deep) 52%, var(--tw-bg-haze) 100%);
+  background: radial-gradient(
+      circle at 14% 14%,
+      rgba(69, 157, 255, 0.22) 0%,
+      transparent 42%
+    ),
+    radial-gradient(
+      circle at 86% 16%,
+      rgba(70, 215, 160, 0.16) 0%,
+      transparent 38%
+    ),
+    linear-gradient(
+      138deg,
+      var(--tw-bg-ink) 5%,
+      var(--tw-bg-deep) 52%,
+      var(--tw-bg-haze) 100%
+    );
 
   &::before {
     position: absolute;
     inset: 0;
     pointer-events: none;
     content: "";
-      background-image:
-        linear-gradient(rgba(75, 120, 170, 0.16) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(75, 120, 170, 0.12) 1px, transparent 1px);
+    background-image: linear-gradient(
+        rgba(75, 120, 170, 0.16) 1px,
+        transparent 1px
+      ),
+      linear-gradient(90deg, rgba(75, 120, 170, 0.12) 1px, transparent 1px);
     background-size: 54px 54px;
     opacity: 0.32;
   }
@@ -134,7 +157,8 @@ onMounted(async () => {
 
       :deep(.layout-panel) {
         border-color: var(--tw-panel-edge);
-        box-shadow: var(--tw-shadow-panel), inset 0 0 0 1px rgba(139, 196, 255, 0.14);
+        box-shadow: var(--tw-shadow-panel),
+          inset 0 0 0 1px rgba(139, 196, 255, 0.14);
       }
     }
 
@@ -147,7 +171,8 @@ onMounted(async () => {
       height: 100%;
       border: 1px solid rgba(90, 140, 204, 0.5);
       border-radius: var(--tw-radius-lg);
-      box-shadow: inset 0 0 0 1px rgba(126, 190, 255, 0.22), 0 16px 30px rgba(4, 11, 23, 0.5);
+      box-shadow: inset 0 0 0 1px rgba(126, 190, 255, 0.22),
+        0 16px 30px rgba(4, 11, 23, 0.5);
 
       &::before {
         position: absolute;
@@ -158,9 +183,16 @@ onMounted(async () => {
         height: 100%;
         pointer-events: none;
         content: "";
-        background:
-          radial-gradient(circle at 32% 20%, var(--tw-glow-cyan) 0%, transparent 44%),
-          radial-gradient(circle at 76% 76%, var(--tw-glow-lime) 0%, transparent 48%),
+        background: radial-gradient(
+            circle at 32% 20%,
+            var(--tw-glow-cyan) 0%,
+            transparent 44%
+          ),
+          radial-gradient(
+            circle at 76% 76%,
+            var(--tw-glow-lime) 0%,
+            transparent 48%
+          ),
           radial-gradient(circle, transparent 40%, rgba(7, 17, 34, 0.46) 88%);
       }
     }
@@ -172,16 +204,21 @@ onMounted(async () => {
       z-index: 1001;
       height: 40px;
       padding: 0 16px;
-      font-family: Douyu;
+      font-family: var(--tw-font-title);
       font-size: 13px;
       letter-spacing: 1px;
-      color: #deecff;
+      color: var(--tw-color-text-on-dark);
       cursor: pointer;
-      background: linear-gradient(120deg, var(--tw-cta-start) 0%, var(--tw-cta-end) 100%);
+      background: linear-gradient(
+        120deg,
+        var(--tw-cta-start) 0%,
+        var(--tw-cta-end) 100%
+      );
       border: 1px solid var(--tw-cta-border);
       border-radius: 999px;
       box-shadow: var(--tw-cta-shadow);
-      transition: all var(--tw-motion-duration-base) var(--tw-motion-ease-standard);
+      transition: all var(--tw-motion-duration-base)
+        var(--tw-motion-ease-standard);
 
       &:hover {
         transform: translateY(-1px);

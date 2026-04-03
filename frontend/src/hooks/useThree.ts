@@ -1,4 +1,11 @@
-import { onMounted, onUnmounted, ref, shallowRef, nextTick, type Ref } from "vue";
+import {
+  onMounted,
+  onUnmounted,
+  ref,
+  shallowRef,
+  nextTick,
+  type Ref,
+} from "vue";
 import { isFunction } from "lodash";
 import * as THREE from "three";
 
@@ -37,7 +44,10 @@ export function useThree(externalContainer?: Ref<HTMLElement | null>) {
   const renderMixins = new Map<string, (delta: number) => void>();
   let tweenUpdate: (() => void) | null = null;
   let controlsPromise: Promise<{
-    OrbitControls: new (camera: THREE.Camera, element: HTMLElement) => OrbitControlsLike;
+    OrbitControls: new (
+      camera: THREE.Camera,
+      element: HTMLElement
+    ) => OrbitControlsLike;
   }> | null = null;
   let cssRendererPromise: Promise<{
     CSS2DRenderer: new () => CSS2DRendererLike;
@@ -64,7 +74,9 @@ export function useThree(externalContainer?: Ref<HTMLElement | null>) {
 
   const getOrbitControls = async () => {
     if (!controlsPromise) {
-      controlsPromise = import("three/examples/jsm/controls/OrbitControls.js").then((mod) => ({
+      controlsPromise = import(
+        "three/examples/jsm/controls/OrbitControls.js"
+      ).then((mod) => ({
         OrbitControls: mod.OrbitControls as unknown as new (
           camera: THREE.Camera,
           element: HTMLElement
@@ -76,8 +88,11 @@ export function useThree(externalContainer?: Ref<HTMLElement | null>) {
 
   const getCSS2DRenderer = async () => {
     if (!cssRendererPromise) {
-      cssRendererPromise = import("three/examples/jsm/renderers/CSS2DRenderer.js").then((mod) => ({
-        CSS2DRenderer: mod.CSS2DRenderer as unknown as new () => CSS2DRendererLike,
+      cssRendererPromise = import(
+        "three/examples/jsm/renderers/CSS2DRenderer.js"
+      ).then((mod) => ({
+        CSS2DRenderer:
+          mod.CSS2DRenderer as unknown as new () => CSS2DRendererLike,
       }));
     }
     return cssRendererPromise;
@@ -223,8 +238,10 @@ export function useThree(externalContainer?: Ref<HTMLElement | null>) {
     const loader = new GLTFLoader();
     loader.setDRACOLoader(dracoLoader);
 
-    const onCompleted = (object: GltfLike, resolve: (value: GltfLike) => void) =>
-      resolve(object);
+    const onCompleted = (
+      object: GltfLike,
+      resolve: (value: GltfLike) => void
+    ) => resolve(object);
     const onError = (error: unknown, reject: (reason?: unknown) => void) => {
       console.error("模型加载失败:", url, error);
       reject(error);
@@ -297,7 +314,13 @@ export function useThree(externalContainer?: Ref<HTMLElement | null>) {
 
   // 窗口大小变化处理
   const handleResize = () => {
-    if (!container.value || !camera.value || !renderer.value || !cssRenderer.value) return;
+    if (
+      !container.value ||
+      !camera.value ||
+      !renderer.value ||
+      !cssRenderer.value
+    )
+      return;
 
     const { clientWidth, clientHeight } = container.value;
 

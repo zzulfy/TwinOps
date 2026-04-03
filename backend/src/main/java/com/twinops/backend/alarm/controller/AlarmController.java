@@ -28,9 +28,13 @@ public class AlarmController {
 
     @GetMapping
     public ApiResponse<List<AlarmItemDto>> list(
+        @RequestParam(required = false) String deviceCode,
         @RequestParam(required = false) String status,
         @RequestParam(defaultValue = "20") int limit
     ) {
+        if (deviceCode != null && !deviceCode.isBlank()) {
+            return ApiResponse.ok(alarmService.listByDeviceAndStatus(deviceCode, status, limit));
+        }
         return ApiResponse.ok(alarmService.listByStatus(status, limit));
     }
 

@@ -1,7 +1,16 @@
 :root {
+  --tw-font-title: Douyu, "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", sans-serif;
+  --tw-font-body: "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
+
   --tw-color-text-primary: #d9e7ff;
   --tw-color-text-secondary: #9cb5de;
   --tw-color-text-muted: #6e86ab;
+  --tw-color-text-on-dark: #e8f2ff;
+  --tw-color-text-on-dark-secondary: #b8cdee;
+  --tw-color-text-on-dark-muted: #8fa8c8;
+  --tw-color-text-on-light: #102039;
+  --tw-color-text-on-light-secondary: #395171;
+  --tw-color-text-on-light-muted: #5e738d;
 
   --tw-bg-ink: #050b17;
   --tw-bg-deep: #0b1528;

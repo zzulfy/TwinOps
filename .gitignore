@@ -38,3 +38,5 @@ stats.html
 # Backend (Maven/Java) build artifacts
 /backend/target/
 /backend/*.log
+/backend/src/main/resources/application.yml
+/backend/src/main/resources/llm.yml

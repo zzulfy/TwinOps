@@ -1,15 +1,17 @@
 <template>
   <LayoutPanel title="设备故障变化率">
-    <div v-if="loadError || apiError" class="chart-fallback">{{ loadError || apiError }}</div>
+    <div v-if="loadError || apiError" class="chart-fallback">
+      {{ loadError || apiError }}
+    </div>
     <div v-else class="container" ref="container"></div>
   </LayoutPanel>
 </template>
 <script setup lang="ts">
 import { inject, nextTick, onMounted, ref, watch } from "vue";
 import useEcharts from "@/hooks/useEcharts";
-import LayoutPanel from "./LayoutPanel.vue";
 import { CHART_MOTION } from "@/utils/chartMotion";
 import { fetchDashboardSummary } from "@/api/backend";
+import LayoutPanel from "./LayoutPanel.vue";
 
 const { container, setOption, loadError } = useEcharts();
 const apiError = ref<string | null>(null);
@@ -119,11 +121,16 @@ const generateOptions = (labels: string[], values: number[]) => ({
 const loadChart = async () => {
   try {
     const summary = await fetchDashboardSummary();
-    const options = generateOptions(summary.faultRate.labels, summary.faultRate.values);
+    const options = generateOptions(
+      summary.faultRate.labels,
+      summary.faultRate.values
+    );
     await setOption(options);
     apiError.value = null;
   } catch (error) {
-    apiError.value = `图表数据加载失败: ${error instanceof Error ? error.message : String(error)}`;
+    apiError.value = `图表数据加载失败: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
   }
 };
 
@@ -141,7 +148,8 @@ watch(dashboardSummaryVersion, async () => {
 <style lang="scss" scoped>
 .container {
   height: 100%;
-  animation: chart-fade-in var(--tw-motion-duration-enter) var(--tw-motion-ease-enter) both;
+  animation: chart-fade-in var(--tw-motion-duration-enter)
+    var(--tw-motion-ease-enter) both;
 }
 
 .chart-fallback {
@@ -153,10 +161,15 @@ watch(dashboardSummaryVersion, async () => {
   color: var(--tw-color-text-secondary);
   font-size: 13px;
   text-align: center;
-  background: linear-gradient(135deg, rgba(30, 30, 30, 0.5) 0%, rgba(12, 12, 12, 0.72) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(30, 30, 30, 0.5) 0%,
+    rgba(12, 12, 12, 0.72) 100%
+  );
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  animation: chart-fade-in var(--tw-motion-duration-enter) var(--tw-motion-ease-enter) both;
+  animation: chart-fade-in var(--tw-motion-duration-enter)
+    var(--tw-motion-ease-enter) both;
 }
 
 @keyframes chart-fade-in {

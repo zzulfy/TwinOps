@@ -36,6 +36,16 @@ public class AlarmService {
         return alarmMapper.selectList(wrapper).stream().map(this::toDto).toList();
     }
 
+    public List<AlarmItemDto> listByDeviceAndStatus(String deviceCode, String status, int limit) {
+        QueryWrapper<AlarmEntity> wrapper = new QueryWrapper<>();
+        wrapper.eq("device_code", deviceCode);
+        if (status != null && !status.isBlank()) {
+            wrapper.eq("status", status);
+        }
+        wrapper.orderByDesc("occurred_at").last("LIMIT " + limit);
+        return alarmMapper.selectList(wrapper).stream().map(this::toDto).toList();
+    }
+
     public AlarmItemDto updateStatus(Long id, String status) {
         AlarmEntity entity = alarmMapper.selectById(id);
         if (entity == null) {

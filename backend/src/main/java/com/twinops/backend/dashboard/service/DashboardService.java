@@ -13,10 +13,13 @@ import com.twinops.backend.telemetry.entity.TelemetryEntity;
 import com.twinops.backend.telemetry.mapper.TelemetryMapper;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -60,15 +63,26 @@ public class DashboardService {
 
     private ChartSeriesDto faultRateSeries() {
         QueryWrapper<TelemetryEntity> wrapper = new QueryWrapper<>();
-        wrapper.orderByDesc("metric_time").last("LIMIT 30");
+        wrapper.orderByDesc("metric_time").last("LIMIT 500");
         List<TelemetryEntity> metrics = telemetryMapper.selectList(wrapper);
+        Map<LocalDateTime, List<Double>> bucketValues = new TreeMap<>();
+        for (TelemetryEntity metric : metrics) {
+            if (metric.getMetricTime() == null) {
+                continue;
+            }
+            LocalDateTime bucket = metric.getMetricTime().truncatedTo(ChronoUnit.HOURS);
+            double value = metric.getCpuLoad() == null
+                ? 0D
+                : Math.min(100D, Math.max(0D, metric.getCpuLoad().doubleValue() * 0.35));
+            bucketValues.computeIfAbsent(bucket, k -> new ArrayList<>()).add(value);
+        }
         List<String> labels = new ArrayList<>();
         List<Double> values = new ArrayList<>();
-        for (int i = metrics.size() - 1; i >= 0; i--) {
-            TelemetryEntity m = metrics.get(i);
-            labels.add(m.getMetricTime() == null ? "--" : m.getMetricTime().format(TIME_FMT));
-            double value = m.getCpuLoad() == null ? 0D : Math.min(100D, Math.max(0D, m.getCpuLoad().doubleValue() * 0.35));
-            values.add(Math.round(value * 10D) / 10D);
+        for (Map.Entry<LocalDateTime, List<Double>> entry : bucketValues.entrySet()) {
+            labels.add(entry.getKey().format(TIME_FMT));
+            double sum = entry.getValue().stream().mapToDouble(Double::doubleValue).sum();
+            double avg = sum / entry.getValue().size();
+            values.add(Math.round(avg * 10D) / 10D);
         }
         return new ChartSeriesDto(labels, values);
     }

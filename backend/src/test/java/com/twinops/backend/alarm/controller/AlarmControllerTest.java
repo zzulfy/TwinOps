@@ -13,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import java.util.List;
 import java.util.Map;
 
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -59,5 +60,19 @@ class AlarmControllerTest {
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data.id").value(1))
             .andExpect(jsonPath("$.data.status").value("acknowledged"));
+    }
+
+    @Test
+    void shouldListAlarmsByDeviceCode() throws Exception {
+        List<AlarmItemDto> alarms = List.of(
+            new AlarmItemDto(3L, "DEV001", "温度过高", 2, "08:25", "new")
+        );
+        when(alarmService.listByDeviceAndStatus("DEV001", "new", 20)).thenReturn(alarms);
+
+        mockMvc.perform(get("/api/alarms").param("deviceCode", "DEV001").param("status", "new"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.length()").value(1))
+            .andExpect(jsonPath("$.data[0].name").value("DEV001"));
     }
 }

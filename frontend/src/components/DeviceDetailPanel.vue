@@ -1,5 +1,9 @@
 <template>
-  <div class="device-detail-panel" :class="{ embedded: props.embedded }" @click.stop>
+  <div
+    class="device-detail-panel"
+    :class="{ embedded: props.embedded }"
+    @click.stop
+  >
     <div class="header">
       <div class="title">{{ device.name }}</div>
       <div class="close-btn" @click.stop="onClose">×</div>
@@ -181,8 +185,12 @@ const onClose = () => {
   transform: translate(-50%, -50%);
   width: 700px;
   max-height: 80vh;
-  color: var(--tw-color-text-secondary);
-  background: linear-gradient(158deg, rgba(255, 255, 255, 0.98) 0%, rgba(245, 250, 255, 0.95) 100%);
+  color: var(--tw-color-text-on-light-secondary);
+  background: linear-gradient(
+    158deg,
+    rgba(255, 255, 255, 0.98) 0%,
+    rgba(245, 250, 255, 0.95) 100%
+  );
   border: 1px solid var(--tw-border-panel);
   border-radius: 14px;
   z-index: 99999;
@@ -214,7 +222,7 @@ const onClose = () => {
     .title {
       font-size: 18px;
       font-weight: 700;
-      color: var(--tw-color-text-primary);
+      color: var(--tw-color-text-on-light);
       letter-spacing: 0.2px;
     }
 
@@ -224,7 +232,7 @@ const onClose = () => {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: var(--tw-color-text-muted);
+      color: var(--tw-color-text-on-light-muted);
       font-size: 24px;
       cursor: pointer;
       transition: all 0.3s;
@@ -232,7 +240,7 @@ const onClose = () => {
       &:hover {
         background-color: rgba(70, 110, 146, 0.12);
         border-radius: 50%;
-        color: var(--tw-color-text-primary);
+        color: var(--tw-color-text-on-light);
       }
     }
   }
@@ -248,14 +256,18 @@ const onClose = () => {
     .info-section {
       margin-bottom: 0;
       padding: 12px;
-      background: linear-gradient(145deg, rgba(255, 255, 255, 0.95) 0%, rgba(243, 248, 255, 0.92) 100%);
+      background: linear-gradient(
+        145deg,
+        rgba(255, 255, 255, 0.95) 0%,
+        rgba(243, 248, 255, 0.92) 100%
+      );
       border: 1px solid var(--tw-border-soft);
       border-radius: 10px;
 
       .info-title {
         font-size: 15px;
         font-weight: 700;
-        color: var(--tw-color-text-primary);
+        color: var(--tw-color-text-on-light);
         margin-bottom: 10px;
         padding-bottom: 6px;
         border-bottom: 1px solid var(--tw-border-soft);
@@ -274,14 +286,14 @@ const onClose = () => {
 
         .info-label {
           font-size: 13px;
-          color: var(--tw-color-text-secondary);
+          color: var(--tw-color-text-on-light-secondary);
           font-weight: 600;
           min-width: 100px;
         }
 
         .info-value {
           font-size: 13px;
-          color: var(--tw-color-text-primary);
+          color: var(--tw-color-text-on-light);
           font-weight: 600;
           text-align: right;
           flex: 1;
@@ -319,7 +331,7 @@ const onClose = () => {
             border-radius: 50%;
             font-size: 14px;
             margin-right: 15px;
-            color: #fff;
+            color: var(--tw-color-text-on-dark);
           }
 
           .alarm-info {
@@ -328,13 +340,13 @@ const onClose = () => {
             .alarm-name {
               font-size: 13px;
               font-weight: 600;
-              color: var(--tw-color-text-primary);
+              color: var(--tw-color-text-on-light);
               margin-bottom: 3px;
             }
 
             .alarm-time {
               font-size: 12px;
-              color: var(--tw-color-text-muted);
+              color: var(--tw-color-text-on-light-muted);
             }
           }
         }

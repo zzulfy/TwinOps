@@ -8,8 +8,8 @@
 import { nextTick, onMounted } from "vue";
 import { sampleSize, range } from "lodash";
 import useEcharts from "@/hooks/useEcharts";
-import LayoutPanel from "./LayoutPanel.vue";
 import { CHART_MOTION } from "@/utils/chartMotion";
+import LayoutPanel from "./LayoutPanel.vue";
 
 const { container, setOption, loadError } = useEcharts();
 
@@ -149,7 +149,8 @@ onMounted(() => {
 <style lang="scss" scoped>
 .container {
   height: 100%;
-  animation: chart-fade-in var(--tw-motion-duration-enter) var(--tw-motion-ease-enter) var(--tw-motion-stagger-1) both;
+  animation: chart-fade-in var(--tw-motion-duration-enter)
+    var(--tw-motion-ease-enter) var(--tw-motion-stagger-1) both;
 }
 
 .chart-fallback {
@@ -161,10 +162,15 @@ onMounted(() => {
   color: var(--tw-color-text-secondary);
   font-size: 13px;
   text-align: center;
-  background: linear-gradient(135deg, rgba(30, 30, 30, 0.5) 0%, rgba(12, 12, 12, 0.72) 100%);
+  background: linear-gradient(
+    135deg,
+    rgba(30, 30, 30, 0.5) 0%,
+    rgba(12, 12, 12, 0.72) 100%
+  );
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 8px;
-  animation: chart-fade-in var(--tw-motion-duration-enter) var(--tw-motion-ease-enter) var(--tw-motion-stagger-1) both;
+  animation: chart-fade-in var(--tw-motion-duration-enter)
+    var(--tw-motion-ease-enter) var(--tw-motion-stagger-1) both;
 }
 
 @keyframes chart-fade-in {

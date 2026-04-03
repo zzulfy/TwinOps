@@ -22,9 +22,24 @@
       >
         {{ refreshing ? "刷新中..." : "刷新看板" }}
       </button>
-      <button v-if="showSummaryActions" class="summary-refresh" @click="emit('go-analysis')">分析中心</button>
-      <button v-if="showSummaryActions" class="summary-refresh" @click="emit('logout')">退出登录</button>
-      <span v-if="showSummaryActions && summaryUpdatedAt" class="summary-updated">
+      <button
+        v-if="showSummaryActions"
+        class="summary-refresh"
+        @click="emit('go-analysis')"
+      >
+        分析中心
+      </button>
+      <button
+        v-if="showSummaryActions"
+        class="summary-refresh"
+        @click="emit('logout')"
+      >
+        退出登录
+      </button>
+      <span
+        v-if="showSummaryActions && summaryUpdatedAt"
+        class="summary-updated"
+      >
         更新于 {{ summaryUpdatedAt }}
       </span>
       <span>{{ currentTime }}</span>
@@ -46,7 +61,7 @@ withDefaults(
     showSummaryActions: false,
     summaryUpdatedAt: "",
     refreshing: false,
-  },
+  }
 );
 const emit = defineEmits<{
   (event: "refresh-summary"): void;
@@ -76,7 +91,15 @@ const formatTime = () => {
   currentDate.value = `${year}-${month}-${day}`;
 
   // 星期几
-  const days = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+  const days = [
+    "Sunday",
+    "Monday",
+    "Tuesday",
+    "Wednesday",
+    "Thursday",
+    "Friday",
+    "Saturday",
+  ];
   currentDay.value = days[date.getDay()];
 };
 
@@ -126,9 +149,16 @@ onUnmounted(() => {
   justify-content: center;
   height: 80px;
   padding: 0 16px;
-  background:
-    linear-gradient(180deg, rgba(12, 27, 48, 0.95) 0%, rgba(8, 21, 40, 0.95) 100%),
-    radial-gradient(circle at 50% -40%, rgba(56, 142, 234, 0.24) 0%, transparent 52%);
+  background: linear-gradient(
+      180deg,
+      rgba(12, 27, 48, 0.95) 0%,
+      rgba(8, 21, 40, 0.95) 100%
+    ),
+    radial-gradient(
+      circle at 50% -40%,
+      rgba(56, 142, 234, 0.24) 0%,
+      transparent 52%
+    );
   border-bottom: 1px solid rgba(83, 137, 201, 0.42);
 
   &::before {
@@ -137,7 +167,12 @@ onUnmounted(() => {
     height: 64px;
     pointer-events: none;
     content: "";
-    background: linear-gradient(90deg, rgba(25, 45, 73, 0.8) 0%, rgba(19, 37, 62, 0.76) 45%, rgba(17, 33, 57, 0.8) 100%);
+    background: linear-gradient(
+      90deg,
+      rgba(25, 45, 73, 0.8) 0%,
+      rgba(19, 37, 62, 0.76) 45%,
+      rgba(17, 33, 57, 0.8) 100%
+    );
     border: 1px solid rgba(86, 140, 204, 0.34);
     border-radius: 12px;
     box-shadow: inset 0 0 0 1px rgba(153, 201, 255, 0.1);
@@ -151,7 +186,12 @@ onUnmounted(() => {
     width: 500px;
     height: 100px;
     content: "";
-    background: radial-gradient(circle, rgba(52, 148, 245, 0.34) 0%, rgba(96, 172, 255, 0.14) 35%, transparent 74%);
+    background: radial-gradient(
+      circle,
+      rgba(52, 148, 245, 0.34) 0%,
+      rgba(96, 172, 255, 0.14) 35%,
+      transparent 74%
+    );
     filter: blur(1px);
     animation: light-go 3s ease-in-out infinite forwards;
   }
@@ -163,7 +203,7 @@ onUnmounted(() => {
     justify-content: center;
     height: 100%;
     overflow-x: hidden;
-    font-family: DouYu;
+    font-family: var(--tw-font-title);
     color: var(--tw-color-text-primary);
     .cn {
       font-size: clamp(22px, 1.8vw, 31px);
@@ -188,7 +228,7 @@ onUnmounted(() => {
     grid-gap: 6px;
     align-items: center;
     font-size: 18px;
-    color: #b8d5fc;
+    color: var(--tw-color-text-on-dark-secondary);
     opacity: 0.9;
     .message {
       display: flex;
@@ -213,20 +253,25 @@ onUnmounted(() => {
     display: flex;
     grid-gap: 14px;
     font-size: 14px;
-    color: #d2e5ff;
+    color: var(--tw-color-text-on-dark-secondary);
     align-items: center;
 
     .summary-refresh {
       height: 28px;
       padding: 0 10px;
       font-size: 12px;
-      color: #dff0ff;
+      color: var(--tw-color-text-on-dark);
       cursor: pointer;
-      background: linear-gradient(120deg, var(--tw-cta-start) 0%, var(--tw-cta-end) 100%);
+      background: linear-gradient(
+        120deg,
+        var(--tw-cta-start) 0%,
+        var(--tw-cta-end) 100%
+      );
       border: 1px solid var(--tw-cta-border);
       border-radius: 999px;
       box-shadow: var(--tw-cta-shadow);
-      transition: all var(--tw-motion-duration-fast) var(--tw-motion-ease-standard);
+      transition: all var(--tw-motion-duration-fast)
+        var(--tw-motion-ease-standard);
 
       &:hover:not(:disabled) {
         transform: translateY(-1px);
@@ -240,7 +285,7 @@ onUnmounted(() => {
 
     .summary-updated {
       font-size: 12px;
-      color: #9fc5f7;
+      color: var(--tw-color-text-on-dark-muted);
       text-shadow: none;
     }
 

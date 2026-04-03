@@ -22,7 +22,7 @@ import LayoutPanel from "./LayoutPanel.vue";
   height: 100%;
   margin-top: 10px;
   font-size: 40px;
-  color: #64748b;
+  color: var(--tw-color-text-on-light-secondary);
   background-color: #f8fafc;
   border: 1px solid #e2e8f0;
   border-radius: 6px;

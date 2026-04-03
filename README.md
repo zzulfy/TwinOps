@@ -1,315 +1,213 @@
 # TwinOps
 
-TwinOps 是一个面向数据中心场景的 digital twin 运维平台，提供 3D 可视化、设备状态观测、告警追踪与指标分析能力。项目采用前后端分离架构，围绕统一的数据契约与模块化边界实现从数据入库到业务展示的闭环。
+TwinOps 是面向数据中心的 digital twin 运维系统，核心能力包括设备状态监控、告警流转、资源趋势分析与自动化 AI 报告。
+目标是让运维用户在一个 dashboard 中完成「看状态 -> 查设备 -> 处理告警 -> 读分析报告」的完整闭环。
 
-## 项目概览
-
-TwinOps 由 `frontend`、`backend`、`openspec` 三个核心部分组成：
-
-- `frontend`：基于 Vue 3 + Vite 的可视化应用，负责 dashboard、设备详情页、3D scene 与图表渲染。
-- `backend`：基于 Spring Boot + MyBatis-Plus + MySQL 的 API 服务，负责设备、遥测、告警与聚合数据接口。
-- `openspec`：需求与变更工件管理目录，沉淀 proposal/design/specs/tasks 与归档记录。
-
-核心业务流为：MySQL seeded data 与实时数据进入 backend domain service，经 API 输出标准响应，再由 frontend 完成 UI 组合与交互呈现。
-
-## Repository Layout
-
-- `frontend/`：前端源码、构建配置、脚本与静态资源
-- `backend/`：后端服务、SQL 初始化脚本、测试代码
-- `openspec/`：OpenSpec change artifacts 与 specs
-- `.github/workflows/frontend-ci.yml`：frontend CI（`npm ci` + `type-check` + `build`）
-
-## 技术实现方案（Technical Implementation Plan）
-
-### 0) 新版本系统架构图（Architecture Diagram v2）
+## 技术架构图
 
 ```mermaid
 flowchart LR
-    U[Operator / Browser] --> F[Frontend<br/>Vue 3 + Vite]
-    F -->|Hash Router| R[Routes<br/>/login / /analysis /devices /devices/:deviceCode]
-    R -->|HTTP /api/*| C[Controller Layer]
-    C --> S[Service Layer]
-    S --> M[Mapper Layer<br/>MyBatis-Plus]
-    M --> D[(MySQL)]
+    U[Operator / Browser]
 
-    subgraph Frontend
-      P0[LoginPage]
-      P1[DashboardPage]
-      P2[AnalysisCenterPage]
-      P3[DeviceDetailPage]
-      API[src/api/backend.ts]
-      P0 --> API
-      P1 --> API
-      P2 --> API
-      P3 --> API
+    subgraph FE_LAYER[Frontend Layer - Vue 3 + Vite]
+      FE_APP[App Shell<br/>Hash Router]
+      FE_DASH[DashboardPage]
+      FE_DEV[DeviceDetailPage / DeviceList]
+      FE_ANALYSIS[AnalysisCenterPage]
+      FE_API[src/api/backend.ts<br/>ApiResponse parser]
+      FE_APP --> FE_DASH
+      FE_APP --> FE_DEV
+      FE_APP --> FE_ANALYSIS
+      FE_DASH --> FE_API
+      FE_DEV --> FE_API
+      FE_ANALYSIS --> FE_API
     end
 
-    subgraph Backend Modular Monolith
-      C
-      S
-      M
-      AU[auth]
-      AN[analysis]
-      WL[watchlist]
-      DM[device]
-      TM[telemetry]
-      AM[alarm]
-      GM[dashboard]
-      C --> AU
-      C --> AN
-      C --> WL
-      C --> DM
-      C --> TM
-      C --> AM
-      C --> GM
+    subgraph BE_LAYER[Backend Layer - Spring Boot Modular Monolith]
+      BE_CTRL[Controller Layer<br/>/api/*]
+      BE_AUTH[auth module]
+      BE_DEVICE[device module]
+      BE_ALARM[alarm module]
+      BE_DASH[dashboard module]
+      BE_ANALYSIS[analysis module]
+      BE_SERVICE[Service Layer]
+      BE_MAPPER[Mapper Layer<br/>MyBatis-Plus QueryWrapper]
+      BE_CTRL --> BE_AUTH
+      BE_CTRL --> BE_DEVICE
+      BE_CTRL --> BE_ALARM
+      BE_CTRL --> BE_DASH
+      BE_CTRL --> BE_ANALYSIS
+      BE_AUTH --> BE_SERVICE
+      BE_DEVICE --> BE_SERVICE
+      BE_ALARM --> BE_SERVICE
+      BE_DASH --> BE_SERVICE
+      BE_ANALYSIS --> BE_SERVICE
+      BE_SERVICE --> BE_MAPPER
     end
+
+    subgraph DATA_LAYER[Data & Messaging Layer]
+      DB[(MySQL<br/>devices / telemetry / alarms / analysis_reports)]
+      SCH[@Scheduled<br/>00:00 / 12:00]
+      MQ[(RocketMQ<br/>analysis.request)]
+      CON[Consumer<br/>createReportWithIdempotency]
+    end
+
+    U --> FE_APP
+    FE_API -->|HTTP JSON| BE_CTRL
+    BE_MAPPER --> DB
+    SCH -->|publish| MQ
+    MQ -->|consume| CON
+    CON --> BE_ANALYSIS
+    BE_ANALYSIS --> BE_SERVICE
+    BE_SERVICE --> BE_MAPPER
 ```
-
-### 0.1) 关键业务链路图（Auth + Analysis + Device Navigation）
 
 ```mermaid
 sequenceDiagram
-    participant Admin
-    participant FE as Frontend
-    participant BE as Backend
+    participant User as Operator
+    participant FE as Frontend Router/Page
+    participant API as frontend api client
+    participant C as Backend Controller
+    participant S as Service Layer
     participant DB as MySQL
+    participant SCH as Scheduler
+    participant MQ as RocketMQ
+    participant CON as MQ Consumer
 
-    Admin->>FE: Login (/login)
-    FE->>BE: POST /api/auth/login
-    BE->>DB: validate admin session
-    DB-->>BE: session/token state
-    BE-->>FE: token + admin identity
+    User->>FE: 打开 Dashboard (/)
+    FE->>API: fetchDashboardSummary()
+    API->>C: GET /api/dashboard/summary
+    C->>S: aggregate device/alarm/telemetry
+    S->>DB: query + group + sort
+    DB-->>S: records
+    S-->>C: DashboardSummaryDto
+    C-->>API: ApiResponse<DashboardSummaryDto>
+    API-->>FE: render widgets/charts
 
-    Admin->>FE: Submit prediction request
-    FE->>BE: POST /api/analysis/reports
-    BE->>BE: LLM adapter + timeout/retry
-    BE->>DB: persist report(status/confidence/risk)
-    BE-->>FE: report result (success/failed)
+    User->>FE: 在设备页确认告警
+    FE->>API: updateAlarmStatus(id,status)
+    API->>C: PATCH /api/alarms/{id}/status
+    C->>S: update status + timestamp
+    S->>DB: update alarms
+    DB-->>S: updated row
+    S-->>C: AlarmItemDto
+    C-->>API: ApiResponse<AlarmItemDto>
+    API-->>FE: refresh list and summary
 
-    Admin->>FE: Pin device
-    FE->>BE: POST /api/watchlist
-    BE->>DB: upsert watchlist item
-    BE-->>FE: watchlist items
-    Admin->>FE: Open /devices/:deviceCode
+    SCH->>DB: scan warning/error devices
+    SCH->>MQ: publish analysis.request(deviceCode,slot,idempotencyKey)
+    MQ-->>CON: deliver message
+    CON->>S: createReportWithIdempotency(...)
+    S->>DB: insert/update analysis_reports
+    DB-->>S: persisted report
+
+    User->>FE: 打开 Analysis (/analysis)
+    FE->>API: fetchAnalysisReports(limit)
+    API->>C: GET /api/analysis/reports
+    C->>S: listReports(limit)
+    S->>DB: query analysis_reports
+    DB-->>S: reports
+    S-->>C: AnalysisReportDto[]
+    C-->>API: ApiResponse<List<AnalysisReportDto>>
+    API-->>FE: render report board
 ```
 
-### 1) 架构分层与模块职责
+## 目录结构
 
-- 前端采用 page + component + hook 结构，路由基于 hash mode，核心路径包含 `/login`、`/`（dashboard）、`/analysis`、`/devices`、`/devices/:deviceCode`。
-- 后端采用 modular monolith 组织方式，领域模块扩展为 `auth`、`analysis`、`watchlist`、`device`、`telemetry`、`alarm`、`dashboard`，并通过 `Controller -> Service -> Mapper(BaseMapper)` 完成数据访问与业务编排。
-- 数据库层使用 MySQL，初始化脚本位于 `backend/sql`，按 schema/seed/verify 顺序执行，保证 demo 与开发环境可重复初始化。
+- `frontend/`：Vue 应用（Dashboard、Analysis、Device List/Detail）
+- `backend/`：Spring Boot API、SQL 初始化脚本、测试
+- `openspec/`：需求与变更工件
 
-### 2) 前后端契约与数据流
+## 本地部署（直接部署）
 
-- API 统一返回 `ApiResponse<T> { success, message, data }`，frontend 的 `src/api/backend.ts` 按该 contract 进行解析与异常抛出。
-- 认证域基于 admin token session：`/api/auth/login -> token`，受保护 API 通过 `Authorization: Bearer <token>` 访问。
-- 分析域通过 `analysis_reports` 持久化预测结果，支持 `success/failed` 显式状态，保障 LLM 故障可观测。
-- 设备域采用 list-first + focused-detail 模式：`/devices` 聚合检索，`/devices/:deviceCode` 聚焦详情，`watchlist` 提供快捷导航。
-- 领域 DTO 字段命名与 frontend 消费保持一致（如 `deviceCode`、`faultRate`、`resourceUsage`、`riskLevel`、`confidence`），避免 ad-hoc 字段转换导致语义漂移。
-- backend 查询风格统一使用 `QueryWrapper`，并在 service 层明确排序与 limit 规则，保证 dashboard 与列表视图可预测性。
-- 告警工作流支持前端状态流转：`new -> acknowledged -> resolved`，并通过 `PATCH /api/alarms/{id}/status` 回写 backend。
+### 1) 安装并启动 MySQL 8
 
-### 3) 性能与运行时策略
+```bash
+# Ubuntu/Debian
+sudo apt-get update
+sudo apt-get install -y mysql-server
+sudo systemctl enable mysql
+sudo systemctl start mysql
 
-- frontend 对 Three.js addon 与 ECharts runtime 使用 lazy loading / deferred loading，降低 initial bundle 体积并减少首屏阻塞。
-- Vite 构建采用 manual chunking 策略；生产构建输出用于静态部署并通过 reverse proxy 转发 `/api/*`。
-- 非关键模块加载失败时采用 local fallback UI/logging，避免单点异常导致整页不可用。
+# 创建数据库
+mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS twinops DEFAULT CHARSET utf8mb4;"
+```
 
-### 4) 工程与交付策略
+### 2) 安装并启动 RocketMQ（NameServer + Broker）
 
-- 前端脚本在 `frontend` workspace 执行，CI 显式配置 `working-directory: frontend`。
-- 后端接口使用 `/api/*` 路径，并保持与 frontend 环境变量（如 `VITE_BACKEND_BASE_URL`）对齐。
-- OpenSpec 作为变更治理入口：先定义 `proposal/design/specs/tasks`，再实施、验证与归档，保证需求可追溯。
+```bash
+# 安装 JDK17（如未安装）
+java -version
 
-### 5) 稳定性优先实现策略（Stability-first）
+# 下载并解压 RocketMQ（示例 5.3.2）
+wget https://archive.apache.org/dist/rocketmq/5.3.2/rocketmq-all-5.3.2-bin-release.zip
+unzip rocketmq-all-5.3.2-bin-release.zip
+cd rocketmq-all-5.3.2-bin-release
 
-1. 接口复用优先：优先复用既有 API（如 `GET /api/alarms`、`PATCH /api/alarms/{id}/status`），避免无必要 backend 扩面。  
-2. 增量交付优先：以小步可回滚的前端改造推进功能（告警工作流、summary 刷新、设备筛选）。  
-3. 一致性优先：dashboard summary 采用 shared fetch，避免多组件并发请求造成数据快照不一致。  
-4. 明确错误反馈：对请求失败提供可见错误提示与状态回滚，避免“成功假象”。  
-5. AI 可降级优先：analysis 模块采用 timeout/retry/failure persistence，确保 LLM 失败不拖垮主链路。  
+# 启动 NameServer
+nohup sh bin/mqnamesrv > logs/namesrv.log 2>&1 &
 
-## 开发环境与依赖
+# 启动 Broker（单机）
+nohup sh bin/mqbroker -n 127.0.0.1:9876 --enable-proxy > logs/broker.log 2>&1 &
+```
 
-### Frontend
+### 3) 初始化数据库
 
-- Node.js 20+（建议与 CI 对齐）
-- 包管理：npm
+```bash
+mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/001_schema.sql
+mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/002_seed_devices.sql
+mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/003_seed_metrics.sql
+mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/004_seed_alarms.sql
+mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/005_verify_retention.sql
+```
 
-### Backend
+### 4) 启动后端
 
-- Java 17+
-- Maven 3.9+
-- MySQL 8+
+```bash
+cd backend
+mvn -DskipTests package
+java -jar target/backend-0.0.1-SNAPSHOT.jar
+```
 
-## Frontend Quick Start
+Backend 默认地址：`http://127.0.0.1:8080`
+
+### 5) 启动前端
 
 ```bash
 cd frontend
-npm install
-npm run dev
-```
-
-## Frontend Build and Preview
-
-在 `frontend` 目录执行：
-
-```bash
-npm run type-check
+npm ci
 npm run build
 npm run preview
 ```
 
-可选质量命令：
+Frontend 默认预览地址：`http://127.0.0.1:4173`
+
+### Docker 备选方案（仅在本机未安装 MySQL/RocketMQ 时使用）
 
 ```bash
-npm run lint
-npm run lint:style
-npm run format
+# 1) 启动 MySQL 容器
+docker run -d --name twinops-mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=twinops -p 3306:3306 mysql:8.0
+
+# 2) 启动 RocketMQ NameServer + Broker
+docker run -d --name rmqnamesrv -p 9876:9876 apache/rocketmq:5.3.2 sh mqnamesrv
+docker run -d --name rmqbroker --link rmqnamesrv:namesrv -e "NAMESRV_ADDR=namesrv:9876" -p 10911:10911 -p 10909:10909 apache/rocketmq:5.3.2 sh mqbroker -n namesrv:9876 --enable-proxy
+
+# 3) 初始化数据库（在宿主机执行）
+mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/001_schema.sql
+mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/002_seed_devices.sql
+mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/003_seed_metrics.sql
+mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/004_seed_alarms.sql
+mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/005_verify_retention.sql
 ```
 
-## 前端新增交互能力（稳定性优先）
-
-- Dashboard 支持 **手动刷新** summary 数据，并展示“最近更新时间”。
-- 告警面板支持状态筛选：`new / acknowledged / resolved`。
-- 告警面板支持状态操作：`new -> acknowledged`、`acknowledged -> resolved`。
-- 设备详情页支持按 `name/deviceCode` 搜索，并支持按 `status(normal/warning/error)` 过滤。
-
-## 本次扩展模块（Admin + Analysis + Device Navigation）
-
-- 新增 **Admin Authentication**：
-  - frontend 新增 `/login` 页面与 route guard；
-  - backend 新增 `/api/auth/login`、`/api/auth/logout`、`/api/auth/me`。
-- 新增 **AI Analysis Center**：
-  - frontend 新增 `/analysis` 页面，支持报告列表与详情展示；
-  - backend 新增 `/api/analysis/reports` 系列接口，支持预测报告创建/查询；
-  - LLM 调用采用 adapter + timeout/retry + failure persistence。
-- 新增 **Device List + Watchlist Navigation**：
-  - 路由改造为 `/devices`（列表）与 `/devices/:deviceCode`（聚焦详情）；
-  - backend 新增 `/api/watchlist` 持久化关注列表；
-  - frontend 支持 pin/unpin 并从列表/关注列表直达详情。
-
-### Auth API 示例
-
-```http
-POST /api/auth/login
-Content-Type: application/json
-
-{
-  "username": "admin",
-  "password": "admin123456"
-}
-```
-
-失败响应示例（invalid credentials）：
-
-```json
-{
-  "success": false,
-  "message": "invalid admin credentials",
-  "data": null
-}
-```
-
-### Analysis API 示例
-
-```http
-POST /api/analysis/reports
-Authorization: Bearer <admin-token>
-Content-Type: application/json
-
-{
-  "deviceCode": "DEV001",
-  "metricSummary": "cpu overload risk in next 2h"
-}
-```
-
-超时失败状态示例：
-
-```json
-{
-  "success": true,
-  "message": "ok",
-  "data": {
-    "id": 12,
-    "status": "failed",
-    "errorMessage": "llm timeout after 5s"
-  }
-}
-```
-
-## Backend Quick Start
-
-在 `backend` 目录执行：
-
-```bash
-mvn test -DskipITs
-mvn spring-boot:run
-```
-
-默认服务地址：`http://127.0.0.1:8080`
-
-## 部署与运行流程
-
-推荐部署顺序：`MySQL -> Backend -> Frontend`
-
-### 1. 初始化数据库
-
-```sql
-CREATE DATABASE IF NOT EXISTS twinops DEFAULT CHARSET utf8mb4;
-```
-
-按顺序执行：
-
-1. `backend/sql/001_schema.sql`
-2. `backend/sql/002_seed_devices.sql`
-3. `backend/sql/003_seed_metrics.sql`
-4. `backend/sql/004_seed_alarms.sql`
-5. `backend/sql/005_verify_retention.sql`（可选）
-
-### 2. 启动 Backend
-
-```bash
-cd backend
-mvn spring-boot:run
-```
-
-可选环境变量：
-
-- `DB_URL`（默认：`jdbc:mysql://127.0.0.1:3306/twinops?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC`）
-- `DB_USERNAME`（默认：`root`）
-- `DB_PASSWORD`（默认：`root`）
-- `SERVER_PORT`（默认：`8080`）
-
-### 3. 启动 Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-如需指定 backend 地址：
-
-- `VITE_BACKEND_BASE_URL=http://127.0.0.1:8080`
-
-### 4. End-to-End 验证
-
-- frontend 页面可正常加载与路由切换。
-- backend API 返回 seeded records。
-- 设备详情、告警面板、dashboard 图表由 backend 数据驱动。
-- 在 dashboard 执行“刷新看板”后，更新时间发生变化且设备规模/故障变化率数据保持一致刷新。
-- 在告警面板切换状态 tabs，并执行确认/解决动作后，列表状态与筛选结果正确更新。
-- 在设备详情页输入关键词与状态过滤后，列表数量与卡片内容匹配筛选条件。
-
-## 生产构建（Simple）
+## 生产部署
 
 ### Backend
 
 ```bash
 cd backend
 mvn -DskipTests package
-java -jar target/backend-0.0.1-SNAPSHOT.jar
+nohup java -jar target/backend-0.0.1-SNAPSHOT.jar > backend.log 2>&1 &
 ```
 
 ### Frontend
@@ -318,34 +216,25 @@ java -jar target/backend-0.0.1-SNAPSHOT.jar
 cd frontend
 npm ci
 npm run build
+npm run dev
 ```
 
-将构建产物作为静态资源部署（如 Nginx/CDN），并将 `/api/*` reverse proxy 到 backend 服务。
+将 `frontend/docs` 作为静态目录部署到 Nginx，并将 `/api/*` reverse proxy 到 `http://127.0.0.1:8080`。
 
-## OpenSpec Workflow
+## 启动后验证
 
-常用命令：
+```bash
+curl "http://127.0.0.1:8080/api/dashboard/summary"
+curl "http://127.0.0.1:8080/api/analysis/reports?limit=20"
+```
 
-- `openspec new change "<change-name>"`
-- `openspec status --change "<change-name>"`
-- `openspec instructions apply --change "<change-name>"`
-- `openspec apply --change "<change-name>"`
-- `openspec archive "<change-name>" -y`
+验证页面：
 
-Copilot CLI 可直接调用技能命令：
+- Dashboard：`http://127.0.0.1:4173/#/`
+- Analysis：`http://127.0.0.1:4173/#/analysis`
+- Devices：`http://127.0.0.1:4173/#/devices`
 
-- `/openspec-new-change`
-- `/openspec-ff-change`
-- `/openspec-apply-change`
-- `/openspec-verify-change`
-- `/openspec-archive-change`
+## 详细文档
 
-## Migration and Rollback
-
-- Migration notes: `openspec/changes/archive/2026-03-29-restructure-frontend-folder/migration-notes.md`
-- Rollback script: `rollback-frontend.ps1`
-
-## Notes
-
-- 本地可视化测试生成的截图文件已在根目录与 `frontend` 目录的 `.gitignore` 中忽略。
-- OpenSpec/opsx scratch 文件与 backend 构建产物在仓库根目录已做忽略处理。
+- Backend API/配置：[`backend/README.md`](backend/README.md)
+- Frontend 页面与脚本：[`frontend/README.md`](frontend/README.md)

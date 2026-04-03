@@ -11,12 +11,28 @@ The repository SHALL maintain a `README.md` that presents a complete project sum
 - **WHEN** a contributor reads `README.md` from top to bottom
 - **THEN** they can identify the system purpose, major modules, and how frontend/backend collaborate without opening source files first
 
+#### Scenario: Root README remains project-level navigation
+- **WHEN** a contributor reads root `README.md`
+- **THEN** the document SHALL present high-level architecture, minimum runnable path, runtime contracts, and explicit links to module READMEs instead of duplicating detailed backend/frontend implementation sections
+
+#### Scenario: README is user-facing instead of documentation-governance-facing
+- **WHEN** a deployment user reads root `README.md`
+- **THEN** the narrative SHALL focus on architecture/business understanding and executable run instructions, and SHALL NOT center on documentation design rules
+
 ### Requirement: README SHALL include technical implementation plan section
 `README.md` SHALL include a dedicated technical implementation plan section that describes architecture strategy, module responsibilities, data flow, and key engineering practices used in TwinOps.
 
 #### Scenario: Implementation strategy is explicitly documented
 - **WHEN** a maintainer searches `README.md` for implementation guidance
 - **THEN** they can find a structured section that explains the project's technical approach rather than only operational commands
+
+#### Scenario: Cross-document detail ownership is explicit
+- **WHEN** implementation details such as API lists, backend configuration specifics, or frontend UX conventions are documented
+- **THEN** root `README.md` SHALL reference module README files as the source of truth, and duplicated detail blocks SHALL be avoided
+
+#### Scenario: Architecture and business diagrams are detailed and quickly understandable
+- **WHEN** a user views the architecture diagram and business sequence diagram
+- **THEN** they SHALL be able to map frontend pages, backend modules, data stores, and messaging flow in one read without inferring hidden steps
 
 ### Requirement: Explanatory text SHALL be Chinese while technical terms remain in English
 Documentation narrative in `README.md` SHALL be written in Chinese, and professional technical terminology SHALL remain in English where terms map to canonical tool names, interfaces, patterns, or code identifiers.
@@ -31,3 +47,11 @@ Documentation narrative in `README.md` SHALL be written in Chinese, and professi
 #### Scenario: New contributor can run project using README commands
 - **WHEN** a contributor follows the documented command sequence
 - **THEN** they can initialize dependencies, start services, and perform baseline validation without path-related failures
+
+#### Scenario: Documented runtime flows match implemented behavior
+- **WHEN** README sequence/flow diagrams describe auth, analysis automation, and messaging interactions
+- **THEN** the textual and diagrammed behavior SHALL match current implementation semantics (for example, admin token session handling and RocketMQ-driven analysis automation)
+
+#### Scenario: Non-Docker deployment path is primary and executable
+- **WHEN** a user follows deployment steps in root `README.md`
+- **THEN** the primary path SHALL be non-Docker deployment commands for MySQL and RocketMQ, with Docker presented as fallback instead of the default path

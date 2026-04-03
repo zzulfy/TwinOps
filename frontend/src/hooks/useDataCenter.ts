@@ -21,9 +21,9 @@ let css2DObjectCtorPromise: Promise<CSS2DObjectCtor> | null = null;
 
 const getCSS2DObjectCtor = async (): Promise<CSS2DObjectCtor> => {
   if (!css2DObjectCtorPromise) {
-    css2DObjectCtorPromise = import("three/examples/jsm/renderers/CSS2DRenderer.js").then(
-      (mod) => mod.CSS2DObject as unknown as CSS2DObjectCtor
-    );
+    css2DObjectCtorPromise = import(
+      "three/examples/jsm/renderers/CSS2DRenderer.js"
+    ).then((mod) => mod.CSS2DObject as unknown as CSS2DObjectCtor);
   }
   return css2DObjectCtorPromise;
 };
@@ -180,10 +180,10 @@ export function useDataCenter(externalContainer?: Ref<HTMLElement | null>) {
         // 遍历场景所有子对象，找到所有可能包含设备的组
         gltf.scene.children.forEach((child, index) => {
           if (child.name.includes("设备") && child.children) {
-            console.log(`加载设备组 ${index}: ${child.name}，包含 ${child.children.length} 个设备`);
-            devices.value.push(
-              ...(child.children as unknown as THREE.Mesh[])
+            console.log(
+              `加载设备组 ${index}: ${child.name}，包含 ${child.children.length} 个设备`
             );
+            devices.value.push(...(child.children as unknown as THREE.Mesh[]));
           }
         });
 
@@ -235,7 +235,7 @@ export function useDataCenter(externalContainer?: Ref<HTMLElement | null>) {
         arrowsToRemove.push(mesh);
       }
     });
-    arrowsToRemove.forEach(arrow => {
+    arrowsToRemove.forEach((arrow) => {
       if (arrow.parent) {
         arrow.parent.remove(arrow);
       }
@@ -310,7 +310,7 @@ export function useDataCenter(externalContainer?: Ref<HTMLElement | null>) {
       "3# 电源柜",
       "4# 电源柜",
       "5# 电源柜",
-      "6# 电源柜"
+      "6# 电源柜",
     ];
 
     console.log("设备数组内容:", devices.value);
@@ -318,16 +318,18 @@ export function useDataCenter(externalContainer?: Ref<HTMLElement | null>) {
 
     // 根据设备名称找到对应的索引
     // 现在设备数组可能包含了多个设备组的设备，我们需要根据 LabelPositions 数组中的位置来匹配
-    const alarmDeviceIndices = alarmDeviceNames.map(name => {
-      const labelIndex = LabelPositions.findIndex(pos => pos.name === name);
-      console.log(`设备 "${name}" 在 LabelPositions 中的索引:`, labelIndex);
-      return labelIndex;
-    }).filter(index => index !== -1); // 过滤掉未找到的设备
+    const alarmDeviceIndices = alarmDeviceNames
+      .map((name) => {
+        const labelIndex = LabelPositions.findIndex((pos) => pos.name === name);
+        console.log(`设备 "${name}" 在 LabelPositions 中的索引:`, labelIndex);
+        return labelIndex;
+      })
+      .filter((index) => index !== -1); // 过滤掉未找到的设备
 
     console.log("告警设备索引:", alarmDeviceIndices);
 
     // 瞬间标红所有告警设备
-    alarmDeviceIndices.forEach(index => {
+    alarmDeviceIndices.forEach((index) => {
       const device = devices.value[index];
       if (device) {
         console.log(`找到告警设备 ${index}:`, device);
@@ -366,14 +368,14 @@ export function useDataCenter(externalContainer?: Ref<HTMLElement | null>) {
       warmingTimer.value = null;
     }
     // 恢复所有设备的原始颜色
-    devices.value.forEach(device => {
+    devices.value.forEach((device) => {
       if (device) {
         device.traverse((mesh: THREE.Object3D) => {
           if (!(mesh instanceof THREE.Mesh)) return;
           const meshWithCurrentHex = mesh as unknown as {
-    currentHex: number;
-    material: THREE.Material | THREE.Material[]
-  };
+            currentHex: number;
+            material: THREE.Material | THREE.Material[];
+          };
           if (Array.isArray(meshWithCurrentHex.material)) {
             meshWithCurrentHex.material.forEach((m: THREE.Material) => {
               if (m && "emissive" in m) {

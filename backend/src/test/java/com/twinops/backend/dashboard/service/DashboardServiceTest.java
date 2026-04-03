@@ -76,8 +76,8 @@ class DashboardServiceTest {
         assertEquals("08:21", summary.alarms().get(0).time());
         assertEquals("--:--", summary.alarms().get(1).time());
 
-        assertEquals(List.of("10:00", "10:05"), summary.faultRate().labels());
-        assertEquals(List.of(17.5, 100.0), summary.faultRate().values());
+        assertEquals(List.of("10:00"), summary.faultRate().labels());
+        assertEquals(List.of(58.8), summary.faultRate().values());
 
         assertEquals(List.of("10:00", "10:05"), summary.resourceUsage().labels());
         assertEquals(List.of(50.0, 400.0), summary.resourceUsage().values());

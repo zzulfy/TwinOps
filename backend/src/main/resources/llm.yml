@@ -4,7 +4,7 @@ twinops:
       provider: openai
       base-url: https://ark.cn-beijing.volces.com/api/coding/v3
       path: /chat/completions
-      api-key: ""
+      api-key: "3b94b95d-946a-41e8-853f-0765fa357331"
       model: ark-code-latest
       temperature: 0.2
       max-tokens: 512

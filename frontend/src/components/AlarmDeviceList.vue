@@ -5,24 +5,32 @@
       <div class="close-btn" @click="onClose">×</div>
     </div>
     <div class="content">
-      <div class="device-item" v-for="item in devices" :key="item.id">
-        <div class="device-info">
-          <div class="device-name">{{ item.name }}</div>
-          <div class="device-event">{{ item.event }}</div>
-        </div>
-        <div class="device-time">{{ item.time }}</div>
-        <div
-          class="device-type"
-          :style="{ background: getTypeColor(item.type) }"
-        >
-          {{ getTypeText(item.type) }}
-        </div>
+      <div v-if="loading" class="status-message">告警数据加载中...</div>
+      <div v-else-if="errorMessage" class="status-message error">
+        {{ errorMessage }}
       </div>
+      <div v-else-if="devices.length === 0" class="status-message">
+        暂无告警数据
+      </div>
+      <template v-else>
+        <div class="device-item" v-for="item in devices" :key="item.id">
+          <div class="device-info">
+            <div class="device-name">{{ item.name }}</div>
+            <div class="device-event">{{ item.event }}</div>
+          </div>
+          <div class="device-time">{{ item.time }}</div>
+          <div
+            class="device-type"
+            :style="{ background: getTypeColor(item.type) }"
+          >
+            {{ getTypeText(item.type) }}
+          </div>
+        </div>
+      </template>
     </div>
   </div>
 </template>
 <script setup lang="ts">
-
 interface AlarmDevice {
   id: number;
   name: string;
@@ -31,8 +39,10 @@ interface AlarmDevice {
   time: string;
 }
 
-const props = defineProps<{
+defineProps<{
   devices: AlarmDevice[];
+  loading?: boolean;
+  errorMessage?: string;
 }>();
 
 const emit = defineEmits<{
@@ -85,7 +95,7 @@ const onClose = () => {
     .title {
       font-size: 18px;
       font-weight: bold;
-      color: #fff;
+      color: var(--tw-color-text-on-dark);
     }
 
     .close-btn {
@@ -94,7 +104,7 @@ const onClose = () => {
       display: flex;
       align-items: center;
       justify-content: center;
-      color: #fff;
+      color: var(--tw-color-text-on-dark);
       font-size: 24px;
       cursor: pointer;
       transition: all 0.3s;
@@ -110,6 +120,21 @@ const onClose = () => {
     padding: 20px;
     max-height: calc(80vh - 60px);
     overflow-y: auto;
+
+    .status-message {
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: var(--tw-color-text-on-dark);
+      background-color: rgba(255, 255, 255, 0.05);
+      font-size: 13px;
+
+      &.error {
+        color: #ffd2d2;
+        border-color: rgba(255, 132, 132, 0.44);
+        background: rgba(95, 26, 34, 0.52);
+      }
+    }
 
     .device-item {
       display: flex;
@@ -130,19 +155,19 @@ const onClose = () => {
 
         .device-name {
           font-size: 16px;
-          color: #fff;
+          color: var(--tw-color-text-on-dark);
           margin-bottom: 5px;
         }
 
         .device-event {
           font-size: 14px;
-          color: #999;
+          color: var(--tw-color-text-on-dark-muted);
         }
       }
 
       .device-time {
         font-size: 14px;
-        color: #666;
+        color: var(--tw-color-text-on-dark-muted);
         margin-right: 15px;
         min-width: 80px;
         text-align: right;
@@ -152,7 +177,7 @@ const onClose = () => {
         padding: 4px 12px;
         border-radius: 4px;
         font-size: 12px;
-        color: #fff;
+        color: var(--tw-color-text-on-light);
         font-weight: bold;
       }
     }

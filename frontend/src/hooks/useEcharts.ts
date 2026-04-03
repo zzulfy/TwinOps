@@ -13,7 +13,9 @@ type EchartsOption = import("echarts").EChartsOption;
  */
 export function useEcharts() {
   const container = ref<HTMLElement | null>(null);
-  const chart = shallowRef<import("@/utils/echartsRuntime").EChartsType | null>(null);
+  const chart = shallowRef<import("@/utils/echartsRuntime").EChartsType | null>(
+    null
+  );
   const moduleRef = shallowRef<EchartsModule | null>(null);
   const loadError = ref<string | null>(null);
   let modulePromise: Promise<EchartsModule> | null = null;

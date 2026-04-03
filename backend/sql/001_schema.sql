@@ -1,3 +1,4 @@
+-- Active: 1775211594559@@127.0.0.1@3306@twinops
 CREATE TABLE IF NOT EXISTS devices (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   device_code VARCHAR(64) NOT NULL,
@@ -50,6 +51,7 @@ CREATE TABLE IF NOT EXISTS analysis_reports (
   id BIGINT PRIMARY KEY AUTO_INCREMENT,
   device_code VARCHAR(64) NOT NULL,
   metric_summary TEXT NOT NULL,
+  idempotency_key VARCHAR(128) NULL,
   prediction TEXT NULL,
   confidence DECIMAL(5,2) NULL,
   risk_level VARCHAR(32) NULL,
@@ -58,6 +60,7 @@ CREATE TABLE IF NOT EXISTS analysis_reports (
   error_message VARCHAR(255) NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_analysis_idempotency_key (idempotency_key),
   KEY idx_analysis_device_time (device_code, created_at),
   KEY idx_analysis_status_time (status, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

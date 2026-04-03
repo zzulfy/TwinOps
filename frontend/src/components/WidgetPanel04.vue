@@ -2,7 +2,9 @@
   <LayoutPanel title="设备规模">
     <div class="weather-scroll-area">
       <div v-if="errorMessage" class="panel-message">{{ errorMessage }}</div>
-      <div v-else-if="source.length === 0" class="panel-message">暂无设备规模数据</div>
+      <div v-else-if="source.length === 0" class="panel-message">
+        暂无设备规模数据
+      </div>
       <div class="weather-monitor">
         <div
           v-for="(item, index) in source"
@@ -22,10 +24,12 @@
 </template>
 <script setup lang="ts">
 import { inject, onMounted, ref, watch } from "vue";
-import LayoutPanel from "./LayoutPanel.vue";
 import { fetchDashboardSummary } from "@/api/backend";
+import LayoutPanel from "./LayoutPanel.vue";
 
-const source = ref<Array<{ icon: string; label: string; value: string; unit: string }>>([]);
+const source = ref<
+  Array<{ icon: string; label: string; value: string; unit: string }>
+>([]);
 const errorMessage = ref("");
 const dashboardSummaryVersion = inject("dashboardSummaryVersion", ref(0));
 
@@ -35,7 +39,9 @@ const loadSummary = async () => {
     source.value = summary.deviceScale;
     errorMessage.value = "";
   } catch (error) {
-    errorMessage.value = `设备规模加载失败: ${error instanceof Error ? error.message : String(error)}`;
+    errorMessage.value = `设备规模加载失败: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
   }
 };
 
@@ -72,7 +78,7 @@ watch(dashboardSummaryVersion, async () => {
 .panel-message {
   padding: 10px;
   font-size: 13px;
-  color: var(--tw-color-text-secondary);
+  color: var(--tw-color-text-on-light-secondary);
   border: 1px solid var(--tw-border-soft);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.72);
@@ -98,7 +104,11 @@ watch(dashboardSummaryVersion, async () => {
     width: 100%;
     min-height: 84px;
     padding: 0 8px;
-    background: linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, rgba(244, 249, 255, 0.93) 100%);
+    background: linear-gradient(
+      145deg,
+      rgba(255, 255, 255, 0.96) 0%,
+      rgba(244, 249, 255, 0.93) 100%
+    );
     border: 1px solid var(--tw-border-panel);
     border-radius: 8px;
     transition: all 0.3s ease;
@@ -119,14 +129,18 @@ watch(dashboardSummaryVersion, async () => {
       height: $icon-size;
       border: 1px solid rgba(92, 128, 160, 0.32);
       border-radius: 50%;
-      color: var(--tw-color-text-primary);
-      background: radial-gradient(circle, rgba(94, 146, 194, 0.16) 0%, rgba(255, 255, 255, 0.86) 72%);
+      color: var(--tw-color-text-on-light);
+      background: radial-gradient(
+        circle,
+        rgba(94, 146, 194, 0.16) 0%,
+        rgba(255, 255, 255, 0.86) 72%
+      );
     }
 
     .weather-label {
       margin-top: 10px;
       font-size: 13px;
-      color: var(--tw-color-text-secondary);
+      color: var(--tw-color-text-on-light-secondary);
       font-weight: 600;
     }
 
@@ -135,7 +149,7 @@ watch(dashboardSummaryVersion, async () => {
       align-items: baseline;
       gap: 4px;
       margin-bottom: 6px;
-      color: var(--tw-color-text-primary);
+      color: var(--tw-color-text-on-light);
 
       .value {
         font-size: 20px;
@@ -145,7 +159,7 @@ watch(dashboardSummaryVersion, async () => {
 
       .unit {
         font-size: 12px;
-        color: var(--tw-color-text-muted);
+        color: var(--tw-color-text-on-light-muted);
       }
     }
   }

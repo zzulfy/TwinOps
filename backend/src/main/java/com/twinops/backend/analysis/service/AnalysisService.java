@@ -37,6 +37,32 @@ public class AnalysisService {
     }
 
     public AnalysisReportDto createReport(String deviceCode, String metricSummary) {
+        return createReportInternal(deviceCode, metricSummary, null);
+    }
+
+    public AnalysisReportDto createReportWithIdempotency(String deviceCode, String metricSummary, String idempotencyKey) {
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            QueryWrapper<AnalysisReportEntity> query = new QueryWrapper<>();
+            query.eq("idempotency_key", idempotencyKey).last("LIMIT 1");
+            AnalysisReportEntity existing = analysisReportMapper.selectOne(query);
+            if (existing != null) {
+                log.info("{}={} {}={} {}={} {}={} {}={} idempotencyKey={} reportId={} deviceCode={}",
+                    LogFields.REQUEST_ID, safeRequestId(),
+                    LogFields.MODULE, "analysis",
+                    LogFields.EVENT, "analysis.create.idempotent_skip",
+                    LogFields.RESULT, "success",
+                    LogFields.ERROR_CODE, "DUPLICATE_ANALYSIS_REQUEST",
+                    idempotencyKey,
+                    existing.getId(),
+                    existing.getDeviceCode()
+                );
+                return toDto(existing);
+            }
+        }
+        return createReportInternal(deviceCode, metricSummary, idempotencyKey);
+    }
+
+    private AnalysisReportDto createReportInternal(String deviceCode, String metricSummary, String idempotencyKey) {
         long startNanos = System.nanoTime();
         log.info("{}={} {}={} {}={} {}={} deviceCode={}",
             LogFields.REQUEST_ID, safeRequestId(),
@@ -48,6 +74,7 @@ public class AnalysisService {
         AnalysisReportEntity report = new AnalysisReportEntity();
         report.setDeviceCode(deviceCode);
         report.setMetricSummary(metricSummary);
+        report.setIdempotencyKey(idempotencyKey);
         report.setStatus("processing");
         analysisReportMapper.insert(report);
 

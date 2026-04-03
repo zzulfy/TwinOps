@@ -18,8 +18,12 @@ const { title } = defineProps<PropsType>();
 .layout-panel {
   position: relative;
   overflow: hidden;
-  color: var(--tw-color-text-secondary);
-  background: linear-gradient(165deg, var(--tw-bg-panel-start) 0%, var(--tw-bg-panel-end) 100%);
+  color: var(--tw-color-text-on-dark-secondary);
+  background: linear-gradient(
+    165deg,
+    var(--tw-bg-panel-start) 0%,
+    var(--tw-bg-panel-end) 100%
+  );
   backdrop-filter: blur(8px);
   border: 1px solid var(--tw-border-panel);
   border-radius: var(--tw-radius-md);
@@ -34,7 +38,11 @@ const { title } = defineProps<PropsType>();
     height: 180px;
     pointer-events: none;
     content: "";
-    background: radial-gradient(circle, rgba(61, 157, 255, 0.26) 0%, transparent 70%);
+    background: radial-gradient(
+      circle,
+      rgba(61, 157, 255, 0.26) 0%,
+      transparent 70%
+    );
   }
 
   &:hover {
@@ -47,8 +55,13 @@ const { title } = defineProps<PropsType>();
     display: flex;
     align-items: center;
     height: 65px;
-    font-family: Douyu;
-    background: linear-gradient(120deg, rgba(20, 41, 67, 0.95) 0%, rgba(15, 32, 55, 0.92) 55%, rgba(12, 27, 49, 0.94) 100%);
+    font-family: var(--tw-font-title);
+    background: linear-gradient(
+      120deg,
+      rgba(20, 41, 67, 0.95) 0%,
+      rgba(15, 32, 55, 0.92) 55%,
+      rgba(12, 27, 49, 0.94) 100%
+    );
     border-radius: var(--tw-radius-md) var(--tw-radius-md) 0 0;
     border-bottom: 1px solid rgba(77, 132, 195, 0.5);
     .panel-header-title {
@@ -59,7 +72,7 @@ const { title } = defineProps<PropsType>();
       font-size: 14px;
       font-weight: bold;
       letter-spacing: 1.5px;
-      color: #d3e7ff;
+      color: var(--tw-color-text-on-dark);
       text-transform: uppercase;
       background: rgba(22, 49, 82, 0.92);
       border: 1px solid rgba(96, 160, 226, 0.52);
@@ -70,6 +83,7 @@ const { title } = defineProps<PropsType>();
   .panel-body {
     height: 220px;
     padding: 0 12px 12px;
+    font-family: var(--tw-font-body);
   }
 }
 </style>

@@ -5,17 +5,21 @@
       <div class="title">AI Analysis Center</div>
     </div>
 
-    <div class="create-box">
-      <input v-model.trim="deviceCode" type="text" placeholder="deviceCode" />
-      <textarea v-model.trim="metricSummary" rows="3" placeholder="Metric summary for prediction" />
-      <button :disabled="submitting" @click="submitReport">{{ submitting ? "提交中..." : "提交分析" }}</button>
+    <div class="read-only-banner">
+      分析任务由后端定时自动执行（每半天），本页面仅用于查看报告结果。
     </div>
 
     <div v-if="errorMessage" class="status error">{{ errorMessage }}</div>
     <div class="layout">
       <div class="list">
         <div class="list-title">Reports</div>
-        <div v-for="report in reports" :key="report.id" class="item" :class="{ active: report.id === selectedId }" @click="selectReport(report.id)">
+        <div
+          v-for="report in reports"
+          :key="report.id"
+          class="item"
+          :class="{ active: report.id === selectedId }"
+          @click="selectReport(report.id)"
+        >
           <div>#{{ report.id }} · {{ report.deviceCode }}</div>
           <div class="meta">
             <span>{{ report.status }}</span>
@@ -26,17 +30,30 @@
       </div>
 
       <div class="detail">
-        <div v-if="!selectedReport" class="placeholder">请选择左侧分析报告查看详情</div>
+        <div v-if="!selectedReport" class="placeholder">
+          请选择左侧分析报告查看详情
+        </div>
         <template v-else>
           <h3>Report #{{ selectedReport.id }}</h3>
           <p><strong>Device:</strong> {{ selectedReport.deviceCode }}</p>
           <p><strong>Status:</strong> {{ selectedReport.status }}</p>
-          <p><strong>Confidence:</strong> {{ selectedReport.confidence ?? "-" }}</p>
+          <p>
+            <strong>Confidence:</strong> {{ selectedReport.confidence ?? "-" }}
+          </p>
           <p><strong>Risk:</strong> {{ selectedReport.riskLevel ?? "-" }}</p>
-          <p><strong>Prediction:</strong> {{ selectedReport.prediction ?? "-" }}</p>
-          <p><strong>Recommended Action:</strong> {{ selectedReport.recommendedAction ?? "-" }}</p>
-          <p><strong>Error:</strong> {{ selectedReport.errorMessage ?? "-" }}</p>
-          <p><strong>Metric Summary:</strong> {{ selectedReport.metricSummary }}</p>
+          <p>
+            <strong>Prediction:</strong> {{ selectedReport.prediction ?? "-" }}
+          </p>
+          <p>
+            <strong>Recommended Action:</strong>
+            {{ selectedReport.recommendedAction ?? "-" }}
+          </p>
+          <p>
+            <strong>Error:</strong> {{ selectedReport.errorMessage ?? "-" }}
+          </p>
+          <p>
+            <strong>Metric Summary:</strong> {{ selectedReport.metricSummary }}
+          </p>
         </template>
       </div>
     </div>
@@ -47,7 +64,6 @@
 import { onMounted, ref } from "vue";
 import { useRouter } from "vue-router";
 import {
-  createAnalysisReport,
   fetchAnalysisReport,
   fetchAnalysisReports,
   type AnalysisReport,
@@ -57,9 +73,6 @@ const router = useRouter();
 const reports = ref<AnalysisReport[]>([]);
 const selectedId = ref<number | null>(null);
 const selectedReport = ref<AnalysisReport | null>(null);
-const deviceCode = ref("");
-const metricSummary = ref("");
-const submitting = ref(false);
 const errorMessage = ref("");
 
 const loadReports = async () => {
@@ -72,25 +85,6 @@ const loadReports = async () => {
 const selectReport = async (id: number) => {
   selectedId.value = id;
   selectedReport.value = await fetchAnalysisReport(id);
-};
-
-const submitReport = async () => {
-  if (!deviceCode.value || !metricSummary.value) {
-    errorMessage.value = "deviceCode 和 metric summary 必填";
-    return;
-  }
-  submitting.value = true;
-  errorMessage.value = "";
-  try {
-    const created = await createAnalysisReport(deviceCode.value, metricSummary.value);
-    await loadReports();
-    await selectReport(created.id);
-    metricSummary.value = "";
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : String(error);
-  } finally {
-    submitting.value = false;
-  }
 };
 
 const goDashboard = () => router.push({ name: "dashboard" });
@@ -108,7 +102,12 @@ onMounted(async () => {
 .analysis-page {
   min-height: 100%;
   padding: 16px;
-  background: linear-gradient(145deg, var(--tw-bg-ink) 0%, var(--tw-bg-deep) 54%, var(--tw-bg-haze) 100%);
+  background: linear-gradient(
+    145deg,
+    var(--tw-bg-ink) 0%,
+    var(--tw-bg-deep) 54%,
+    var(--tw-bg-haze) 100%
+  );
   color: var(--tw-color-text-primary);
 }
 .header {
@@ -118,31 +117,30 @@ onMounted(async () => {
 }
 .title {
   font-size: 24px;
-  font-family: Douyu;
+  font-family: var(--tw-font-title);
 }
-.back-btn,
-.create-box button {
+.back-btn {
   height: 34px;
   padding: 0 12px;
-  color: #e3f0ff;
+  color: var(--tw-color-text-on-dark);
   cursor: pointer;
-  background: linear-gradient(120deg, var(--tw-cta-start) 0%, var(--tw-cta-end) 100%);
+  background: linear-gradient(
+    120deg,
+    var(--tw-cta-start) 0%,
+    var(--tw-cta-end) 100%
+  );
   border: 1px solid var(--tw-cta-border);
   border-radius: 18px;
 }
-.create-box {
+
+.read-only-banner {
   margin-top: 14px;
-  display: grid;
-  grid-template-columns: 220px 1fr auto;
-  gap: 10px;
-}
-.create-box input,
-.create-box textarea {
+  padding: 10px 12px;
   border: 1px solid var(--tw-border-soft);
   border-radius: 8px;
-  color: #dff0ff;
-  background: rgba(12, 28, 48, 0.8);
-  padding: 8px 10px;
+  color: var(--tw-color-text-on-dark);
+  background: rgba(20, 56, 98, 0.72);
+  font-family: var(--tw-font-body);
 }
 .layout {
   margin-top: 14px;
@@ -175,12 +173,12 @@ onMounted(async () => {
 .meta {
   margin-top: 4px;
   font-size: 12px;
-  color: #9fc5f7;
+  color: var(--tw-color-text-on-dark-secondary);
   display: flex;
   gap: 8px;
 }
 .placeholder {
-  color: #9fc5f7;
+  color: var(--tw-color-text-on-dark-secondary);
 }
 .status.error {
   margin-top: 12px;

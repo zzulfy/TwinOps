@@ -1,6 +1,8 @@
 export interface DeviceAlarm {
   id: number;
   name: string;
+  event?: string;
+  status?: AlarmStatus;
   type: "warning" | "error" | "info";
   time: string;
 }
@@ -36,7 +38,12 @@ export interface AlarmListItem {
 export type AlarmStatus = "new" | "acknowledged" | "resolved";
 
 export interface DashboardSummary {
-  deviceScale: Array<{ icon: string; label: string; value: string; unit: string }>;
+  deviceScale: Array<{
+    icon: string;
+    label: string;
+    value: string;
+    unit: string;
+  }>;
   alarms: AlarmListItem[];
   faultRate: { labels: string[]; values: number[] };
   resourceUsage: { labels: string[]; values: number[] };
@@ -77,7 +84,9 @@ interface ApiResponse<T> {
   data: T;
 }
 
-const BASE_URL = (import.meta.env.VITE_BACKEND_BASE_URL as string | undefined) || "http://127.0.0.1:8080";
+const BASE_URL =
+  (import.meta.env.VITE_BACKEND_BASE_URL as string | undefined) ||
+  "http://127.0.0.1:8080";
 
 interface RequestOptions {
   method?: "GET" | "PATCH" | "POST" | "DELETE";
@@ -87,7 +96,8 @@ interface RequestOptions {
 const TOKEN_KEY = "twinops_admin_token";
 const ADMIN_KEY = "twinops_admin_identity";
 
-export const getAdminToken = (): string => localStorage.getItem(TOKEN_KEY) || "";
+export const getAdminToken = (): string =>
+  localStorage.getItem(TOKEN_KEY) || "";
 export const setAdminSession = (response: LoginResponse): void => {
   localStorage.setItem(TOKEN_KEY, response.token);
   localStorage.setItem(ADMIN_KEY, JSON.stringify(response.admin));
@@ -109,7 +119,10 @@ export const getCurrentAdmin = (): AdminIdentity | null => {
 };
 export const isAdminLoggedIn = (): boolean => Boolean(getAdminToken());
 
-const request = async <T>(path: string, options: RequestOptions = {}): Promise<T> => {
+const request = async <T>(
+  path: string,
+  options: RequestOptions = {}
+): Promise<T> => {
   const token = getAdminToken();
   const headers: HeadersInit = {};
   if (options.body) {
@@ -137,12 +150,15 @@ const request = async <T>(path: string, options: RequestOptions = {}): Promise<T
   return result.data;
 };
 
-export const fetchDevices = async (): Promise<DeviceData[]> => request<DeviceData[]>("/api/devices");
+export const fetchDevices = async (): Promise<DeviceData[]> =>
+  request<DeviceData[]>("/api/devices");
 
 let dashboardSummaryCache: DashboardSummary | null = null;
 let dashboardSummaryInFlight: Promise<DashboardSummary> | null = null;
 
-export const fetchDashboardSummary = async (options: { force?: boolean } = {}): Promise<DashboardSummary> => {
+export const fetchDashboardSummary = async (
+  options: { force?: boolean } = {}
+): Promise<DashboardSummary> => {
   if (!options.force && dashboardSummaryCache) {
     return dashboardSummaryCache;
   }
@@ -160,22 +176,43 @@ export const fetchDashboardSummary = async (options: { force?: boolean } = {}): 
   return dashboardSummaryInFlight;
 };
 
-export const fetchAlarmList = async (status?: AlarmStatus, limit = 20): Promise<AlarmListItem[]> => {
+export const clearDashboardSummaryCache = (): void => {
+  dashboardSummaryCache = null;
+  dashboardSummaryInFlight = null;
+};
+
+export const fetchAlarmList = async (
+  status?: AlarmStatus,
+  limit = 20,
+  deviceCode?: string
+): Promise<AlarmListItem[]> => {
   const params = new URLSearchParams();
   params.set("limit", String(limit));
   if (status) {
     params.set("status", status);
   }
+  if (deviceCode) {
+    params.set("deviceCode", deviceCode);
+  }
   return request<AlarmListItem[]>(`/api/alarms?${params.toString()}`);
 };
 
-export const updateAlarmStatus = async (id: number, status: AlarmStatus): Promise<AlarmListItem> =>
-  request<AlarmListItem>(`/api/alarms/${id}/status`, {
+export const updateAlarmStatus = async (
+  id: number,
+  status: AlarmStatus
+): Promise<AlarmListItem> => {
+  const updated = await request<AlarmListItem>(`/api/alarms/${id}/status`, {
     method: "PATCH",
     body: { status },
   });
+  clearDashboardSummaryCache();
+  return updated;
+};
 
-export const loginAdmin = async (username: string, password: string): Promise<LoginResponse> =>
+export const loginAdmin = async (
+  username: string,
+  password: string
+): Promise<LoginResponse> =>
   request<LoginResponse>("/api/auth/login", {
     method: "POST",
     body: { username, password },
@@ -186,29 +223,42 @@ export const logoutAdmin = async (): Promise<void> => {
   clearAdminSession();
 };
 
-export const fetchAdminMe = async (): Promise<AdminIdentity> => request<AdminIdentity>("/api/auth/me");
+export const fetchAdminMe = async (): Promise<AdminIdentity> =>
+  request<AdminIdentity>("/api/auth/me");
 
-export const fetchAnalysisReports = async (limit = 20): Promise<AnalysisReport[]> =>
+export const fetchAnalysisReports = async (
+  limit = 20
+): Promise<AnalysisReport[]> =>
   request<AnalysisReport[]>(`/api/analysis/reports?limit=${limit}`);
 
-export const fetchAnalysisReport = async (id: number): Promise<AnalysisReport> =>
+export const fetchAnalysisReport = async (
+  id: number
+): Promise<AnalysisReport> =>
   request<AnalysisReport>(`/api/analysis/reports/${id}`);
 
-export const createAnalysisReport = async (deviceCode: string, metricSummary: string): Promise<AnalysisReport> =>
+export const createAnalysisReport = async (
+  deviceCode: string,
+  metricSummary: string
+): Promise<AnalysisReport> =>
   request<AnalysisReport>("/api/analysis/reports", {
     method: "POST",
     body: { deviceCode, metricSummary },
   });
 
-export const fetchWatchlist = async (): Promise<WatchlistItem[]> => request<WatchlistItem[]>("/api/watchlist");
+export const fetchWatchlist = async (): Promise<WatchlistItem[]> =>
+  request<WatchlistItem[]>("/api/watchlist");
 
-export const pinWatchlistDevice = async (deviceCode: string): Promise<WatchlistItem[]> =>
+export const pinWatchlistDevice = async (
+  deviceCode: string
+): Promise<WatchlistItem[]> =>
   request<WatchlistItem[]>("/api/watchlist", {
     method: "POST",
     body: { deviceCode },
   });
 
-export const unpinWatchlistDevice = async (deviceCode: string): Promise<WatchlistItem[]> =>
+export const unpinWatchlistDevice = async (
+  deviceCode: string
+): Promise<WatchlistItem[]> =>
   request<WatchlistItem[]>(`/api/watchlist/${encodeURIComponent(deviceCode)}`, {
     method: "DELETE",
   });

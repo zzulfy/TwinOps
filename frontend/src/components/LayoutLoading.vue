@@ -29,6 +29,7 @@ const { loading } = defineProps<PropsType>();
   width: 100%;
   height: 100%;
   background: #f8fafc;
+  color: var(--tw-color-text-on-light);
   .loading-gif {
     width: 1000px;
     height: 250px;
@@ -41,7 +42,7 @@ const { loading } = defineProps<PropsType>();
 
     // font-style: italic;
     // font-weight: bolder;
-    color: #3b82f6;
+    color: var(--tw-color-text-on-light-secondary);
     font-size: 18px;
     margin-top: 20px;
   }
