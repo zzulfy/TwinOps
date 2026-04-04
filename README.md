@@ -275,6 +275,7 @@ curl -X POST "http://127.0.0.1:8080/api/analysis/reports/trigger" \
   - `warn`：可恢复异常、边界输入、空结果、兼容分支；
   - `error`：不可恢复失败、关键依赖异常、主流程中断。
 - 日志必须可定位代码来源（class/method/line），保证开发排障时可以直接定位日志打印位置。
+- 日志来源必须输出完整包名（如 `com.twinops.backend...`），禁止使用 `c.t.b...` 这类包名缩写。
 - 结构化字段保持统一：`request_id`、`module`、`event`、`result`、`error_code`（按需带 `latency_ms`）。
 
 验证页面：

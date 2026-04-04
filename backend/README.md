@@ -245,7 +245,8 @@ Backend critical paths now emit structured logs using stable keys:
 
 Default console pattern includes source location for fast bug tracing:
 
-- `%logger{40}.%M:%line`
+- `%logger.%M:%line`
+- Logger source MUST use full package name (for example `com.twinops.backend.analysis.controller.AnalysisController.detail:9`), not abbreviated form like `c.t.b.a...`.
 
 ### Request Correlation
 
@@ -277,3 +278,4 @@ Default console pattern includes source location for fast bug tracing:
 - From this change onward, every backend code modification must add logs in appropriate critical paths.
 - Log levels must be semantically split into `INFO`, `WARN`, `ERROR`.
 - Logs must be source-traceable for developers during debugging (class/method/line visible in output).
+- Migration note: when searching logs, use full package path keywords instead of abbreviated logger prefixes.
