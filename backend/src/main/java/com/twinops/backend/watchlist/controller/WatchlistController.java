@@ -3,10 +3,14 @@ package com.twinops.backend.watchlist.controller;
 import com.twinops.backend.auth.dto.AdminIdentityDto;
 import com.twinops.backend.auth.config.AdminAuthInterceptor;
 import com.twinops.backend.common.dto.ApiResponse;
+import com.twinops.backend.common.logging.LogFields;
 import com.twinops.backend.watchlist.dto.WatchlistItemDto;
 import com.twinops.backend.watchlist.dto.WatchlistToggleRequest;
 import com.twinops.backend.watchlist.service.WatchlistService;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,6 +28,7 @@ import java.util.List;
 @RequestMapping("/api/watchlist")
 public class WatchlistController {
 
+    private static final Logger log = LoggerFactory.getLogger(WatchlistController.class);
     private final WatchlistService watchlistService;
 
     public WatchlistController(
@@ -35,6 +40,13 @@ public class WatchlistController {
     @GetMapping
     public ApiResponse<List<WatchlistItemDto>> list(HttpServletRequest request) {
         AdminIdentityDto identity = (AdminIdentityDto) request.getAttribute(AdminAuthInterceptor.ADMIN_IDENTITY_ATTR);
+        log.info("{}={} {}={} {}={} {}={} username={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "watchlist",
+            LogFields.EVENT, "watchlist.list.request",
+            LogFields.RESULT, "received",
+            identity.username()
+        );
         return ApiResponse.ok(watchlistService.listByAdmin(identity.username()));
     }
 
@@ -44,6 +56,14 @@ public class WatchlistController {
         HttpServletRequest request
     ) {
         AdminIdentityDto identity = (AdminIdentityDto) request.getAttribute(AdminAuthInterceptor.ADMIN_IDENTITY_ATTR);
+        log.info("{}={} {}={} {}={} {}={} username={} deviceCode={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "watchlist",
+            LogFields.EVENT, "watchlist.pin.request",
+            LogFields.RESULT, "received",
+            identity.username(),
+            body.deviceCode()
+        );
         return ApiResponse.ok(watchlistService.pin(identity.username(), body.deviceCode()));
     }
 
@@ -53,6 +73,19 @@ public class WatchlistController {
         HttpServletRequest request
     ) {
         AdminIdentityDto identity = (AdminIdentityDto) request.getAttribute(AdminAuthInterceptor.ADMIN_IDENTITY_ATTR);
+        log.info("{}={} {}={} {}={} {}={} username={} deviceCode={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "watchlist",
+            LogFields.EVENT, "watchlist.unpin.request",
+            LogFields.RESULT, "received",
+            identity.username(),
+            deviceCode
+        );
         return ApiResponse.ok(watchlistService.unpin(identity.username(), deviceCode));
+    }
+
+    private String safeRequestId() {
+        String requestId = MDC.get(LogFields.REQUEST_ID);
+        return requestId == null || requestId.isBlank() ? "n/a" : requestId;
     }
 }

@@ -243,6 +243,10 @@ Backend critical paths now emit structured logs using stable keys:
 - `latency_ms`
 - `error_code`
 
+Default console pattern includes source location for fast bug tracing:
+
+- `%logger{40}.%M:%line`
+
 ### Request Correlation
 
 - Backend reads `X-Request-Id` from incoming requests.
@@ -267,3 +271,9 @@ Backend critical paths now emit structured logs using stable keys:
 
 - Startup emits sanitized datasource summary (host/schema only).
 - `DataAccessException` and JDBC connection errors are logged at `ERROR` with request path and exception class.
+
+### Logging Baseline Policy (Mandatory)
+
+- From this change onward, every backend code modification must add logs in appropriate critical paths.
+- Log levels must be semantically split into `INFO`, `WARN`, `ERROR`.
+- Logs must be source-traceable for developers during debugging (class/method/line visible in output).

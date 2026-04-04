@@ -7,7 +7,11 @@ import com.twinops.backend.analysis.service.AnalysisAutomationTriggerService;
 import com.twinops.backend.analysis.service.AnalysisAutomationProducer;
 import com.twinops.backend.analysis.service.AnalysisService;
 import com.twinops.backend.common.dto.ApiResponse;
+import com.twinops.backend.common.logging.LogFields;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -24,6 +28,7 @@ import java.util.List;
 @RequestMapping("/api/analysis")
 public class AnalysisController {
 
+    private static final Logger log = LoggerFactory.getLogger(AnalysisController.class);
     private final AnalysisService analysisService;
     private final AnalysisAutomationProducer analysisAutomationProducer;
     private final AnalysisAutomationTriggerService analysisAutomationTriggerService;
@@ -40,21 +45,58 @@ public class AnalysisController {
 
     @PostMapping("/reports")
     public ApiResponse<AnalysisReportDto> create(@Valid @RequestBody CreateAnalysisRequest body) {
+        log.info("{}={} {}={} {}={} {}={} deviceCode={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "analysis",
+            LogFields.EVENT, "analysis.report.create.request",
+            LogFields.RESULT, "received",
+            body.deviceCode()
+        );
         return ApiResponse.ok(triggerInternal(body).report());
     }
 
     @PostMapping("/reports/trigger")
     public ApiResponse<TriggerAnalysisResponse> trigger() {
+        log.info("{}={} {}={} {}={} {}={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "analysis",
+            LogFields.EVENT, "analysis.report.trigger.request",
+            LogFields.RESULT, "received"
+        );
         return ApiResponse.ok(analysisAutomationTriggerService.triggerManualBatch());
     }
 
     @GetMapping("/reports")
     public ApiResponse<List<AnalysisReportDto>> list(@RequestParam(defaultValue = "20") int limit) {
+        if (limit <= 0) {
+            log.warn("{}={} {}={} {}={} {}={} {}={} limit={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "analysis",
+                LogFields.EVENT, "analysis.report.list.request",
+                LogFields.RESULT, "invalid",
+                LogFields.ERROR_CODE, "ANALYSIS_LIMIT_INVALID",
+                limit
+            );
+        }
+        log.info("{}={} {}={} {}={} {}={} limit={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "analysis",
+            LogFields.EVENT, "analysis.report.list.request",
+            LogFields.RESULT, "received",
+            limit
+        );
         return ApiResponse.ok(analysisService.listReports(limit));
     }
 
     @GetMapping("/reports/{id}")
     public ApiResponse<AnalysisReportDto> detail(@PathVariable Long id) {
+        log.info("{}={} {}={} {}={} {}={} reportId={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "analysis",
+            LogFields.EVENT, "analysis.report.detail.request",
+            LogFields.RESULT, "received",
+            id
+        );
         return ApiResponse.ok(analysisService.getReport(id));
     }
 
@@ -75,5 +117,10 @@ public class AnalysisController {
     }
 
     private record TriggerContext(AnalysisReportDto report, String idempotencyKey) {
+    }
+
+    private String safeRequestId() {
+        String requestId = MDC.get(LogFields.REQUEST_ID);
+        return requestId == null || requestId.isBlank() ? "n/a" : requestId;
     }
 }

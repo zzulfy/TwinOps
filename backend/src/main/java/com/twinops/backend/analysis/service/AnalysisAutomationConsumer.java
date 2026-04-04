@@ -53,6 +53,16 @@ public class AnalysisAutomationConsumer {
             if (BATCH_JOB_TYPE.equals(message.jobType())) {
                 analysisAggregationService.processAggregatedBatch(message.slot(), message.idempotencyKey());
             } else {
+                log.warn("{}={} {}={} {}={} {}={} {}={} topic={} jobType={} idempotencyKey={}",
+                    LogFields.REQUEST_ID, safeRequestId(),
+                    LogFields.MODULE, "analysis",
+                    LogFields.EVENT, "analysis.automation.consume",
+                    LogFields.RESULT, "legacy_path",
+                    LogFields.ERROR_CODE, "ANALYSIS_LEGACY_JOB_TYPE",
+                    topic,
+                    message.jobType(),
+                    message.idempotencyKey()
+                );
                 analysisService.createReportWithIdempotency(message.deviceCode(), message.metricSummary(), message.idempotencyKey());
             }
             log.info("{}={} {}={} {}={} {}={} topic={} deviceCode={} idempotencyKey={}",

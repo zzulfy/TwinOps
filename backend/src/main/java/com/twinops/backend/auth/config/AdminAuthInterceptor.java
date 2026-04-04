@@ -33,6 +33,14 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         if (HttpMethod.OPTIONS.matches(request.getMethod())) {
+            log.info("{}={} {}={} {}={} {}={} path={} method={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "auth",
+                LogFields.EVENT, "auth.interceptor.preflight",
+                LogFields.RESULT, "bypass",
+                request.getRequestURI(),
+                request.getMethod()
+            );
             return true;
         }
         String token = tokenResolver.resolve(
@@ -45,6 +53,14 @@ public class AdminAuthInterceptor implements HandlerInterceptor {
         }
         AdminIdentityDto identity = adminAuthService.getIdentityByToken(token);
         request.setAttribute(ADMIN_IDENTITY_ATTR, identity);
+        log.info("{}={} {}={} {}={} {}={} path={} username={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "auth",
+            LogFields.EVENT, "auth.interceptor",
+            LogFields.RESULT, "success",
+            request.getRequestURI(),
+            identity.username()
+        );
         return true;
     }
 

@@ -40,6 +40,15 @@ public class AnalysisAggregationService {
         deviceQuery.orderByAsc("device_code");
         List<DeviceEntity> targets = deviceMapper.selectList(deviceQuery);
         if (targets.isEmpty()) {
+            log.warn("{}={} {}={} {}={} {}={} {}={} slot={} idempotencyKey={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "analysis",
+                LogFields.EVENT, "analysis.automation.aggregate",
+                LogFields.RESULT, "empty",
+                LogFields.ERROR_CODE, "ANALYSIS_TARGET_EMPTY",
+                slot,
+                idempotencyKey
+            );
             throw new RuntimeException("no warning/error devices found for aggregated analysis slot=" + slot);
         }
 
@@ -54,6 +63,15 @@ public class AnalysisAggregationService {
             targets.size()
         );
         analysisService.createReportWithIdempotency(AGGREGATED_DEVICE_CODE, metricSummary, idempotencyKey);
+        log.info("{}={} {}={} {}={} {}={} slot={} idempotencyKey={} targetCount={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "analysis",
+            LogFields.EVENT, "analysis.automation.aggregate",
+            LogFields.RESULT, "success",
+            slot,
+            idempotencyKey,
+            targets.size()
+        );
     }
 
     private String buildAggregatedMetricSummary(String slot, List<DeviceEntity> targets) {

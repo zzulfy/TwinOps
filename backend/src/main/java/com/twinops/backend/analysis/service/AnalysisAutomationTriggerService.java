@@ -57,6 +57,14 @@ public class AnalysisAutomationTriggerService {
         );
 
         if (targets.isEmpty()) {
+            log.warn("{}={} {}={} {}={} {}={} {}={} slot={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "analysis",
+                LogFields.EVENT, "analysis.automation.manual.trigger",
+                LogFields.RESULT, "skipped",
+                LogFields.ERROR_CODE, "ANALYSIS_TARGET_EMPTY",
+                slot
+            );
             return new TriggerAnalysisResponse(slot, "skipped", 0, 0, 0);
         }
 
@@ -83,6 +91,16 @@ public class AnalysisAutomationTriggerService {
             ));
             acceptedCount = 1;
         } catch (Exception ex) {
+            log.error("{}={} {}={} {}={} {}={} {}={} slot={} message={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "analysis",
+                LogFields.EVENT, "analysis.automation.manual.trigger",
+                LogFields.RESULT, "failed",
+                LogFields.ERROR_CODE, "ANALYSIS_TRIGGER_PUBLISH_FAILED",
+                slot,
+                ex.getMessage(),
+                ex
+            );
             failExistingReportSafely(reportId, ex.getMessage());
             failedCount = 1;
         }

@@ -6,10 +6,14 @@ import com.twinops.backend.alarm.mapper.AlarmMapper;
 import com.twinops.backend.common.dto.DeviceAlarmDto;
 import com.twinops.backend.common.dto.DeviceDetailDto;
 import com.twinops.backend.common.exception.NotFoundException;
+import com.twinops.backend.common.logging.LogFields;
 import com.twinops.backend.device.entity.DeviceEntity;
 import com.twinops.backend.device.mapper.DeviceMapper;
 import com.twinops.backend.telemetry.entity.TelemetryEntity;
 import com.twinops.backend.telemetry.mapper.TelemetryMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -19,6 +23,7 @@ import java.util.List;
 @Service
 public class DeviceService {
 
+    private static final Logger log = LoggerFactory.getLogger(DeviceService.class);
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
     private final DeviceMapper deviceMapper;
     private final TelemetryMapper telemetryMapper;
@@ -31,16 +36,47 @@ public class DeviceService {
     }
 
     public List<DeviceDetailDto> list() {
+        log.info("{}={} {}={} {}={} {}={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "device",
+            LogFields.EVENT, "device.service.list",
+            LogFields.RESULT, "started"
+        );
         QueryWrapper<DeviceEntity> wrapper = new QueryWrapper<>();
         wrapper.orderByAsc("device_code");
-        return deviceMapper.selectList(wrapper).stream().map(this::toDetail).toList();
+        List<DeviceEntity> entities = deviceMapper.selectList(wrapper);
+        if (entities.isEmpty()) {
+            log.warn("{}={} {}={} {}={} {}={} {}={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "device",
+                LogFields.EVENT, "device.service.list",
+                LogFields.RESULT, "empty",
+                LogFields.ERROR_CODE, "DEVICE_LIST_EMPTY"
+            );
+        }
+        return entities.stream().map(this::toDetail).toList();
     }
 
     public DeviceDetailDto getByDeviceCode(String deviceCode) {
+        log.info("{}={} {}={} {}={} {}={} deviceCode={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "device",
+            LogFields.EVENT, "device.service.detail",
+            LogFields.RESULT, "started",
+            deviceCode
+        );
         QueryWrapper<DeviceEntity> wrapper = new QueryWrapper<>();
         wrapper.eq("device_code", deviceCode).last("LIMIT 1");
         DeviceEntity entity = deviceMapper.selectOne(wrapper);
         if (entity == null) {
+            log.error("{}={} {}={} {}={} {}={} {}={} deviceCode={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "device",
+                LogFields.EVENT, "device.service.detail",
+                LogFields.RESULT, "failed",
+                LogFields.ERROR_CODE, "DEVICE_NOT_FOUND",
+                deviceCode
+            );
             throw new NotFoundException("device not found: " + deviceCode);
         }
         return toDetail(entity);
@@ -124,5 +160,10 @@ public class DeviceService {
             case "warning", "error", "normal" -> status;
             default -> "normal";
         };
+    }
+
+    private String safeRequestId() {
+        String requestId = MDC.get(LogFields.REQUEST_ID);
+        return requestId == null || requestId.isBlank() ? "n/a" : requestId;
     }
 }

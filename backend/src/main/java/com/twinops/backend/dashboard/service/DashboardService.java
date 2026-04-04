@@ -11,6 +11,10 @@ import com.twinops.backend.device.entity.DeviceEntity;
 import com.twinops.backend.device.mapper.DeviceMapper;
 import com.twinops.backend.telemetry.entity.TelemetryEntity;
 import com.twinops.backend.telemetry.mapper.TelemetryMapper;
+import com.twinops.backend.common.logging.LogFields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MDC;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -25,6 +29,7 @@ import java.util.stream.Collectors;
 @Service
 public class DashboardService {
 
+    private static final Logger log = LoggerFactory.getLogger(DashboardService.class);
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("HH:mm");
     private final DeviceMapper deviceMapper;
     private final AlarmMapper alarmMapper;
@@ -37,11 +42,26 @@ public class DashboardService {
     }
 
     public DashboardSummaryDto summary() {
+        log.info("{}={} {}={} {}={} {}={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "dashboard",
+            LogFields.EVENT, "dashboard.service.summary",
+            LogFields.RESULT, "started"
+        );
         return new DashboardSummaryDto(deviceScale(), recentAlarms(), faultRateSeries(), resourceUsageSeries());
     }
 
     private List<DeviceScaleItemDto> deviceScale() {
         List<DeviceEntity> devices = deviceMapper.selectList(new QueryWrapper<>());
+        if (devices.isEmpty()) {
+            log.warn("{}={} {}={} {}={} {}={} {}={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "dashboard",
+                LogFields.EVENT, "dashboard.service.device_scale",
+                LogFields.RESULT, "empty",
+                LogFields.ERROR_CODE, "DEVICE_LIST_EMPTY"
+            );
+        }
         Map<String, Long> grouped = devices.stream().collect(Collectors.groupingBy(DeviceEntity::getType, Collectors.counting()));
         List<DeviceScaleItemDto> items = new ArrayList<>();
         grouped.forEach((type, count) -> items.add(new DeviceScaleItemDto(iconByType(type), type, String.valueOf(count), "个")));
@@ -99,6 +119,11 @@ public class DashboardService {
             values.add(m.getCpuLoad() == null ? 0D : m.getCpuLoad().doubleValue());
         }
         return new ChartSeriesDto(labels, values);
+    }
+
+    private String safeRequestId() {
+        String requestId = MDC.get(LogFields.REQUEST_ID);
+        return requestId == null || requestId.isBlank() ? "n/a" : requestId;
     }
 
     private String iconByType(String type) {

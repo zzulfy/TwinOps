@@ -267,6 +267,16 @@ curl -X POST "http://127.0.0.1:8080/api/analysis/reports/trigger" \
   - Integration Tests（集成测试）
   - Regression Tests（回归测试）
 
+## Backend Logging Baseline（从本次 change 起强制执行）
+
+- 后续所有 backend 代码变更都必须在关键路径补齐日志（Controller/Service/Auth/Kafka），不能仅依赖异常堆栈被动排查。
+- 日志等级必须使用并区分 `info`、`warn`、`error`：
+  - `info`：请求入口、关键步骤开始/成功；
+  - `warn`：可恢复异常、边界输入、空结果、兼容分支；
+  - `error`：不可恢复失败、关键依赖异常、主流程中断。
+- 日志必须可定位代码来源（class/method/line），保证开发排障时可以直接定位日志打印位置。
+- 结构化字段保持统一：`request_id`、`module`、`event`、`result`、`error_code`（按需带 `latency_ms`）。
+
 验证页面：
 
 - Dashboard：`http://127.0.0.1:4173/#/`
