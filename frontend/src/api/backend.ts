@@ -74,6 +74,14 @@ export interface AnalysisReport {
   createdAt: string;
 }
 
+export interface TriggerAnalysisResponse {
+  triggerId: string;
+  status: "processing" | "partial" | "failed";
+  targetCount: number;
+  acceptedCount: number;
+  failedCount: number;
+}
+
 export interface WatchlistItem {
   deviceCode: string;
 }
@@ -95,6 +103,7 @@ interface RequestOptions {
 
 const TOKEN_KEY = "twinops_admin_token";
 const ADMIN_KEY = "twinops_admin_identity";
+const AUTH_EXPIRED_QUERY = "expired=1";
 
 export const getAdminToken = (): string =>
   localStorage.getItem(TOKEN_KEY) || "";
@@ -119,6 +128,22 @@ export const getCurrentAdmin = (): AdminIdentity | null => {
 };
 export const isAdminLoggedIn = (): boolean => Boolean(getAdminToken());
 
+const redirectToLoginOnUnauthorized = (): void => {
+  if (typeof window === "undefined") {
+    return;
+  }
+  const rawHash = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  const currentPathWithQuery = rawHash || "/";
+  const currentPath = currentPathWithQuery.split("?")[0] || "/";
+  if (currentPath === "/login") {
+    return;
+  }
+  const redirectTarget = encodeURIComponent(currentPathWithQuery);
+  window.location.hash = `/login?${AUTH_EXPIRED_QUERY}&redirect=${redirectTarget}`;
+};
+
 const request = async <T>(
   path: string,
   options: RequestOptions = {}
@@ -138,6 +163,7 @@ const request = async <T>(
   });
   if (response.status === 401) {
     clearAdminSession();
+    redirectToLoginOnUnauthorized();
     throw new Error("UNAUTHORIZED");
   }
   if (!response.ok) {
@@ -243,6 +269,11 @@ export const createAnalysisReport = async (
   request<AnalysisReport>("/api/analysis/reports", {
     method: "POST",
     body: { deviceCode, metricSummary },
+  });
+
+export const triggerAnalysisReport = async (): Promise<TriggerAnalysisResponse> =>
+  request<TriggerAnalysisResponse>("/api/analysis/reports/trigger", {
+    method: "POST",
   });
 
 export const fetchWatchlist = async (): Promise<WatchlistItem[]> =>

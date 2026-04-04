@@ -18,11 +18,13 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 @Component
-@ConditionalOnProperty(prefix = "twinops.analysis.automation", name = "enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(prefix = "twinops.analysis.automation", name = {"enabled", "scheduler-enabled"}, havingValue = "true")
 public class AnalysisAutomationScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(AnalysisAutomationScheduler.class);
     private static final DateTimeFormatter SLOT_FMT = DateTimeFormatter.ofPattern("yyyyMMddHH");
+    private static final String BATCH_JOB_TYPE = "analysis-batch";
+    private static final String AGGREGATED_DEVICE_CODE = "AGGREGATED";
 
     private final DeviceMapper deviceMapper;
     private final AnalysisAutomationProducer producer;
@@ -56,20 +58,22 @@ public class AnalysisAutomationScheduler {
             targets.size()
         );
 
-        for (DeviceEntity target : targets) {
-            String metricSummary = "auto-analysis slot=%s status=%s location=%s".formatted(
-                slot,
-                target.getStatus(),
-                target.getLocation()
-            );
-            AnalysisAutomationMessage message = new AnalysisAutomationMessage(
-                target.getDeviceCode(),
-                metricSummary,
-                slot,
-                target.getDeviceCode() + ":" + slot
-            );
-            producer.publish(message);
+        if (targets.isEmpty()) {
+            return;
         }
+        String metricSummary = "auto-analysis slot=%s mode=aggregated targetCount=%d source=scheduler".formatted(
+            slot,
+            targets.size()
+        );
+        AnalysisAutomationMessage message = new AnalysisAutomationMessage(
+            BATCH_JOB_TYPE,
+            AGGREGATED_DEVICE_CODE,
+            metricSummary,
+            slot,
+            "batch:" + slot,
+            null
+        );
+        producer.publish(message);
     }
 
     private String safeRequestId() {

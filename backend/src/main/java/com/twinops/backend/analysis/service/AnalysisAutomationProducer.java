@@ -3,12 +3,13 @@ package com.twinops.backend.analysis.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twinops.backend.analysis.dto.AnalysisAutomationMessage;
 import com.twinops.backend.common.logging.LogFields;
-import org.apache.rocketmq.spring.core.RocketMQTemplate;
+import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -17,15 +18,15 @@ public class AnalysisAutomationProducer {
 
     private static final Logger log = LoggerFactory.getLogger(AnalysisAutomationProducer.class);
 
-    private final RocketMQTemplate rocketMQTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
     private final String topic;
 
     public AnalysisAutomationProducer(
-        RocketMQTemplate rocketMQTemplate,
+        KafkaTemplate<String, String> kafkaTemplate,
         @Value("${twinops.analysis.automation.topic:analysis.request}") String topic
     ) {
-        this.rocketMQTemplate = rocketMQTemplate;
+        this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = new ObjectMapper();
         this.topic = topic;
     }
@@ -33,7 +34,7 @@ public class AnalysisAutomationProducer {
     public void publish(AnalysisAutomationMessage message) {
         try {
             String payload = objectMapper.writeValueAsString(message);
-            rocketMQTemplate.convertAndSend(topic, payload);
+            kafkaTemplate.send(new ProducerRecord<>(topic, message.idempotencyKey(), payload));
             log.info("{}={} {}={} {}={} {}={} topic={} deviceCode={} idempotencyKey={}",
                 LogFields.REQUEST_ID, safeRequestId(),
                 LogFields.MODULE, "analysis",

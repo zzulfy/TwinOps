@@ -40,12 +40,44 @@ public class AnalysisService {
         return createReportInternal(deviceCode, metricSummary, null);
     }
 
+    public AnalysisReportDto createProcessingReport(String deviceCode, String metricSummary, String idempotencyKey) {
+        if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+            QueryWrapper<AnalysisReportEntity> query = new QueryWrapper<>();
+            query.eq("idempotency_key", idempotencyKey).last("LIMIT 1");
+            AnalysisReportEntity existing = analysisReportMapper.selectOne(query);
+            if (existing != null) {
+                return toDto(existing);
+            }
+        }
+        AnalysisReportEntity report = new AnalysisReportEntity();
+        report.setDeviceCode(deviceCode);
+        report.setMetricSummary(metricSummary);
+        report.setIdempotencyKey(idempotencyKey);
+        report.setStatus("processing");
+        analysisReportMapper.insert(report);
+        return toDto(report);
+    }
+
+    public AnalysisReportDto failExistingProcessingReport(Long reportId, String errorMessage) {
+        AnalysisReportEntity report = analysisReportMapper.selectById(reportId);
+        if (report == null) {
+            throw new NotFoundException("analysis report not found: " + reportId);
+        }
+        report.setStatus("failed");
+        report.setErrorMessage(errorMessage);
+        analysisReportMapper.updateById(report);
+        return toDto(report);
+    }
+
     public AnalysisReportDto createReportWithIdempotency(String deviceCode, String metricSummary, String idempotencyKey) {
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
             QueryWrapper<AnalysisReportEntity> query = new QueryWrapper<>();
             query.eq("idempotency_key", idempotencyKey).last("LIMIT 1");
             AnalysisReportEntity existing = analysisReportMapper.selectOne(query);
             if (existing != null) {
+                if ("processing".equalsIgnoreCase(existing.getStatus())) {
+                    return completeExistingReport(existing, deviceCode, metricSummary);
+                }
                 log.info("{}={} {}={} {}={} {}={} {}={} idempotencyKey={} reportId={} deviceCode={}",
                     LogFields.REQUEST_ID, safeRequestId(),
                     LogFields.MODULE, "analysis",
@@ -60,6 +92,48 @@ public class AnalysisService {
             }
         }
         return createReportInternal(deviceCode, metricSummary, idempotencyKey);
+    }
+
+    private AnalysisReportDto completeExistingReport(AnalysisReportEntity report, String deviceCode, String metricSummary) {
+        long startNanos = System.nanoTime();
+        report.setDeviceCode(deviceCode);
+        report.setMetricSummary(metricSummary);
+        int attempt = 0;
+        while (attempt <= MAX_RETRY) {
+            try {
+                LlmPredictionResult result = callWithTimeout(deviceCode, metricSummary);
+                report.setPrediction(result.prediction());
+                report.setConfidence(result.confidence());
+                report.setRiskLevel(result.riskLevel());
+                report.setRecommendedAction(result.recommendedAction());
+                report.setStatus("success");
+                report.setErrorMessage(null);
+                analysisReportMapper.updateById(report);
+                long latencyMs = (System.nanoTime() - startNanos) / 1_000_000;
+                log.info("{}={} {}={} {}={} {}={} {}={} reportId={} deviceCode={}",
+                    LogFields.REQUEST_ID, safeRequestId(),
+                    LogFields.MODULE, "analysis",
+                    LogFields.EVENT, "analysis.create.complete",
+                    LogFields.RESULT, "success",
+                    LogFields.LATENCY_MS, latencyMs,
+                    report.getId(),
+                    deviceCode
+                );
+                return toDto(report);
+            } catch (Exception ex) {
+                attempt += 1;
+                if (attempt > MAX_RETRY) {
+                    report.setStatus("failed");
+                    report.setErrorMessage(ex.getMessage());
+                    analysisReportMapper.updateById(report);
+                    return toDto(report);
+                }
+            }
+        }
+        report.setStatus("failed");
+        report.setErrorMessage("analysis failed");
+        analysisReportMapper.updateById(report);
+        return toDto(report);
     }
 
     private AnalysisReportDto createReportInternal(String deviceCode, String metricSummary, String idempotencyKey) {

@@ -3,6 +3,9 @@
     <div class="login-card">
       <h1>TwinOps Admin Login</h1>
       <p>Only administrator access is allowed.</p>
+      <div v-if="authExpiredNotice" class="expired-notice">
+        Session expired. Please sign in again.
+      </div>
       <form @submit.prevent="submitLogin">
         <label>
           Username
@@ -35,7 +38,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { loginAdmin, setAdminSession } from "@/api/backend";
 
@@ -46,6 +49,7 @@ const username = ref("admin");
 const password = ref("");
 const loading = ref(false);
 const errorMessage = ref("");
+const authExpiredNotice = computed(() => route.query.expired === "1");
 
 const submitLogin = async () => {
   loading.value = true;
@@ -143,6 +147,16 @@ const submitLogin = async () => {
   margin-top: 12px;
   font-size: 13px;
   color: #ffd2d2;
+}
+
+.expired-notice {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #ffe8a6;
+  border: 1px solid rgba(255, 232, 166, 0.45);
+  border-radius: 8px;
+  background: rgba(98, 70, 12, 0.28);
 }
 
 .hint {

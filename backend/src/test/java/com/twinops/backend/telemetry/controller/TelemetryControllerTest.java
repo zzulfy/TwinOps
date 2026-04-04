@@ -1,6 +1,9 @@
 package com.twinops.backend.telemetry.controller;
 
 import com.twinops.backend.common.dto.TelemetryPointDto;
+import com.twinops.backend.auth.dto.AdminIdentityDto;
+import com.twinops.backend.auth.service.AdminAuthService;
+import com.twinops.backend.auth.service.AuthTokenResolver;
 import com.twinops.backend.telemetry.service.TelemetryService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,8 +28,16 @@ class TelemetryControllerTest {
     @MockBean
     private TelemetryService telemetryService;
 
+    @MockBean
+    private AuthTokenResolver authTokenResolver;
+
+    @MockBean
+    private AdminAuthService adminAuthService;
+
     @Test
     void shouldQueryTelemetryByDeviceAndLimit() throws Exception {
+        when(authTokenResolver.resolve(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn("token");
+        when(adminAuthService.getIdentityByToken("token")).thenReturn(new AdminIdentityDto("admin", "System Administrator", "admin"));
         List<TelemetryPointDto> points = List.of(
             new TelemetryPointDto(
                 "03-30 10:00",
@@ -44,7 +55,7 @@ class TelemetryControllerTest {
 
         when(telemetryService.query("DEV001", null, null, 2)).thenReturn(points);
 
-        mockMvc.perform(get("/api/telemetry").param("deviceCode", "DEV001").param("limit", "2"))
+        mockMvc.perform(get("/api/telemetry").param("deviceCode", "DEV001").param("limit", "2").header("Authorization", "Bearer token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data.length()").value(1))
@@ -53,9 +64,11 @@ class TelemetryControllerTest {
 
     @Test
     void shouldRunRetentionCleanup() throws Exception {
+        when(authTokenResolver.resolve(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn("token");
+        when(adminAuthService.getIdentityByToken("token")).thenReturn(new AdminIdentityDto("admin", "System Administrator", "admin"));
         when(telemetryService.deleteOlderThan30Days()).thenReturn(123);
 
-        mockMvc.perform(get("/api/telemetry/retention/cleanup"))
+        mockMvc.perform(get("/api/telemetry/retention/cleanup").header("Authorization", "Bearer token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data").value(123));

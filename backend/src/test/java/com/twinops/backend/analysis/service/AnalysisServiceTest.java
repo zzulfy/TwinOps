@@ -87,6 +87,23 @@ class AnalysisServiceTest {
     }
 
     @Test
+    void shouldCreateProcessingReportForManualTrigger() {
+        when(analysisReportMapper.selectOne(any(QueryWrapper.class))).thenReturn(null);
+        doAnswer(invocation -> {
+            AnalysisReportEntity entity = invocation.getArgument(0);
+            entity.setId(15L);
+            entity.setCreatedAt(LocalDateTime.of(2026, 4, 3, 15, 0));
+            return 1;
+        }).when(analysisReportMapper).insert(any(AnalysisReportEntity.class));
+
+        AnalysisReportDto result = analysisService.createProcessingReport("DEV015", "cpu=88", "DEV015:manual");
+
+        assertEquals(15L, result.id());
+        assertEquals("processing", result.status());
+        assertEquals("DEV015", result.deviceCode());
+    }
+
+    @Test
     void shouldPersistFailedStatusAfterRetriesExhausted() throws Exception {
         when(analysisReportMapper.selectOne(any(QueryWrapper.class))).thenReturn(null);
         doAnswer(invocation -> {

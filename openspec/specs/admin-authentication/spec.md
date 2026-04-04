@@ -12,6 +12,14 @@ The system SHALL require admin authentication before accessing protected fronten
 - **THEN** the app redirects to `/login`
 - **AND** protected content is not rendered
 
+### Requirement: Frontend SHALL enforce immediate protected-page exit on expired auth
+The frontend SHALL immediately leave protected pages and route to login when backend reports unauthorized session, instead of keeping user on invalid protected context.
+
+#### Scenario: Unauthorized API response in protected route
+- **WHEN** backend returns `401` for protected API and current route is protected
+- **THEN** frontend clears auth session and redirects to login
+- **AND** protected page content is no longer accessible until re-login
+
 ### Requirement: Backend SHALL provide admin identity APIs
 The backend SHALL expose authentication endpoints for login, logout, and current-session identity retrieval for admin users, and SHALL emit observability logs for auth outcomes without exposing sensitive credentials.
 
@@ -29,3 +37,12 @@ The backend SHALL expose authentication endpoints for login, logout, and current
 - **WHEN** an authenticated admin calls logout
 - **THEN** backend invalidates the session token
 - **AND** backend logs a structured logout event with request correlation context
+
+#### Scenario: Backend protected APIs are denied without login
+- **WHEN** a request targets protected backend API endpoints without valid admin token
+- **THEN** backend interceptor SHALL reject the request with unauthorized response
+- **AND** backend SHALL NOT execute downstream controller business logic
+
+#### Scenario: Auth and documentation whitelist paths bypass interceptor
+- **WHEN** a request targets configured whitelist paths (such as login/logout identity endpoints and swagger/openapi docs endpoints)
+- **THEN** backend interceptor SHALL allow the request to continue without admin token validation

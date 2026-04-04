@@ -35,7 +35,7 @@ class AnalysisAutomationSchedulerTest {
     }
 
     @Test
-    void shouldPublishForWarningAndErrorDevicesWithIdempotencyKey() {
+    void shouldPublishSingleBatchMessageForWarningAndErrorDevices() {
         when(deviceMapper.selectList(any())).thenReturn(List.of(
             device("DEV001", "warning", "A1"),
             device("DEV002", "error", "B1")
@@ -44,13 +44,21 @@ class AnalysisAutomationSchedulerTest {
         scheduler.publishHalfDayBatch();
 
         ArgumentCaptor<AnalysisAutomationMessage> messageCaptor = ArgumentCaptor.forClass(AnalysisAutomationMessage.class);
-        verify(producer, org.mockito.Mockito.times(2)).publish(messageCaptor.capture());
-        List<AnalysisAutomationMessage> messages = messageCaptor.getAllValues();
+        verify(producer, org.mockito.Mockito.times(1)).publish(messageCaptor.capture());
+        AnalysisAutomationMessage message = messageCaptor.getValue();
 
-        assertEquals("DEV001", messages.get(0).deviceCode());
-        assertTrue(messages.get(0).idempotencyKey().startsWith("DEV001:"));
-        assertEquals("DEV002", messages.get(1).deviceCode());
-        assertTrue(messages.get(1).idempotencyKey().startsWith("DEV002:"));
+        assertEquals("analysis-batch", message.jobType());
+        assertEquals("AGGREGATED", message.deviceCode());
+        assertTrue(message.idempotencyKey().startsWith("batch:"));
+    }
+
+    @Test
+    void shouldNotPublishWhenNoTargetDevices() {
+        when(deviceMapper.selectList(any())).thenReturn(List.of());
+
+        scheduler.publishHalfDayBatch();
+
+        verify(producer, org.mockito.Mockito.times(0)).publish(any());
     }
 
     private static DeviceEntity device(String code, String status, String location) {

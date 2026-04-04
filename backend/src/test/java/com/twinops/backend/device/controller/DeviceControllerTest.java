@@ -2,6 +2,9 @@ package com.twinops.backend.device.controller;
 
 import com.twinops.backend.common.dto.DeviceAlarmDto;
 import com.twinops.backend.common.dto.DeviceDetailDto;
+import com.twinops.backend.auth.dto.AdminIdentityDto;
+import com.twinops.backend.auth.service.AdminAuthService;
+import com.twinops.backend.auth.service.AuthTokenResolver;
 import com.twinops.backend.device.service.DeviceService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,8 +29,16 @@ class DeviceControllerTest {
     @MockBean
     private DeviceService deviceService;
 
+    @MockBean
+    private AuthTokenResolver authTokenResolver;
+
+    @MockBean
+    private AdminAuthService adminAuthService;
+
     @Test
     void shouldListDevices() throws Exception {
+        when(authTokenResolver.resolve(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn("token");
+        when(adminAuthService.getIdentityByToken("token")).thenReturn(new AdminIdentityDto("admin", "System Administrator", "admin"));
         DeviceDetailDto dto = new DeviceDetailDto(
             "DEV001",
             "1# 服务器机柜",
@@ -49,7 +60,7 @@ class DeviceControllerTest {
 
         when(deviceService.list()).thenReturn(List.of(dto));
 
-        mockMvc.perform(get("/api/devices"))
+        mockMvc.perform(get("/api/devices").header("Authorization", "Bearer token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data[0].deviceCode").value("DEV001"))
@@ -58,6 +69,8 @@ class DeviceControllerTest {
 
     @Test
     void shouldGetDeviceDetailByCode() throws Exception {
+        when(authTokenResolver.resolve(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn("token");
+        when(adminAuthService.getIdentityByToken("token")).thenReturn(new AdminIdentityDto("admin", "System Administrator", "admin"));
         DeviceDetailDto dto = new DeviceDetailDto(
             "DEV002",
             "2# 服务器机柜",
@@ -79,7 +92,7 @@ class DeviceControllerTest {
 
         when(deviceService.getByDeviceCode("DEV002")).thenReturn(dto);
 
-        mockMvc.perform(get("/api/devices/DEV002"))
+        mockMvc.perform(get("/api/devices/DEV002").header("Authorization", "Bearer token"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data.deviceCode").value("DEV002"))
