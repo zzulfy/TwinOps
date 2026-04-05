@@ -21,14 +21,11 @@
           class="item"
           v-for="(item, index) in list"
           :key="item.id ?? index"
-          :style="{
-            background: generateTypeColor(item.type, true),
-            color: contrastTextColor(item.type),
-          }"
+          :class="[`type-${item.type}`]"
         >
           <div
             class="item-circle"
-            :style="{ background: generateTypeColor(item.type) }"
+            :class="[`dot-${item.type}`]"
           ></div>
 
           <div class="item-name">{{ item.name }}</div>
@@ -51,6 +48,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from "vue";
 import { fetchAlarmList, type AlarmStatus } from "@/api/backend";
+import useAutoRefresh from "@/hooks/useAutoRefresh";
 import LayoutPanel from "./LayoutPanel.vue";
 
 interface AlarmItem {
@@ -67,6 +65,7 @@ const errorMessage = ref("");
 const currentStatus = ref<AlarmStatus>("new");
 const loading = ref(false);
 const container = ref<HTMLElement | null>(null);
+const ALARM_AUTO_REFRESH_MS = 20000;
 const statusTabs: Array<{ label: string; value: AlarmStatus }> = [
   { label: "新告警", value: "new" },
   { label: "已确认", value: "acknowledged" },
@@ -74,6 +73,9 @@ const statusTabs: Array<{ label: string; value: AlarmStatus }> = [
 ];
 
 const loadAlarms = async () => {
+  if (loading.value) {
+    return;
+  }
   try {
     loading.value = true;
     const data = await fetchAlarmList(currentStatus.value);
@@ -90,6 +92,7 @@ const loadAlarms = async () => {
     errorMessage.value = `预警数据加载失败: ${
       error instanceof Error ? error.message : String(error)
     }`;
+    list.value = [];
   } finally {
     loading.value = false;
   }
@@ -101,28 +104,9 @@ const switchStatus = async (status: AlarmStatus) => {
   await loadAlarms();
 };
 
-const generateTypeColor = (type: 1 | 2 | 3, gradual = false) => {
-  const colors = {
-    1: "#86a17f",
-    2: "#c8a36a",
-    3: "#cc5f5f",
-  };
-  if (gradual) {
-    return `linear-gradient(90deg, ${colors[type]}2e , transparent )`;
-  }
-  return colors[type];
-};
-
-const contrastTextColor = (type: 1 | 2 | 3) => {
-  if (type === 2) {
-    return "var(--tw-color-text-on-light)";
-  }
-  return "var(--tw-color-text-on-dark)";
-};
-
 let timer: number | null = null;
 onMounted(() => {
-  loadAlarms();
+  void loadAlarms();
 
   if (timer) window.clearInterval(timer);
   timer = window.setInterval(() => {
@@ -139,6 +123,12 @@ onMounted(() => {
       }
     }, 2000);
   }, 3000);
+});
+
+useAutoRefresh({
+  intervalMs: ALARM_AUTO_REFRESH_MS,
+  immediate: false,
+  onTick: loadAlarms,
 });
 
 onUnmounted(() => {
@@ -224,6 +214,19 @@ onUnmounted(() => {
     border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     transition: all 0.2s ease;
+    color: var(--tw-color-text-on-dark);
+
+    &.type-1 {
+      background: var(--tw-alarm-row-bg-1);
+    }
+
+    &.type-2 {
+      background: var(--tw-alarm-row-bg-2);
+    }
+
+    &.type-3 {
+      background: var(--tw-alarm-row-bg-3);
+    }
 
     &:hover {
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.42);
@@ -236,6 +239,18 @@ onUnmounted(() => {
       width: 5px;
       height: 10px;
       border-radius: 2px;
+
+      &.dot-1 {
+        background: var(--tw-state-success);
+      }
+
+      &.dot-2 {
+        background: var(--tw-state-warning);
+      }
+
+      &.dot-3 {
+        background: var(--tw-state-danger);
+      }
     }
     .item-name {
       width: 50%;
@@ -260,13 +275,16 @@ onUnmounted(() => {
       white-space: nowrap;
 
       &.is-new {
-        background: rgba(255, 109, 109, 0.18);
+        color: var(--tw-color-text-on-dark);
+        background: rgba(255, 109, 109, 0.26);
       }
       &.is-acknowledged {
-        background: rgba(244, 189, 67, 0.2);
+        color: var(--tw-color-text-on-light);
+        background: rgba(255, 214, 133, 0.92);
       }
       &.is-resolved {
-        background: rgba(62, 215, 149, 0.2);
+        color: var(--tw-color-text-on-dark);
+        background: rgba(62, 215, 149, 0.26);
       }
     }
     .item-time {

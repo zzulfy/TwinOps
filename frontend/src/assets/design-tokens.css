@@ -41,6 +41,21 @@
   --tw-status-bg: rgba(15, 33, 58, 0.76);
   --tw-status-border: rgba(89, 144, 209, 0.42);
   --tw-status-error: rgba(95, 26, 34, 0.75);
+  --tw-alarm-row-bg-1: linear-gradient(
+    90deg,
+    rgba(62, 215, 149, 0.26) 0%,
+    rgba(13, 27, 47, 0.9) 100%
+  );
+  --tw-alarm-row-bg-2: linear-gradient(
+    90deg,
+    rgba(244, 189, 67, 0.42) 0%,
+    rgba(13, 27, 47, 0.92) 100%
+  );
+  --tw-alarm-row-bg-3: linear-gradient(
+    90deg,
+    rgba(255, 109, 109, 0.3) 0%,
+    rgba(13, 27, 47, 0.9) 100%
+  );
 
   --tw-radius-sm: 8px;
   --tw-radius-md: 12px;

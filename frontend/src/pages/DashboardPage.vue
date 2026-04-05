@@ -24,7 +24,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, provide, ref, watchEffect } from "vue";
+import { provide, ref, watchEffect } from "vue";
 import { useRouter } from "vue-router";
 import LayoutHeader from "@/components/LayoutHeader.vue";
 import LayoutFooter from "@/components/LayoutFooter.vue";
@@ -33,6 +33,7 @@ import WidgetPanel01 from "@/components/WidgetPanel01.vue";
 import WidgetPanel04 from "@/components/WidgetPanel04.vue";
 import WidgetPanel06 from "@/components/WidgetPanel06.vue";
 import { useDataCenter } from "@/hooks/useDataCenter";
+import useAutoRefresh from "@/hooks/useAutoRefresh";
 import { fetchDashboardSummary, logoutAdmin } from "@/api/backend";
 
 const router = useRouter();
@@ -48,6 +49,8 @@ const showMask = ref(false);
 const summaryUpdatedAt = ref("");
 const refreshingSummary = ref(false);
 const dashboardSummaryVersion = ref(0);
+const autoRefreshError = ref("");
+const DASHBOARD_AUTO_REFRESH_MS = 20000;
 
 const formatTime = (date: Date) =>
   `${date.getHours().toString().padStart(2, "0")}:${date
@@ -56,11 +59,15 @@ const formatTime = (date: Date) =>
     .padStart(2, "0")}:${date.getSeconds().toString().padStart(2, "0")}`;
 
 const refreshSummary = async () => {
+  if (refreshingSummary.value) {
+    return;
+  }
   try {
     refreshingSummary.value = true;
     await fetchDashboardSummary({ force: true });
     summaryUpdatedAt.value = formatTime(new Date());
     dashboardSummaryVersion.value += 1;
+    autoRefreshError.value = "";
   } finally {
     refreshingSummary.value = false;
   }
@@ -95,9 +102,16 @@ provide("events", {
   disableControls,
 });
 provide("dashboardSummaryVersion", dashboardSummaryVersion);
+provide("dashboardAutoRefreshError", autoRefreshError);
 
-onMounted(async () => {
-  await refreshSummary();
+useAutoRefresh({
+  intervalMs: DASHBOARD_AUTO_REFRESH_MS,
+  onTick: refreshSummary,
+  onError: (error) => {
+    autoRefreshError.value = `看板自动刷新失败: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
+  },
 });
 </script>
 

@@ -1,7 +1,5 @@
-## Purpose
+## MODIFIED Requirements
 
-Define required validation and documentation checks for frontend optimization changes.
-## Requirements
 ### Requirement: Optimization verification checklist
 The change process SHALL include a repeatable checklist for performance and visual validation before completion, including CI-friendly smoke evidence. For auto-refresh related changes, the checklist SHALL include polling-behavior validation, duplicate-request prevention validation, and visible-state rendering stability checks.
 
@@ -24,11 +22,3 @@ The optimization process SHALL require a successful production build as an accep
 - **THEN** the optimization change is not marked complete
 - **AND** follow-up tasks are created to resolve failures
 - **AND** remaining chunk warnings are recorded as explicit optimization debt when build succeeds
-
-### Requirement: Documentation synchronization
-The process SHALL update developer-facing documentation when optimization conventions change.
-
-#### Scenario: README reflects new optimization conventions
-- **WHEN** chunking strategy or token conventions are introduced or modified
-- **THEN** frontend documentation is updated with current commands and conventions
-- **AND** examples align with actual project structure and scripts

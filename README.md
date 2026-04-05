@@ -260,6 +260,14 @@ curl -X POST "http://127.0.0.1:8080/api/analysis/reports/trigger" \
   - Consumer 只执行 **1 次** LLM analysis，并持久化 **1 条**最终聚合报告。
 - 前端通过异步查询（列表或 latest 接口）获取并展示该 single final report。
 - 整体链路为 `Frontend click trigger -> Producer ONE job -> Consumer aggregated query -> ONE LLM analysis -> ONE final report -> Frontend async fetch`。
+- Analysis Center 卡片主标题统一为“报告编号 + 生成时间”，不再使用固定 `AGGREGATED` 作为标题展示。
+
+## Frontend 自动刷新与性能约束
+
+- Dashboard / Alarm / Analysis 核心数据流使用页面可见性感知的自动刷新，不依赖浏览器手动刷新。
+- 自动刷新必须做 in-flight 去重，避免同一资源并发重复请求。
+- 页面隐藏时暂停或抑制非关键轮询，恢复可见时再续刷，降低无效请求与重渲染。
+- 告警展示禁止 fallback 到本地测试数据，后端失败时只显示明确 error/empty 状态。
 
 ## 工程质量策略
 

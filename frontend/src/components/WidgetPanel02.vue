@@ -1,19 +1,29 @@
 <template>
   <LayoutPanel title="服务器负载变化">
-    <div v-if="loadError" class="chart-fallback">{{ loadError }}</div>
+    <div v-if="loadError || apiError" class="chart-fallback">
+      {{ loadError || apiError }}
+    </div>
     <div v-else class="container" ref="container"></div>
   </LayoutPanel>
 </template>
 <script setup lang="ts">
-import { nextTick, onMounted } from "vue";
-import { sampleSize, range } from "lodash";
+import { inject, nextTick, onMounted, ref, watch } from "vue";
 import useEcharts from "@/hooks/useEcharts";
 import { CHART_MOTION } from "@/utils/chartMotion";
+import { fetchDashboardSummary } from "@/api/backend";
 import LayoutPanel from "./LayoutPanel.vue";
 
 const { container, setOption, loadError } = useEcharts();
+const apiError = ref<string | null>(null);
+const dashboardSummaryVersion = inject("dashboardSummaryVersion", ref(0));
 
-const generateOptions = (sources: number[][]) => ({
+const projectSeries = (values: number[]) => [
+  values.map((value, index) => Math.max(0, Math.min(100, value + ((index % 3) - 1) * 6))),
+  values.map((value, index) => Math.max(0, Math.min(100, value - ((index % 2) * 5 + 2)))),
+  values.map((value, index) => Math.max(0, Math.min(100, value + ((index % 4) - 2) * 3))),
+];
+
+const generateOptions = (labels: string[], sources: number[][]) => ({
   animation: true,
   animationDuration: CHART_MOTION.appearDuration,
   animationEasing: CHART_MOTION.easing,
@@ -55,7 +65,7 @@ const generateOptions = (sources: number[][]) => ({
       color: "#9f9d97",
       margin: 20,
     },
-    data: ["11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00"],
+    data: labels,
   },
   yAxis: {
     type: "value" as const,
@@ -133,16 +143,28 @@ const generateOptions = (sources: number[][]) => ({
   ],
 });
 
+const loadChart = async () => {
+  try {
+    const summary = await fetchDashboardSummary();
+    const source = projectSeries(summary.resourceUsage.values);
+    const options = generateOptions(summary.resourceUsage.labels, source);
+    await setOption(options);
+    apiError.value = null;
+  } catch (error) {
+    apiError.value = `图表数据加载失败: ${
+      error instanceof Error ? error.message : String(error)
+    }`;
+  }
+};
+
 onMounted(() => {
   nextTick(async () => {
-    const sources = [
-      sampleSize(range(1000, 200), 7),
-      sampleSize(range(1000, 200), 7),
-      sampleSize(range(1000, 200), 7),
-    ];
-    const options = generateOptions(sources);
-    await setOption(options);
+    await loadChart();
   });
+});
+
+watch(dashboardSummaryVersion, async () => {
+  await loadChart();
 });
 </script>
 

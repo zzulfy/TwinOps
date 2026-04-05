@@ -26,11 +26,13 @@
           :class="{ active: report.id === selectedId }"
           @click="selectReport(report.id)"
         >
-          <div>#{{ report.id }} · {{ report.deviceCode }}</div>
+          <div class="item-head">
+            <div class="report-id">#{{ report.id }}</div>
+            <div class="report-time">{{ report.createdAt }}</div>
+          </div>
           <div class="meta">
             <span>{{ report.status }}</span>
             <span>{{ report.riskLevel || "-" }}</span>
-            <span>{{ report.createdAt }}</span>
           </div>
         </div>
       </div>
@@ -40,7 +42,8 @@
           请选择左侧分析报告查看详情
         </div>
         <template v-else>
-           <h3>分析报告 #{{ selectedReport.id }}</h3>
+           <h3 class="detail-title">#{{ selectedReport.id }}</h3>
+           <p class="detail-time">生成时间 {{ selectedReport.createdAt }}</p>
            <p><strong>设备:</strong> {{ selectedReport.deviceCode }}</p>
            <p><strong>状态:</strong> {{ selectedReport.status }}</p>
            <p>
@@ -67,7 +70,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 import {
   triggerAnalysisReport,
@@ -75,6 +78,7 @@ import {
   fetchAnalysisReports,
   type AnalysisReport,
 } from "@/api/backend";
+import useAutoRefresh from "@/hooks/useAutoRefresh";
 
 const router = useRouter();
 const reports = ref<AnalysisReport[]>([]);
@@ -83,6 +87,9 @@ const selectedReport = ref<AnalysisReport | null>(null);
 const errorMessage = ref("");
 const submitting = ref(false);
 const triggerMessage = ref("");
+const listLoading = ref(false);
+const detailLoading = ref(false);
+const ANALYSIS_AUTO_REFRESH_MS = 20000;
 
 const formatTriggerStatus = (
   status: "processing" | "partial" | "failed"
@@ -97,15 +104,33 @@ const formatTriggerStatus = (
 };
 
 const loadReports = async () => {
-  reports.value = await fetchAnalysisReports(30);
-  if (reports.value.length > 0 && selectedId.value === null) {
-    await selectReport(reports.value[0].id);
+  if (listLoading.value) {
+    return;
+  }
+  try {
+    listLoading.value = true;
+    reports.value = await fetchAnalysisReports(30);
+    if (reports.value.length > 0 && selectedId.value === null) {
+      await selectReport(reports.value[0].id);
+    } else if (selectedId.value !== null) {
+      await selectReport(selectedId.value);
+    }
+  } finally {
+    listLoading.value = false;
   }
 };
 
 const selectReport = async (id: number) => {
-  selectedId.value = id;
-  selectedReport.value = await fetchAnalysisReport(id);
+  if (detailLoading.value) {
+    return;
+  }
+  try {
+    detailLoading.value = true;
+    selectedId.value = id;
+    selectedReport.value = await fetchAnalysisReport(id);
+  } finally {
+    detailLoading.value = false;
+  }
 };
 
 const submitTrigger = async () => {
@@ -125,12 +150,15 @@ const submitTrigger = async () => {
 
 const goDashboard = () => router.push({ name: "dashboard" });
 
-onMounted(async () => {
-  try {
+useAutoRefresh({
+  intervalMs: ANALYSIS_AUTO_REFRESH_MS,
+  onTick: async () => {
+    triggerMessage.value = "";
     await loadReports();
-  } catch (error) {
+  },
+  onError: (error) => {
     errorMessage.value = error instanceof Error ? error.message : String(error);
-  }
+  },
 });
 </script>
 
@@ -227,6 +255,24 @@ onMounted(async () => {
   margin-bottom: 8px;
   cursor: pointer;
 }
+
+.item-head {
+  display: flex;
+  flex-direction: column;
+}
+
+.report-id {
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--tw-color-text-on-dark);
+  font-weight: 700;
+}
+
+.report-time {
+  margin-top: 2px;
+  font-size: 15px;
+  color: var(--tw-color-text-on-dark-secondary);
+}
 .item.active {
   border-color: #7cb9ff;
   box-shadow: inset 0 0 0 1px rgba(124, 185, 255, 0.36);
@@ -239,6 +285,19 @@ onMounted(async () => {
   gap: 8px;
 }
 .placeholder {
+  color: var(--tw-color-text-on-dark-secondary);
+}
+
+.detail-title {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.1;
+  color: var(--tw-color-text-on-dark);
+}
+
+.detail-time {
+  margin: 8px 0 14px;
+  font-size: 20px;
   color: var(--tw-color-text-on-dark-secondary);
 }
 .status.error {

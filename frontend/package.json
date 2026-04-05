@@ -11,6 +11,8 @@
     "smoke:shell": "node check-shell-readiness.mjs",
     "smoke:analysis-trigger": "node check-analysis-trigger.mjs",
     "smoke:auth-expiry": "node check-auth-expiry.mjs",
+    "smoke:analysis-auto-refresh": "node check-analysis-auto-refresh.mjs",
+    "smoke:alarm-real-data": "node check-alarm-panel-real-data.mjs",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint --fix --ext .js,.vue,jsx,ts,tsx src",
