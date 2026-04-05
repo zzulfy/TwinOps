@@ -5,13 +5,13 @@ Define backend structured observability requirements for consistent event loggin
 ## Requirements
 
 ### Requirement: Backend SHALL emit structured logs for critical operations
-The backend MUST emit structured logs with stable keys for critical operational events, including request correlation context, execution outcome, and source-traceable logger location.
+The backend MUST emit structured logs with stable keys for critical operational events, including request correlation context, execution outcome, and source-traceable logger location that uses full package names.
 
 #### Scenario: Structured log fields on critical events
 - **WHEN** a critical backend event is logged (auth, analysis, DB failure, exception boundary, controller/service entry)
 - **THEN** the log entry includes `request_id`, `module`, `event`, `result`, `latency_ms`, and `error_code` (when applicable)
-- **AND** logger output provides class/method/line context for source localization
-- **AND** field names SHALL remain stable across modules for queryability
+- **AND** logger output provides full package name + class/method/line context for source localization
+- **AND** field names remain stable across modules for queryability
 
 ### Requirement: Request correlation id SHALL be propagated per HTTP request
 The backend MUST support request-level correlation by accepting or generating a request id and binding it to logs for the duration of request processing.
