@@ -4,17 +4,17 @@
 TBD - created by archiving change frontend-stability-feature-batch1. Update Purpose after archive.
 ## Requirements
 ### Requirement: Alarm panel SHALL support status filtering
-The frontend alarm panel SHALL provide status filtering for `new`, `acknowledged`, and `resolved` alarms, with the default view showing `new` alarms. The dashboard alarm panel SHALL remain monitoring-focused and SHALL present only alarm basic information and auto-scroll behavior. Alarm status presentation SHALL use backend-provided data only and SHALL maintain high text/background contrast for operational readability.
+The frontend alarm panel SHALL provide status filtering for `new`, `acknowledged`, and `resolved` alarms, with the default view showing `new` alarms. The dashboard alarm panel SHALL remain monitoring-focused and SHALL present only alarm basic information and manual scroll behavior without timer-driven auto-rotation. Alarm status presentation SHALL use backend-provided data only and SHALL maintain high text/background contrast for operational readability.
 
 #### Scenario: Operator switches alarm status filter
 - **WHEN** the operator selects a status filter in the alarm panel
 - **THEN** the panel requests and renders alarms for the selected status
 - **AND** empty-state messaging remains readable when no alarms match
 
-#### Scenario: Dashboard panel auto-scrolls alarm basic info
-- **WHEN** alarm panel contains one or more records
+#### Scenario: Dashboard panel allows manual scrolling of alarm basic info
+- **WHEN** alarm panel contains more records than the visible area
 - **THEN** panel displays basic fields such as device name, reason/event, level, and time
-- **AND** records rotate through configured scroll animation without action buttons
+- **AND** records are browsed by user-driven manual scrolling instead of automatic row rotation
 
 #### Scenario: Footer alarm popup loads from backend API only
 - **WHEN** the operator opens the footer alarm popup
