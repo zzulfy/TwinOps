@@ -34,6 +34,11 @@ The repository SHALL maintain a `README.md` that presents a complete project sum
 - **WHEN** a user views the architecture diagram and business sequence diagram
 - **THEN** they SHALL be able to map frontend pages, backend modules, data stores, and messaging flow in one read without inferring hidden steps
 
+#### Scenario: Mermaid diagrams are GitHub-renderable
+- **WHEN** a contributor updates Mermaid diagrams in root `README.md`
+- **THEN** the diagrams SHALL render successfully in GitHub rich display
+- **AND** documentation changes SHALL avoid syntax patterns known to trigger Mermaid parse errors on GitHub
+
 ### Requirement: Explanatory text SHALL be Chinese while technical terms remain in English
 Documentation narrative in `README.md` SHALL be written in Chinese, and professional technical terminology SHALL remain in English where terms map to canonical tool names, interfaces, patterns, or code identifiers.
 

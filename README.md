@@ -53,7 +53,7 @@ flowchart LR
 
     subgraph DATA_LAYER[Data & Messaging Layer]
       DB[(MySQL<br/>devices / telemetry / alarms / analysis_reports)]
-      SCH[@Scheduled<br/>00:00 / 12:00]
+      SCH["Scheduled Trigger<br/>00:00 and 12:00"]
       MQ[(Kafka Topic<br/>analysis.request)]
       CON[Kafka Consumer<br/>createReportWithIdempotency]
     end
@@ -266,6 +266,12 @@ curl -X POST "http://127.0.0.1:8080/api/analysis/reports/trigger" \
 - 任何后续代码变更（功能、修复、重构、配置）必须同时补充：
   - Integration Tests（集成测试）
   - Regression Tests（回归测试）
+
+## README Mermaid 兼容规范
+
+- Mermaid 图必须使用 GitHub 支持的语法子集，避免使用易触发 parser 歧义的节点文本写法。
+- 推荐在节点标签中使用引号包裹复杂文本，并用 `and` 等明确分隔替代歧义符号组合。
+- 更新架构图或时序图时，必须确保 GitHub rich display 可正常渲染且无 parse error。
 
 ## Backend Logging Baseline（从本次 change 起强制执行）
 
