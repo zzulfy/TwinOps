@@ -13,6 +13,7 @@
     "smoke:auth-expiry": "node check-auth-expiry.mjs",
     "smoke:analysis-auto-refresh": "node check-analysis-auto-refresh.mjs",
     "smoke:alarm-real-data": "node check-alarm-panel-real-data.mjs",
+    "smoke:alarm-manual-scroll": "node check-alarm-scroll-smooth.mjs",
     "build-only": "vite build",
     "type-check": "vue-tsc --build --force",
     "lint": "eslint --fix --ext .js,.vue,jsx,ts,tsx src",

@@ -90,9 +90,10 @@ npm run dev -- --host 127.0.0.1 --port 8090 --strictPort
 ## Alarm Workflow UX
 
 - Alarm panel supports status tabs: `new`, `acknowledged`, `resolved`.
-- Dashboard alarm panel is monitoring-only (basic alarm info + auto-scroll), no action buttons.
+- Dashboard alarm panel is monitoring-only (basic alarm info + manual scroll), no action buttons.
 - Alarm panel always reads backend data and does not fallback to local mock items.
 - Alarm row and status badge colors use high-contrast token combinations for dark cockpit readability.
+- Alarm list disables auto-rotation and keeps user-controlled manual scrolling as the only navigation mode.
 - Status actions move to device list/detail operations:
   - `new` -> `acknowledged`
   - `acknowledged` -> `resolved`
@@ -113,6 +114,7 @@ npm run dev -- --host 127.0.0.1 --port 8090 --strictPort
 - npm run smoke:shell (requires a running app URL, defaults to `http://127.0.0.1:8090/`)
 - npm run smoke:analysis-auto-refresh
 - npm run smoke:alarm-real-data
+- npm run smoke:alarm-manual-scroll
 
 ## Smoke Check Examples
 
