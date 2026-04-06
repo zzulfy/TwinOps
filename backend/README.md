@@ -89,6 +89,7 @@ Kafka 关键映射：
 - `GET /api/alarms?deviceCode=DEV001&status=new&limit=20`
 - `PATCH /api/alarms/{id}/status`
 - `GET /api/dashboard/summary`
+- `GET /api/dashboard/fault-rate/trend?predictMinutes=5`
 - `GET /api/analysis/reports?limit=20`
 - `GET /api/analysis/reports/{id}`
 - `POST /api/analysis/reports/trigger`
@@ -99,6 +100,12 @@ Kafka 关键映射：
 - 全局 auth interceptor 对 `/api/**` 生效（白名单除外）
 - OpenAPI：`GET /v3/api-docs`
 - Swagger UI：`GET /swagger-ui/index.html`
+
+## Dashboard 故障率趋势约定
+
+- `GET /api/dashboard/fault-rate/trend` 返回分钟级故障率趋势（非“故障变化率”）。
+- x 轴时间标签按 1 分钟粒度输出，格式固定为 `HH:mm`（不包含月/日）。
+- 故障率计算口径为：`status=error` 的设备数 / 全部设备数 × 100（无设备时为 0）。
 
 ## 8. Analysis 一键触发与 Kafka 流程
 

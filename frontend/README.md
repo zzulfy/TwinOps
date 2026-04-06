@@ -82,8 +82,11 @@ npm run smoke:alarm-manual-scroll
 ### 2) 数据一致性与刷新
 
 - `fetchDashboardSummary` 采用共享 in-flight 策略，避免并发重复请求。
+- `fetchFaultRateTrend` 提供分钟级（minute）故障率历史曲线，并返回未来 5 分钟 AI 预测点位。
+- 故障率口径与后端一致：`error` 设备数 / 全部设备数 × 100。
 - Dashboard 支持自动刷新 + 手动刷新，并展示最近一次成功刷新时间。
 - 自动刷新具备页面可见性控制，避免隐藏页面无效轮询。
+- 故障率曲线统一按 0.1% 精度展示，横坐标按 1 分钟粒度展示且仅显示 `HH:mm`，支持 dataZoom 滑动查看历史分钟数据。
 
 ### 3) 鉴权与路由
 

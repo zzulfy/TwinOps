@@ -346,6 +346,24 @@ body,
   background: rgba(22, 49, 82, 0.92);
 }
 
+.fault-rate-chart-wrap {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.fault-rate-meta {
+  margin: 8px 0 4px;
+  font-size: 12px;
+  color: #d8e7ff;
+}
+
+.fault-rate-chart {
+  flex: 1;
+  min-height: 0;
+}
+
 .wrap {
   display: flex;
   flex-direction: column;

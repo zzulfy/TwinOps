@@ -49,6 +49,20 @@ export interface DashboardSummary {
   resourceUsage: { labels: string[]; values: number[] };
 }
 
+export interface FaultRateTrendPoint {
+  time: string;
+  value: number;
+  forecast: boolean;
+  confidence: number | null;
+}
+
+export interface FaultRateTrendResponse {
+  history: FaultRateTrendPoint[];
+  forecast: FaultRateTrendPoint[];
+  granularity: "minute";
+  precision: 1;
+}
+
 export interface AdminIdentity {
   username: string;
   displayName: string;
@@ -205,6 +219,22 @@ export const fetchDashboardSummary = async (
 export const clearDashboardSummaryCache = (): void => {
   dashboardSummaryCache = null;
   dashboardSummaryInFlight = null;
+};
+
+export const fetchFaultRateTrend = async (options: {
+  from?: string;
+  to?: string;
+  predictMinutes?: number;
+} = {}): Promise<FaultRateTrendResponse> => {
+  const params = new URLSearchParams();
+  if (options.from) {
+    params.set("from", options.from);
+  }
+  if (options.to) {
+    params.set("to", options.to);
+  }
+  params.set("predictMinutes", String(options.predictMinutes ?? 5));
+  return request<FaultRateTrendResponse>(`/api/dashboard/fault-rate/trend?${params.toString()}`);
 };
 
 export const fetchAlarmList = async (

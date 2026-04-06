@@ -260,6 +260,8 @@ curl -X POST "http://127.0.0.1:8080/api/auth/login" \
 # 受保护接口访问需要携带 Authorization: Bearer <token>
 curl "http://127.0.0.1:8080/api/dashboard/summary" \
   -H "Authorization: Bearer <token>"
+curl "http://127.0.0.1:8080/api/dashboard/fault-rate/trend?predictMinutes=5" \
+  -H "Authorization: Bearer <token>"
 curl "http://127.0.0.1:8080/api/analysis/reports?limit=20" \
   -H "Authorization: Bearer <token>"
 
@@ -267,6 +269,8 @@ curl "http://127.0.0.1:8080/api/analysis/reports?limit=20" \
 curl -X POST "http://127.0.0.1:8080/api/analysis/reports/trigger" \
   -H "Authorization: Bearer <token>"
 ```
+
+> Dashboard 故障率图表说明：横坐标按 1 分钟粒度展示且仅显示 `HH:mm`，纵坐标语义为“故障率”（`error` 设备数 / 全部设备数 × 100）。
 
 ## Analysis Center 触发流程（Kafka 对齐）
 

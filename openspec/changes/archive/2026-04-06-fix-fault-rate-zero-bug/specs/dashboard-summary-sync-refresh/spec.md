@@ -1,8 +1,5 @@
-# dashboard-summary-sync-refresh Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change frontend-stability-feature-batch1. Update Purpose after archive.
-## Requirements
 ### Requirement: Dashboard summary SHALL use a shared fetch source
 Dashboard summary consumers SHALL use a coordinated summary data source so panel snapshots remain consistent during the same refresh cycle. Fault-rate chart data in the summary SHALL be provided as time-bucketed series with unique ordered labels.
 
@@ -30,6 +27,8 @@ The dashboard SHALL provide both automatic periodic refresh and explicit manual 
 - **AND** panels update without requiring browser reload
 - **AND** last-update timestamp is updated after successful auto-refresh
 
+## ADDED Requirements
+
 ### Requirement: Fault-rate series SHALL use device error ratio semantics
 Dashboard fault-rate series values SHALL be computed from device status ratio, where fault rate equals the count of `error` devices divided by total device count and multiplied by 100.
 
@@ -37,3 +36,4 @@ Dashboard fault-rate series values SHALL be computed from device status ratio, w
 - **WHEN** at least one device in the current dataset has `status=error`
 - **THEN** dashboard fault-rate series values SHALL be greater than 0 for the corresponding sampling window
 - **AND** the value semantics SHALL remain consistent with `errorDeviceCount / totalDeviceCount * 100`
+

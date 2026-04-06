@@ -4,8 +4,11 @@ import com.twinops.backend.alarm.entity.AlarmEntity;
 import com.twinops.backend.alarm.mapper.AlarmMapper;
 import com.twinops.backend.common.dto.DashboardSummaryDto;
 import com.twinops.backend.common.dto.DeviceScaleItemDto;
+import com.twinops.backend.common.dto.FaultRateTrendDto;
 import com.twinops.backend.device.entity.DeviceEntity;
 import com.twinops.backend.device.mapper.DeviceMapper;
+import com.twinops.backend.analysis.service.LlmPredictionResult;
+import com.twinops.backend.analysis.service.LlmProviderAdapter;
 import com.twinops.backend.telemetry.entity.TelemetryEntity;
 import com.twinops.backend.telemetry.mapper.TelemetryMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,19 +40,22 @@ class DashboardServiceTest {
     @Mock
     private TelemetryMapper telemetryMapper;
 
+    @Mock
+    private LlmProviderAdapter llmProviderAdapter;
+
     private DashboardService dashboardService;
 
     @BeforeEach
     void setUp() {
-        dashboardService = new DashboardService(deviceMapper, alarmMapper, telemetryMapper);
+        dashboardService = new DashboardService(deviceMapper, alarmMapper, telemetryMapper, llmProviderAdapter);
     }
 
     @Test
     void shouldAggregateScaleAndMapAlarmAndSeries() {
         when(deviceMapper.selectList(any())).thenReturn(List.of(
-            device("DEV001", "服务器机柜"),
-            device("DEV002", "服务器机柜"),
-            device("DEV003", "网络设备")
+            device("DEV001", "服务器机柜", "normal"),
+            device("DEV002", "服务器机柜", "error"),
+            device("DEV003", "网络设备", "normal")
         ));
 
         when(alarmMapper.selectList(any())).thenReturn(List.of(
@@ -77,7 +83,7 @@ class DashboardServiceTest {
         assertEquals("--:--", summary.alarms().get(1).time());
 
         assertEquals(List.of("10:00"), summary.faultRate().labels());
-        assertEquals(List.of(58.8), summary.faultRate().values());
+        assertEquals(List.of(33.3), summary.faultRate().values());
 
         assertEquals(List.of("10:00", "10:05"), summary.resourceUsage().labels());
         assertEquals(List.of(50.0, 400.0), summary.resourceUsage().values());
@@ -85,7 +91,7 @@ class DashboardServiceTest {
 
     @Test
     void shouldFallbackToDefaultIconForUnknownType() {
-        when(deviceMapper.selectList(any())).thenReturn(List.of(device("DEV100", "未知设备")));
+        when(deviceMapper.selectList(any())).thenReturn(List.of(device("DEV100", "未知设备", "normal")));
         when(alarmMapper.selectList(any())).thenReturn(List.of());
         when(telemetryMapper.selectList(any())).thenReturn(List.of(), List.of());
 
@@ -100,10 +106,60 @@ class DashboardServiceTest {
         assertTrue(summary.resourceUsage().labels().isEmpty());
     }
 
-    private static DeviceEntity device(String code, String type) {
+    @Test
+    void shouldReturnMinuteLevelHistoryAndFiveMinuteForecast() throws Exception {
+        when(deviceMapper.selectList(any())).thenReturn(List.of(
+            device("DEV001", "服务器机柜", "error"),
+            device("DEV002", "网络设备", "normal"),
+            device("DEV003", "电源柜", "normal")
+        ));
+        when(llmProviderAdapter.predict(any(), any())).thenReturn(
+            new LlmPredictionResult("趋势平稳", new BigDecimal("80"), "medium", "继续观察")
+        );
+
+        FaultRateTrendDto trend = dashboardService.faultRateTrend(
+            LocalDateTime.of(2026, 4, 6, 10, 0),
+            LocalDateTime.of(2026, 4, 6, 10, 3),
+            5
+        );
+
+        assertEquals("minute", trend.granularity());
+        assertEquals(1, trend.precision());
+        assertEquals(4, trend.history().size());
+        assertEquals("10:00", trend.history().get(0).time());
+        assertEquals(33.3, trend.history().get(0).value());
+        assertEquals(33.3, trend.history().get(2).value());
+        assertEquals(5, trend.forecast().size());
+        assertEquals("10:04", trend.forecast().get(0).time());
+        assertEquals(33.3, trend.forecast().get(0).value());
+        assertEquals(80.0, trend.forecast().get(0).confidence());
+    }
+
+    @Test
+    void shouldReturnZeroFaultRateWhenNoErrorDevices() throws Exception {
+        when(deviceMapper.selectList(any())).thenReturn(List.of(
+            device("DEV010", "服务器机柜", "normal"),
+            device("DEV011", "网络设备", "warning")
+        ));
+        when(llmProviderAdapter.predict(any(), any())).thenReturn(
+            new LlmPredictionResult("趋势平稳", new BigDecimal("75"), "medium", "继续观察")
+        );
+
+        FaultRateTrendDto trend = dashboardService.faultRateTrend(
+            LocalDateTime.of(2026, 4, 6, 11, 0),
+            LocalDateTime.of(2026, 4, 6, 11, 2),
+            5
+        );
+
+        assertEquals(0.0, trend.history().get(0).value());
+        assertEquals(0.0, trend.forecast().get(0).value());
+    }
+
+    private static DeviceEntity device(String code, String type, String status) {
         DeviceEntity entity = new DeviceEntity();
         entity.setDeviceCode(code);
         entity.setType(type);
+        entity.setStatus(status);
         return entity;
     }
 

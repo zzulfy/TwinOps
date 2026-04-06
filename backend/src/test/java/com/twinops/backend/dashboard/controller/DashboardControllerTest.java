@@ -6,6 +6,8 @@ import com.twinops.backend.common.dto.AlarmItemDto;
 import com.twinops.backend.common.dto.ChartSeriesDto;
 import com.twinops.backend.common.dto.DashboardSummaryDto;
 import com.twinops.backend.common.dto.DeviceScaleItemDto;
+import com.twinops.backend.common.dto.FaultRateTrendDto;
+import com.twinops.backend.common.dto.FaultRateTrendPointDto;
 import com.twinops.backend.auth.dto.AdminIdentityDto;
 import com.twinops.backend.auth.service.AdminAuthService;
 import com.twinops.backend.auth.service.AuthTokenResolver;
@@ -70,5 +72,31 @@ class DashboardControllerTest {
             .andExpect(status().isUnauthorized())
             .andExpect(jsonPath("$.success").value(false))
             .andExpect(jsonPath("$.message").value("admin login required"));
+    }
+
+    @Test
+    void shouldReturnFaultRateTrend() throws Exception {
+        when(authTokenResolver.resolve(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn("token");
+        when(adminAuthService.getIdentityByToken("token")).thenReturn(new AdminIdentityDto("admin", "System Administrator", "admin"));
+        FaultRateTrendDto trend = new FaultRateTrendDto(
+            List.of(
+                new FaultRateTrendPointDto("10:00", 12.5, false, null),
+                new FaultRateTrendPointDto("10:01", 12.8, false, null)
+            ),
+            List.of(
+                new FaultRateTrendPointDto("10:02", 13.0, true, 85.0)
+            ),
+            "minute",
+            1
+        );
+        when(dashboardService.faultRateTrend(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.eq(5)))
+            .thenReturn(trend);
+
+        mockMvc.perform(get("/api/dashboard/fault-rate/trend?predictMinutes=5").header("Authorization", "Bearer token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.granularity").value("minute"))
+            .andExpect(jsonPath("$.data.history.length()").value(2))
+            .andExpect(jsonPath("$.data.forecast.length()").value(1));
     }
 }

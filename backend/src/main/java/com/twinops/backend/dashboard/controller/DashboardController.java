@@ -2,15 +2,20 @@ package com.twinops.backend.dashboard.controller;
 
 import com.twinops.backend.common.dto.ApiResponse;
 import com.twinops.backend.common.dto.DashboardSummaryDto;
+import com.twinops.backend.common.dto.FaultRateTrendDto;
 import com.twinops.backend.common.logging.LogFields;
 import com.twinops.backend.dashboard.service.DashboardService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDateTime;
 
 @CrossOrigin
 @RestController
@@ -43,6 +48,22 @@ public class DashboardController {
             );
         }
         return ApiResponse.ok(summary);
+    }
+
+    @GetMapping("/fault-rate/trend")
+    public ApiResponse<FaultRateTrendDto> faultRateTrend(
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+        @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
+        @RequestParam(defaultValue = "5") int predictMinutes
+    ) {
+        log.info("{}={} {}={} {}={} {}={} predictMinutes={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "dashboard",
+            LogFields.EVENT, "dashboard.fault_rate.trend.request",
+            LogFields.RESULT, "received",
+            predictMinutes
+        );
+        return ApiResponse.ok(dashboardService.faultRateTrend(from, to, predictMinutes));
     }
 
     private String safeRequestId() {
