@@ -1,48 +1,33 @@
-import { createRouter, createWebHashHistory } from "vue-router";
-import { isAdminLoggedIn } from "@/api/backend";
+import type { RouteMatch } from "../types/route";
 
-const router = createRouter({
-  history: createWebHashHistory(),
-  routes: [
-    {
-      path: "/login",
-      name: "login",
-      component: () => import("@/pages/LoginPage.vue"),
-      meta: { public: true },
-    },
-    {
-      path: "/",
-      name: "dashboard",
-      component: () => import("@/pages/DashboardPage.vue"),
-    },
-    {
-      path: "/devices",
-      name: "devices",
-      component: () => import("@/pages/DeviceDetailPage.vue"),
-    },
-    {
+export const parseRoute = (): RouteMatch => {
+  const rawHash = window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1)
+    : window.location.hash;
+  const full = rawHash || "/";
+  const [rawPath, rawQuery = ""] = full.split("?");
+  const path = rawPath || "/";
+  const query = new URLSearchParams(rawQuery);
+  const deviceMatch = path.match(/^\/devices\/([^/]+)$/);
+  if (deviceMatch) {
+    return {
       path: "/devices/:deviceCode",
-      name: "device-focus",
-      component: () => import("@/pages/DeviceDetailPage.vue"),
-      props: true,
-    },
-    {
-      path: "/analysis",
-      name: "analysis-center",
-      component: () => import("@/pages/AnalysisCenterPage.vue"),
-    },
-  ],
-});
-
-router.beforeEach((to) => {
-  const requiresAuth = !to.meta.public;
-  if (requiresAuth && !isAdminLoggedIn()) {
-    return { name: "login", query: { redirect: to.fullPath } };
+      params: { deviceCode: decodeURIComponent(deviceMatch[1]) },
+      query,
+    };
   }
-  if (to.name === "login" && isAdminLoggedIn()) {
-    return { name: "dashboard" };
-  }
-  return true;
-});
+  return { path, params: {}, query };
+};
 
-export default router;
+export const toHashPath = (target: string) =>
+  target.startsWith("/") ? target : `/${target}`;
+
+export const navigateTo = (target: string) => {
+  window.location.hash = toHashPath(target);
+};
+
+export const currentHashPath = (): string =>
+  window.location.hash.startsWith("#")
+    ? window.location.hash.slice(1) || "/"
+    : "/";
+

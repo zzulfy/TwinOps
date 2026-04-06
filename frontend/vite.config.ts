@@ -1,7 +1,6 @@
 import { fileURLToPath, URL } from 'node:url'
 import { defineConfig } from 'vite'
-import vue from '@vitejs/plugin-vue'
-import vueJsx from '@vitejs/plugin-vue-jsx'
+import react from '@vitejs/plugin-react-swc'
 import { visualizer } from 'rollup-plugin-visualizer'
 
 const shouldAnalyze = process.env.ANALYZE === 'true'
@@ -37,8 +36,8 @@ export default defineConfig({
             return 'vendor-charts-deferred'
           }
 
-          if (id.includes('vue')) {
-            return 'vendor-vue'
+          if (id.includes('react')) {
+            return 'vendor-react'
           }
 
           if (
@@ -56,8 +55,7 @@ export default defineConfig({
     },
   },
   plugins: [
-    vue(),
-    vueJsx(),
+    react(),
     shouldAnalyze ? visualizer({ open: true }) : null,
   ].filter(Boolean),
   resolve: {

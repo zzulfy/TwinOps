@@ -1,4 +1,4 @@
-import { onMounted, onUnmounted, ref } from "vue";
+import { useEffect, useRef } from "react";
 
 interface UseAutoRefreshOptions {
   intervalMs: number;
@@ -14,120 +14,89 @@ export const useAutoRefresh = ({
   runWhenHidden = false,
   onTick,
   onError,
-}: UseAutoRefreshOptions) => {
-  const running = ref(false);
-  const active = ref(false);
-  let timer: number | null = null;
+}: UseAutoRefreshOptions): void => {
+  const runningRef = useRef(false);
+  const onTickRef = useRef(onTick);
+  const onErrorRef = useRef(onError);
 
-  const resolveIntervalMs = () => {
-    if (typeof window === "undefined") {
-      return intervalMs;
-    }
-    const overrideRaw = window.localStorage.getItem("tw_auto_refresh_interval_ms");
-    if (!overrideRaw) {
-      return intervalMs;
-    }
-    const override = Number(overrideRaw);
-    if (!Number.isFinite(override) || override <= 0) {
-      return intervalMs;
-    }
-    return override;
-  };
+  onTickRef.current = onTick;
+  onErrorRef.current = onError;
 
-  const clearTimer = () => {
-    if (timer !== null) {
-      window.clearInterval(timer);
-      timer = null;
-    }
-  };
+  useEffect(() => {
+    let active = true;
+    let timer: number | null = null;
 
-  const executeTick = async () => {
-    if (running.value) {
-      return;
-    }
-    running.value = true;
-    try {
-      await onTick();
-    } catch (error) {
-      if (onError) {
-        onError(error);
-      } else {
-        // Keep page functional even if one refresh tick fails.
-        console.error("auto refresh tick failed", error);
+    const resolveIntervalMs = () => {
+      const overrideRaw = window.localStorage.getItem("tw_auto_refresh_interval_ms");
+      if (!overrideRaw) {
+        return intervalMs;
       }
-    } finally {
-      running.value = false;
-    }
-  };
+      const override = Number(overrideRaw);
+      if (!Number.isFinite(override) || override <= 0) {
+        return intervalMs;
+      }
+      return override;
+    };
 
-  const shouldRun = () =>
-    runWhenHidden ||
-    typeof document === "undefined" ||
-    document.visibilityState === "visible";
+    const shouldRun = () => runWhenHidden || document.visibilityState === "visible";
 
-  const start = async () => {
-    if (active.value) {
-      return;
-    }
-    active.value = true;
-    if (immediate && shouldRun()) {
-      await executeTick();
-    }
-    if (!shouldRun()) {
-      return;
-    }
-    clearTimer();
-    timer = window.setInterval(() => {
-      if (!shouldRun()) {
+    const clearTimer = () => {
+      if (timer !== null) {
+        window.clearInterval(timer);
+        timer = null;
+      }
+    };
+
+    const executeTick = async () => {
+      if (!active || runningRef.current) {
         return;
       }
-      void executeTick();
-    }, resolveIntervalMs());
-  };
+      runningRef.current = true;
+      try {
+        await onTickRef.current();
+      } catch (error) {
+        if (onErrorRef.current) {
+          onErrorRef.current(error);
+        } else {
+          console.error("auto refresh tick failed", error);
+        }
+      } finally {
+        runningRef.current = false;
+      }
+    };
 
-  const stop = () => {
-    active.value = false;
-    clearTimer();
-  };
-
-  const handleVisibilityChange = () => {
-    if (!active.value) {
-      return;
-    }
-    if (!shouldRun()) {
+    const restartTimer = () => {
       clearTimer();
-      return;
-    }
-    clearTimer();
-    timer = window.setInterval(() => {
-      if (!shouldRun()) {
+      if (!active || !shouldRun()) {
         return;
       }
+      timer = window.setInterval(() => {
+        if (!shouldRun()) {
+          return;
+        }
+        void executeTick();
+      }, resolveIntervalMs());
+    };
+
+    const handleVisibilityChange = () => {
+      restartTimer();
+      if (shouldRun()) {
+        void executeTick();
+      }
+    };
+
+    if (immediate && shouldRun()) {
       void executeTick();
-    }, resolveIntervalMs());
-    void executeTick();
-  };
-
-  onMounted(() => {
-    void start();
-    if (typeof document !== "undefined") {
-      document.addEventListener("visibilitychange", handleVisibilityChange);
     }
-  });
+    restartTimer();
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
-  onUnmounted(() => {
-    stop();
-    if (typeof document !== "undefined") {
+    return () => {
+      active = false;
+      clearTimer();
       document.removeEventListener("visibilitychange", handleVisibilityChange);
-    }
-  });
-
-  return {
-    start,
-    stop,
-    trigger: executeTick,
-    running,
-  };
+    };
+  }, [immediate, intervalMs, runWhenHidden]);
 };
 
 export default useAutoRefresh;

@@ -1,93 +1,71 @@
 # TwinOps Backend
 
-Java backend for TwinOps using a modular monolith structure (`auth`, `analysis`, `watchlist`, `device`, `telemetry`, `alarm`, `dashboard`) with MyBatis Plus and MySQL.
+TwinOps 后端基于 Spring Boot + MyBatis-Plus + MySQL，采用 modular monolith 结构（`auth`、`analysis`、`watchlist`、`device`、`telemetry`、`alarm`、`dashboard`）。
 
-## 1. Prerequisites
+## 1. 环境要求
 
 - JDK 17+
 - Maven 3.9+
 - MySQL 8+
+- Kafka（用于 Analysis Automation）
 
-## 2. Create Database
+## 2. 初始化数据库
 
 ```sql
 CREATE DATABASE IF NOT EXISTS twinops DEFAULT CHARSET utf8mb4;
 ```
 
-## 3. Initialize Schema and Seed Data
-
-Execute SQL files in this order:
+按顺序执行：
 
 1. `sql/001_schema.sql`
 2. `sql/002_seed_devices.sql`
 3. `sql/003_seed_metrics.sql`
 4. `sql/004_seed_alarms.sql`
-
-Retention verification script:
-
 5. `sql/005_verify_retention.sql`
 
-## 4. Configure Connection
+## 3. 配置说明
 
-Configuration files are split as:
+配置文件：
 
-- `src/main/resources/application.yml`:
-  - server
-  - datasource
-  - auth
-  - framework settings
-- `src/main/resources/llm.yml`:
-  - all LLM-related runtime settings
+- `src/main/resources/application.yml`：server、datasource、auth、framework、kafka 等
+- `src/main/resources/llm.yml`：LLM 相关配置
 
-`application.yml` imports `llm.yml`.
-TwinOps current convention is **file-based configuration**: edit values directly in these yml files for local/dev deployment.
+关键配置项：
 
-- `application.yml`:
-  - `server.port`
-  - `spring.datasource.url/username/password`
-  - `twinops.auth.admin.username/password/display-name`
-- `llm.yml`:
-  - `twinops.analysis.llm.provider/base-url/path/api-key/model/temperature/max-tokens/fallback-to-mock`
+- `server.port`
+- `spring.datasource.url/username/password`
+- `twinops.auth.admin.username/password/display-name`
+- `twinops.analysis.llm.provider/base-url/path/api-key/model/temperature/max-tokens/fallback-to-mock`
 
-## 5. Run Backend
+## 4. 启动后端
 
 ```bash
 mvn spring-boot:run
 ```
 
-### Kafka Local Setup (Required for Analysis Automation, non-Docker first)
+## 5. Kafka 本地启动（Analysis 必需）
 
-Analysis automation uses manual trigger + Kafka producer/consumer. Local verification requires Kafka broker.
-
-#### Non-Docker startup (recommended)
+### 非 Docker（推荐）
 
 ```bash
-# Install JDK17 first, then download Kafka binary package
 wget https://archive.apache.org/dist/kafka/3.8.0/kafka_2.13-3.8.0.tgz
 tar -xzf kafka_2.13-3.8.0.tgz
 cd kafka_2.13-3.8.0
 
-# Kafka broker (KRaft single-node)
 bin/kafka-storage.sh random-uuid > /tmp/kraft-cluster-id
 bin/kafka-storage.sh format -t "$(cat /tmp/kraft-cluster-id)" -c config/kraft/server.properties
 nohup bin/kafka-server-start.sh config/kraft/server.properties > logs/server.log 2>&1 &
 
-# Create analysis topic
 bin/kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --create --topic analysis.request --partitions 1 --replication-factor 1
 ```
 
-#### Docker startup (fallback only)
+### Docker（兜底）
 
 ```bash
-# Kafka
 docker run -d --name twinops-kafka -p 9092:9092 apache/kafka:3.8.0
 ```
 
-If Kafka is not available, analysis trigger pipeline will not run correctly.
-
-### Kafka Config Mapping
-
-In `application.yml`, ensure:
+Kafka 关键映射：
 
 - `spring.kafka.bootstrap-servers: 127.0.0.1:9092`
 - `twinops.analysis.automation.enabled: true`
@@ -95,7 +73,7 @@ In `application.yml`, ensure:
 - `twinops.analysis.automation.topic: analysis.request`
 - `twinops.analysis.automation.consumer-group: twinops-analysis-consumer`
 
-## 6. API Overview
+## 6. API 概览
 
 - `POST /api/auth/login`
 - `POST /api/auth/logout`
@@ -115,126 +93,24 @@ In `application.yml`, ensure:
 - `GET /api/analysis/reports/{id}`
 - `POST /api/analysis/reports/trigger`
 
-### Admin Authentication
+## 7. 鉴权与 Swagger
 
-- Login:
-  - `POST /api/auth/login`
+- 受保护接口需携带 `Authorization: Bearer <token>`
+- 全局 auth interceptor 对 `/api/**` 生效（白名单除外）
+- OpenAPI：`GET /v3/api-docs`
+- Swagger UI：`GET /swagger-ui/index.html`
 
-```json
-{
-  "username": "admin",
-  "password": "admin123456"
-}
-```
+## 8. Analysis 一键触发与 Kafka 流程
 
-- Success response includes `token`, `expiresAt`, and `admin` identity.
-- Invalid credentials return `401` with:
+- 前端触发 `POST /api/analysis/reports/trigger` 时不传 `deviceCode`
+- 后端 Producer 仅发布 1 条 `analysis.request` batch job
+- Consumer 聚合查询全部目标设备数据并执行 1 次 LLM analysis
+- 最终持久化 1 条聚合报告（`deviceCode=AGGREGATED`）
+- 幂等键使用 `batch:slot`（manual 场景为 `batch:manual-yyyyMMddHHmmss`）
 
-```json
-{
-  "success": false,
-  "message": "invalid admin credentials",
-  "data": null
-}
-```
+## 9. Structured Logging 规范
 
-- Protected APIs accept `Authorization: Bearer <token>`.
-- Backend now enforces login-first access through global auth interceptor on `/api/**` (except configured whitelist paths).
-- Cross-origin browser calls are supported with CORS preflight (`OPTIONS`) pass-through in auth interceptor, so login followed by protected API fetch can complete normally.
-
-### Swagger / OpenAPI
-
-- OpenAPI JSON: `GET /v3/api-docs`
-- Swagger UI: `GET /swagger-ui/index.html`
-- Swagger UI supports Bearer token authorization for protected API debugging.
-- Runtime switch in `application.yml`:
-  - `twinops.swagger.enabled: true`
-  - `twinops.auth.interceptor.enabled: true`
-
-### Alarm Status Workflow
-
-- Supported status values: `new`, `acknowledged`, `resolved`
-- Query alarms by status:
-  - `GET /api/alarms?status=acknowledged&limit=20`
-- Update alarm status:
-  - `PATCH /api/alarms/{id}/status`
-  - Body:
-
-```json
-{
-  "status": "acknowledged"
-}
-```
-
-- Validation rule: `status` must be one of `new|acknowledged|resolved`.
-
-### Analysis Report Workflow（Analysis Center 一键触发 + Kafka）
-
-- Analysis Center 使用一键触发模式：前端调用 `POST /api/analysis/reports/trigger` 时不传设备参数。
-- `AnalysisAutomationTriggerService#triggerManualBatch()` 会在后端自动完成聚合：
-  - 只发布 1 条 Kafka 批处理消息到 `analysis.request`（ONE job）；
-  - 该 job 对应 1 条聚合 `processing` 报告（`deviceCode=AGGREGATED`）。
-- `AnalysisAutomationConsumer` 收到该 batch job 后，统一查询所有目标设备及最新 telemetry，拼接聚合 LLM 输入，并仅执行一次分析，最终写回同一条聚合报告（ONE final aggregated report）。
-- 聚合作业幂等键使用 `batch:slot`（manual 场景为 `batch:manual-yyyyMMddHHmmss`）确保批次去重，不进行按设备拆分报告生成。
-- 定时任务路径由 `twinops.analysis.automation.scheduler-enabled` 控制，默认关闭，仅作为兼容能力。
-- Trigger API:
-  - `POST /api/analysis/reports/trigger`
-  - Request Body: 无
-
-- Success/failed reports are persisted with status (`success` / `failed`) and failure reason if provider timeout/retry exhaustion occurs.
-- Real-model mode (OpenAI-compatible Chat Completions):
-  - in `llm.yml`, set:
-    - `provider: openai`
-    - `base-url: https://ark.cn-beijing.volces.com/api/coding/v3`
-    - `model: ark-code-latest`
-    - `api-key: <your-key>`
-- Fallback mode:
-  - keep `fallback-to-mock: true` in `llm.yml` to degrade gracefully when provider request fails.
-- Query report list:
-  - `GET /api/analysis/reports?limit=20`
-- Query report detail:
-  - `GET /api/analysis/reports/{id}`
-
-### Kafka Automation Config
-
-The above mapping is the runtime contract for trigger API/producer/consumer wiring.
-
-### Documentation Maintenance Rule
-
-- Any code-level behavior/config/API/test change MUST be reflected in README updates (root README and backend README when backend behavior is affected).
-
-### Engineering Quality Policy
-
-- Any future code change MUST include both:
-  - Integration Tests
-  - Regression Tests
-
-Failure example:
-
-```json
-{
-  "success": true,
-  "message": "ok",
-  "data": {
-    "id": 18,
-    "deviceCode": "DEV004",
-    "status": "failed",
-    "errorMessage": "llm timeout after 5s"
-  }
-}
-```
-
-## 7. Frontend Integration
-
-Frontend should set:
-
-- `VITE_BACKEND_BASE_URL=http://127.0.0.1:8080`
-
-Then run frontend app to consume backend APIs.
-
-## 8. Structured Logging and Observability
-
-Backend critical paths now emit structured logs using stable keys:
+关键路径统一输出结构化字段：
 
 - `request_id`
 - `module`
@@ -243,39 +119,24 @@ Backend critical paths now emit structured logs using stable keys:
 - `latency_ms`
 - `error_code`
 
-Default console pattern includes source location for fast bug tracing:
+约束：
 
-- `%logger.%M:%line`
-- Logger source MUST use full package name (for example `com.twinops.backend.analysis.controller.AnalysisController.detail:9`), not abbreviated form like `c.t.b.a...`.
+- 日志等级必须区分 `INFO / WARN / ERROR`
+- logger source 必须使用完整包名（例如 `com.twinops.backend...`）
+- 敏感信息（API key、token 原文）禁止写入日志
 
-### Request Correlation
+## 10. 前后端联调
 
-- Backend reads `X-Request-Id` from incoming requests.
-- If missing, backend generates one.
-- Backend returns `X-Request-Id` in response header.
-- Correlation id is propagated through MDC across controller/service/exception logs.
+前端环境变量：
 
-### Analysis / LLM Logging
+```bash
+VITE_BACKEND_BASE_URL=http://127.0.0.1:8080
+```
 
-- `INFO`: LLM request start and successful completion.
-- `WARN`: provider failure with fallback enabled (`fallback-to-mock: true`) and fallback decision.
-- `INFO`: fallback success summary (risk/confidence without secret data).
-- `ERROR`: terminal provider failure when fallback is disabled.
-- Secrets are redacted: API key and authorization token raw values are never logged.
+## 11. 文档与质量策略
 
-### Auth Logging
+- 代码行为/配置/API/测试有变化时，必须同步更新 README
+- 后续代码变更必须补齐：
+  - Integration Tests
+  - Regression Tests
 
-- Login success/failure and logout actions are logged with structured fields.
-- Credentials are never logged; token output is masked (suffix-only).
-
-### Database Failure Logging
-
-- Startup emits sanitized datasource summary (host/schema only).
-- `DataAccessException` and JDBC connection errors are logged at `ERROR` with request path and exception class.
-
-### Logging Baseline Policy (Mandatory)
-
-- From this change onward, every backend code modification must add logs in appropriate critical paths.
-- Log levels must be semantically split into `INFO`, `WARN`, `ERROR`.
-- Logs must be source-traceable for developers during debugging (class/method/line visible in output).
-- Migration note: when searching logs, use full package path keywords instead of abbreviated logger prefixes.

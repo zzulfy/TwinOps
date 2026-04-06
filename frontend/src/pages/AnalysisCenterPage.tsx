@@ -1,0 +1,162 @@
+import { useState } from "react";
+import {
+  fetchAnalysisReport,
+  fetchAnalysisReports,
+  triggerAnalysisReport,
+} from "../api/backend";
+import type { AnalysisReport } from "../api/backend";
+import useAutoRefresh from "../hooks/useAutoRefresh";
+
+export default function AnalysisCenterPage() {
+  const [reports, setReports] = useState<AnalysisReport[]>([]);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [selectedReport, setSelectedReport] = useState<AnalysisReport | null>(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [triggerMessage, setTriggerMessage] = useState("");
+  const [listLoading, setListLoading] = useState(false);
+  const [detailLoading, setDetailLoading] = useState(false);
+
+  const formatTriggerStatus = (status: "processing" | "partial" | "failed"): string => {
+    if (status === "processing") return "聚合分析任务已受理，正在生成报告。";
+    if (status === "partial") return "聚合分析任务已受理，部分数据处理失败，请关注结果状态。";
+    return "聚合分析任务触发失败，请稍后重试。";
+  };
+
+  const selectReport = async (id: number) => {
+    if (detailLoading) {
+      return;
+    }
+    try {
+      setDetailLoading(true);
+      setSelectedId(id);
+      setSelectedReport(await fetchAnalysisReport(id));
+    } finally {
+      setDetailLoading(false);
+    }
+  };
+
+  const loadReports = async () => {
+    if (listLoading) {
+      return;
+    }
+    try {
+      setListLoading(true);
+      const list = await fetchAnalysisReports(30);
+      setReports(list);
+      if (list.length > 0 && selectedId === null) {
+        await selectReport(list[0].id);
+      } else if (selectedId !== null) {
+        await selectReport(selectedId);
+      }
+    } finally {
+      setListLoading(false);
+    }
+  };
+
+  useAutoRefresh({
+    intervalMs: 20000,
+    runWhenHidden: true,
+    onTick: async () => {
+      setTriggerMessage("");
+      await loadReports();
+    },
+    onError: (error) => {
+      setErrorMessage(error instanceof Error ? error.message : String(error));
+    },
+  });
+
+  return (
+    <div className="analysis-page">
+      <div className="header">
+        <div className="title">AI Analysis Center</div>
+      </div>
+
+      <div className="trigger-panel">
+        <div className="panel-title">手动触发分析</div>
+        <form
+          className="trigger-form"
+          onSubmit={async (event) => {
+            event.preventDefault();
+            try {
+              setSubmitting(true);
+              setErrorMessage("");
+              setTriggerMessage("");
+              const result = await triggerAnalysisReport();
+              setTriggerMessage(`${formatTriggerStatus(result.status)}（任务ID：${result.triggerId}）`);
+              await loadReports();
+            } catch (error) {
+              setErrorMessage(error instanceof Error ? error.message : String(error));
+            } finally {
+              setSubmitting(false);
+            }
+          }}
+        >
+          <button type="submit" disabled={submitting}>
+            {submitting ? "提交中..." : "触发分析"}
+          </button>
+        </form>
+        {triggerMessage ? <div className="status success">{triggerMessage}</div> : null}
+      </div>
+
+      {errorMessage ? <div className="status error">{errorMessage}</div> : null}
+      <div className="layout analysis-layout">
+        <div className="list">
+          <div className="list-title">分析结果</div>
+          {reports.map((report) => (
+            <div
+              key={report.id}
+              className={`item ${report.id === selectedId ? "active" : ""}`.trim()}
+              onClick={() => {
+                void selectReport(report.id);
+              }}
+            >
+              <div className="item-head">
+                <div className="report-id">#{report.id}</div>
+                <div className="report-time">{report.createdAt}</div>
+              </div>
+              <div className="meta">
+                <span>{report.status}</span>
+                <span>{report.riskLevel || "-"}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div className="detail">
+          {!selectedReport ? <div className="placeholder">请选择左侧分析报告查看详情</div> : null}
+          {selectedReport ? (
+            <>
+              <h3 className="detail-title">#{selectedReport.id}</h3>
+              <p className="detail-time">生成时间 {selectedReport.createdAt}</p>
+              <p>
+                <strong>设备:</strong> {selectedReport.deviceCode}
+              </p>
+              <p>
+                <strong>状态:</strong> {selectedReport.status}
+              </p>
+              <p>
+                <strong>置信度:</strong> {selectedReport.confidence ?? "-"}
+              </p>
+              <p>
+                <strong>风险等级:</strong> {selectedReport.riskLevel ?? "-"}
+              </p>
+              <p>
+                <strong>预测结果:</strong> {selectedReport.prediction ?? "-"}
+              </p>
+              <p>
+                <strong>建议动作:</strong> {selectedReport.recommendedAction ?? "-"}
+              </p>
+              <p>
+                <strong>错误信息:</strong> {selectedReport.errorMessage ?? "-"}
+              </p>
+              <p>
+                <strong>指标摘要:</strong> {selectedReport.metricSummary}
+              </p>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
