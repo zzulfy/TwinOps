@@ -130,6 +130,8 @@ sequenceDiagram
 - `data/`：项目级样例数据（如设备/告警/摘要快照）
 - `reports/`：项目级验证日志与诊断输出
 
+> Dashboard 主视图右侧已恢复 Three.js 设备仿真画面；若外部模型加载失败，将自动回退到内置设备阵列渲染，保证看板不空白。
+
 ### 目录整理迁移说明（reorganize-project-structure）
 
 - `frontend` 根目录已收敛为运行入口层，非入口脚本按用途归档：
@@ -271,6 +273,7 @@ curl -X POST "http://127.0.0.1:8080/api/analysis/reports/trigger" \
 ```
 
 > Dashboard 故障率图表说明：横坐标按 1 分钟粒度展示且仅显示 `HH:mm`，纵坐标语义为“故障率”（`error` 设备数 / 全部设备数 × 100）。
+> Dashboard 设备仿真视角说明：场景静止不自动移动，PC 端支持中央区域左键拖动旋转、边缘区域左键拖动平移、滚轮缩放手动查看全景。
 
 ## Analysis Center 触发流程（Kafka 对齐）
 

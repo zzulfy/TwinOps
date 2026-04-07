@@ -1,14 +1,14 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { fetchDashboardSummary, logoutAdmin } from "../api/backend";
 import useAutoRefresh from "../hooks/useAutoRefresh";
-import LayoutFooter from "../components/LayoutFooter";
+import useDashboardScene from "../hooks/useDashboardScene";
 import LayoutHeader from "../components/LayoutHeader";
-import LayoutLoading from "../components/LayoutLoading";
 import WidgetPanel01 from "../components/WidgetPanel01";
 import WidgetPanel04 from "../components/WidgetPanel04";
 import WidgetPanel06 from "../components/WidgetPanel06";
 
 export default function DashboardPage({ onNavigate }: { onNavigate: (target: string) => void }) {
+  const sceneCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const [loading] = useState({ total: 3, loaded: 3, isLoading: false });
   const [showMask] = useState(false);
   const [summaryUpdatedAt, setSummaryUpdatedAt] = useState("");
@@ -39,6 +39,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (target: str
     runWhenHidden: true,
     onTick: refreshSummary,
   });
+  useDashboardScene(sceneCanvasRef);
 
   return (
     <div className="layout">
@@ -54,8 +55,8 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (target: str
           onNavigate("/login");
         }}
       />
-      <LayoutFooter />
-      <LayoutLoading loading={loading} />
+      {/*<LayoutFooter />*/}
+      {/*<LayoutLoading loading={loading} />*/}
       <div className="layout-main">
         <div className="main-left">
           <WidgetPanel04 dashboardSummaryVersion={dashboardSummaryVersion} />
@@ -63,7 +64,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (target: str
           <WidgetPanel06 />
         </div>
         <div className="main-right">
-          <canvas className="scene-canvas" />
+          <canvas ref={sceneCanvasRef} className="scene-canvas" />
         </div>
         {showMask ? <div className="mask"></div> : null}
       </div>
