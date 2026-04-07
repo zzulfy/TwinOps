@@ -69,6 +69,7 @@ npm run smoke:shell
 npm run smoke:analysis-auto-refresh
 npm run smoke:alarm-real-data
 npm run smoke:alarm-manual-scroll
+npm run smoke:device-alarm-two-status
 ```
 
 ## 关键约定
@@ -108,7 +109,7 @@ npm run smoke:alarm-manual-scroll
 
 ### 5) 告警与设备交互
 
-- 告警状态：`new | acknowledged | resolved`
+- 告警状态：`new | resolved`
 - 告警状态变更通过 `PATCH /api/alarms/{id}/status`
 - 设备页支持筛选、关注（watchlist）、单设备详情跳转
 
@@ -126,4 +127,10 @@ npm run smoke:alarm-manual-scroll
 
 - 统一使用 `src/assets/design-tokens.css`
 - 新视觉常量先补 Token，再落组件
+
+### 8) GitHub Light 主题与布局
+
+- 全站页面（Dashboard / Devices / Analysis / Login）统一迁移为 GitHub Light 视觉语言：浅色中性背景、细边框、轻阴影、克制状态色。
+- 两栏壳层保持左侧导航 + 右侧内容结构，交互态（hover/active/focus）对齐 GitHub 风格可读性。
+- Dashboard 保留 Three.js 设备仿真能力，仅将仿真区外层容器与周边控件改为 Light 卡片样式。
 

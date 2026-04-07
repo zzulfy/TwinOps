@@ -451,11 +451,6 @@ body,
   background: rgba(255, 109, 109, 0.26);
 }
 
-.item-status.is-acknowledged {
-  color: var(--tw-color-text-on-light);
-  background: rgba(255, 214, 133, 0.92);
-}
-
 .item-status.is-resolved {
   color: var(--tw-color-text-on-dark);
   background: rgba(62, 215, 149, 0.26);
@@ -844,4 +839,238 @@ body,
   border: 1px solid rgba(255, 232, 166, 0.45);
   border-radius: 8px;
   background: rgba(98, 70, 12, 0.28);
+}
+
+/* GitHub Light overhaul */
+html,
+body,
+#app {
+  color: var(--tw-color-text-primary);
+  background: var(--tw-bg-deep);
+}
+
+.appshell-root,
+.layout,
+.analysis-page,
+.device-page,
+.login-page {
+  background: var(--tw-bg-deep);
+}
+
+.appshell-sidebar {
+  border-right: 1px solid var(--tw-border-soft);
+  background: #f6f8fa;
+}
+
+.appshell-brand {
+  border-bottom: 1px solid var(--tw-border-soft);
+}
+
+.appshell-brand-cn {
+  color: var(--tw-color-text-primary);
+}
+
+.appshell-brand-en {
+  color: var(--tw-color-text-secondary);
+}
+
+.appshell-nav-item {
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--tw-color-text-primary);
+}
+
+.appshell-nav-item:hover {
+  border-color: var(--tw-border-soft);
+  background: #f3f4f6;
+  color: var(--tw-color-text-primary);
+}
+
+.appshell-nav-item:focus-visible {
+  outline: 2px solid #0969da;
+}
+
+.appshell-nav-item.is-active {
+  border-color: var(--tw-border-soft);
+  color: var(--tw-color-text-primary);
+  background: #ffffff;
+  box-shadow: none;
+}
+
+.layout-header {
+  background: #ffffff;
+  border-bottom: 1px solid var(--tw-border-soft);
+}
+
+.layout-header .header-left,
+.layout-header .header-right {
+  color: var(--tw-color-text-secondary);
+}
+
+.layout-header .header-midden .cn {
+  color: var(--tw-color-text-primary);
+}
+
+.layout-footer {
+  background: #ffffff;
+  border-top: 1px solid var(--tw-border-soft);
+}
+
+.layout-footer .item {
+  background: #ffffff;
+  border: 1px solid var(--tw-border-soft);
+  color: var(--tw-color-text-primary);
+}
+
+.summary-refresh,
+.detail-entry,
+.trigger-form button,
+.back-btn,
+.clear-btn,
+.pin-btn,
+.alarm-action-btn,
+.login-card button {
+  color: #ffffff;
+  background: #2da44e;
+  border-color: rgba(27, 31, 36, 0.15);
+  box-shadow: none;
+}
+
+.main-right {
+  border: 1px solid var(--tw-border-soft);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: var(--tw-shadow-panel);
+}
+
+.scene-canvas {
+  background: #ffffff;
+}
+
+.layout-panel,
+.list,
+.detail,
+.list-panel,
+.watch-panel,
+.detail-panel,
+.alarm-ops-panel,
+.trigger-panel,
+.login-card {
+  color: var(--tw-color-text-primary);
+  background: #ffffff;
+  border: 1px solid var(--tw-border-soft);
+  box-shadow: var(--tw-shadow-panel);
+}
+
+.layout-panel .panel-header-title {
+  color: var(--tw-color-text-primary);
+  background: #f6f8fa;
+  border: 1px solid var(--tw-border-soft);
+  border-radius: 6px;
+}
+
+.widget-weather-item,
+.panel-message,
+.chart-fallback,
+.item,
+.watch-item,
+.alarm-ops-item,
+.list-item,
+.info-section,
+.info-item {
+  background: #ffffff;
+  border: 1px solid var(--tw-border-soft);
+  color: var(--tw-color-text-primary);
+}
+
+.item.type-1 {
+  background: #dafbe1;
+}
+
+.item.type-2 {
+  background: #fff8c5;
+}
+
+.item.type-3 {
+  background: #ffebe9;
+}
+
+.status-tabs .tab-btn,
+.alarm-tab-btn {
+  color: var(--tw-color-text-secondary);
+  border: 1px solid var(--tw-border-soft);
+  background: #ffffff;
+}
+
+.status-tabs .tab-btn.active,
+.alarm-tab-btn.active {
+  color: #ffffff;
+  background: #0969da;
+  border-color: #0969da;
+}
+
+.fault-rate-meta,
+.report-time,
+.meta,
+.subtitle,
+.filter-count,
+.empty-watch,
+.alarm-ops-meta,
+.device-event,
+.device-time {
+  color: var(--tw-color-text-secondary);
+}
+
+.report-id,
+.detail-title,
+.name {
+  color: var(--tw-color-text-primary);
+}
+
+.filter-input,
+.filter-select,
+.login-card input {
+  color: var(--tw-color-text-primary);
+  background: #ffffff;
+  border: 1px solid var(--tw-border-soft);
+}
+
+.filter-input:focus,
+.filter-select:focus,
+.login-card input:focus {
+  outline: 2px solid rgba(9, 105, 218, 0.25);
+  border-color: #0969da;
+}
+
+.alarm-device-list {
+  background: #ffffff;
+  border: 1px solid var(--tw-border-soft);
+  color: var(--tw-color-text-primary);
+}
+
+.alarm-device-list .device-item {
+  background: #f6f8fa;
+}
+
+.status-message {
+  color: var(--tw-color-text-primary);
+  background: #f6f8fa;
+  border: 1px solid var(--tw-border-soft);
+}
+
+.status-message.error,
+.status.error {
+  color: #cf222e;
+}
+
+.status.success,
+.alarm-resolved-tag {
+  color: #1a7f37;
+}
+
+.expired-notice {
+  color: #9a6700;
+  border: 1px solid #d4a72c;
+  background: #fff8c5;
 }

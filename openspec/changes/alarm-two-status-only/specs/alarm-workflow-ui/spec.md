@@ -1,8 +1,5 @@
-# alarm-workflow-ui Specification
+## MODIFIED Requirements
 
-## Purpose
-TBD - created by archiving change frontend-stability-feature-batch1. Update Purpose after archive.
-## Requirements
 ### Requirement: Alarm panel SHALL support status filtering
 The frontend alarm panel SHALL provide status filtering for `new` and `resolved` alarms, with the default view showing `new` alarms. The dashboard alarm panel SHALL remain monitoring-focused and SHALL present only alarm basic information and manual scroll behavior without timer-driven auto-rotation. Alarm status presentation SHALL use backend-provided data only and SHALL maintain high text/background contrast for operational readability.
 
@@ -30,6 +27,7 @@ The frontend alarm panel SHALL provide status filtering for `new` and `resolved`
 - **WHEN** alarm cards render statuses such as `resolved`
 - **THEN** text color and background color combination remains visually distinguishable
 - **AND** frontend uses shared design tokens rather than component-local deep-color overrides
+
 ### Requirement: Alarm panel SHALL support lifecycle actions
 The frontend SHALL allow operators to transition alarm status through backend-supported lifecycle actions (`new -> resolved`) from the device list operation surface rather than the dashboard alarm panel.
 
@@ -37,5 +35,4 @@ The frontend SHALL allow operators to transition alarm status through backend-su
 - **WHEN** the operator triggers `resolved` on a `new` alarm item in the device list page
 - **THEN** frontend calls `PATCH /api/alarms/{id}/status` with `resolved`
 - **AND** the alarm updates or exits the current filtered list consistently across modules after refresh
-
 

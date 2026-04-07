@@ -46,6 +46,20 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(ApiResponse.fail("invalid request"));
     }
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiResponse<Void>> handleIllegalArgument(IllegalArgumentException ex, HttpServletRequest request) {
+        log.warn("{}={} {}={} {}={} {}={} {}={} path={} message={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "common",
+            LogFields.EVENT, "exception.illegal_argument",
+            LogFields.RESULT, "failed",
+            LogFields.ERROR_CODE, "INVALID_ARGUMENT",
+            request.getRequestURI(),
+            ex.getMessage()
+        );
+        return ResponseEntity.badRequest().body(ApiResponse.fail(ex.getMessage()));
+    }
+
     @ExceptionHandler(UnauthorizedException.class)
     public ResponseEntity<ApiResponse<Void>> handleUnauthorized(UnauthorizedException ex, HttpServletRequest request) {
         log.warn("{}={} {}={} {}={} {}={} {}={} path={}",

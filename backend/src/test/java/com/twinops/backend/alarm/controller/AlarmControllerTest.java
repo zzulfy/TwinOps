@@ -63,17 +63,30 @@ class AlarmControllerTest {
     void shouldUpdateAlarmStatus() throws Exception {
         when(authTokenResolver.resolve(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn("token");
         when(adminAuthService.getIdentityByToken("token")).thenReturn(new AdminIdentityDto("admin", "System Administrator", "admin"));
-        AlarmItemDto updated = new AlarmItemDto(1L, "1# 服务器机柜", "温度过高", 2, "08:21", "acknowledged");
-        when(alarmService.updateStatus(1L, "acknowledged")).thenReturn(updated);
+        AlarmItemDto updated = new AlarmItemDto(1L, "1# 服务器机柜", "温度过高", 2, "08:21", "resolved");
+        when(alarmService.updateStatus(1L, "resolved")).thenReturn(updated);
+
+        mockMvc.perform(patch("/api/alarms/1/status")
+                .header("Authorization", "Bearer token")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of("status", "resolved"))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.id").value(1))
+            .andExpect(jsonPath("$.data.status").value("resolved"));
+    }
+
+    @Test
+    void shouldRejectAcknowledgedStatus() throws Exception {
+        when(authTokenResolver.resolve(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn("token");
+        when(adminAuthService.getIdentityByToken("token")).thenReturn(new AdminIdentityDto("admin", "System Administrator", "admin"));
 
         mockMvc.perform(patch("/api/alarms/1/status")
                 .header("Authorization", "Bearer token")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(Map.of("status", "acknowledged"))))
-            .andExpect(status().isOk())
-            .andExpect(jsonPath("$.success").value(true))
-            .andExpect(jsonPath("$.data.id").value(1))
-            .andExpect(jsonPath("$.data.status").value("acknowledged"));
+            .andExpect(status().isBadRequest())
+            .andExpect(jsonPath("$.success").value(false));
     }
 
     @Test

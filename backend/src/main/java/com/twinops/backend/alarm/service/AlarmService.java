@@ -69,7 +69,7 @@ public class AlarmService {
     }
 
     public AlarmItemDto updateStatus(Long id, String status) {
-        if (!"new".equals(status) && !"acknowledged".equals(status) && !"resolved".equals(status)) {
+        if (!"new".equals(status) && !"resolved".equals(status)) {
             log.warn("{}={} {}={} {}={} {}={} {}={} alarmId={} status={}",
                 LogFields.REQUEST_ID, safeRequestId(),
                 LogFields.MODULE, "alarm",
@@ -79,6 +79,7 @@ public class AlarmService {
                 id,
                 status
             );
+            throw new IllegalArgumentException("status must be new/resolved");
         }
         AlarmEntity entity = alarmMapper.selectById(id);
         if (entity == null) {
@@ -93,9 +94,6 @@ public class AlarmService {
             throw new NotFoundException("alarm not found: " + id);
         }
         entity.setStatus(status);
-        if ("acknowledged".equals(status) && entity.getAcknowledgedAt() == null) {
-            entity.setAcknowledgedAt(LocalDateTime.now());
-        }
         if ("resolved".equals(status) && entity.getResolvedAt() == null) {
             entity.setResolvedAt(LocalDateTime.now());
         }

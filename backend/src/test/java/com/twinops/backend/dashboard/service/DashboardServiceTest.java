@@ -60,7 +60,7 @@ class DashboardServiceTest {
 
         when(alarmMapper.selectList(any())).thenReturn(List.of(
             alarm(1L, "1# 服务器机柜", "温度过高", 2, "new", LocalDateTime.of(2026, 3, 30, 8, 21)),
-            alarm(2L, "2# 网络设备", "网络波动", 1, "acknowledged", null)
+            alarm(2L, "2# 网络设备", "网络波动", 1, "resolved", null)
         ));
 
         List<TelemetryEntity> metricsDesc = List.of(

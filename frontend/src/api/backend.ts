@@ -35,7 +35,7 @@ export interface AlarmListItem {
   status: AlarmStatus;
 }
 
-export type AlarmStatus = "new" | "acknowledged" | "resolved";
+export type AlarmStatus = "new" | "resolved";
 
 export interface DashboardSummary {
   deviceScale: Array<{

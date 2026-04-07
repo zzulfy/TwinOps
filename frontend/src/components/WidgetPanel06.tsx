@@ -13,7 +13,6 @@ export default function WidgetPanel06() {
 
   const statusTabs: Array<{ label: string; value: AlarmStatus }> = [
     { label: "新告警", value: "new" },
-    { label: "已确认", value: "acknowledged" },
     { label: "已解决", value: "resolved" },
   ];
 
@@ -83,7 +82,7 @@ export default function WidgetPanel06() {
                   <div className="item-name">{item.name}</div>
                   <div className="item-type">{item.event}</div>
                   <div className={`item-status is-${item.status}`}>
-                    {item.status === "new" ? "新告警" : item.status === "acknowledged" ? "已确认" : "已解决"}
+                    {item.status === "new" ? "新告警" : "已解决"}
                   </div>
                   <div className="item-time">{item.time}</div>
                 </div>

@@ -17,7 +17,6 @@ public class AlarmEntity {
     private Integer level;
     private String status;
     private LocalDateTime occurredAt;
-    private LocalDateTime acknowledgedAt;
     private LocalDateTime resolvedAt;
 
     public Long getId() { return id; }
@@ -34,8 +33,6 @@ public class AlarmEntity {
     public void setStatus(String status) { this.status = status; }
     public LocalDateTime getOccurredAt() { return occurredAt; }
     public void setOccurredAt(LocalDateTime occurredAt) { this.occurredAt = occurredAt; }
-    public LocalDateTime getAcknowledgedAt() { return acknowledgedAt; }
-    public void setAcknowledgedAt(LocalDateTime acknowledgedAt) { this.acknowledgedAt = acknowledgedAt; }
     public LocalDateTime getResolvedAt() { return resolvedAt; }
     public void setResolvedAt(LocalDateTime resolvedAt) { this.resolvedAt = resolvedAt; }
 }

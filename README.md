@@ -90,7 +90,7 @@ sequenceDiagram
     C-->>API: ApiResponse<DashboardSummaryDto>
     API-->>FE: render widgets/charts
 
-    User->>FE: 在设备页确认告警
+    User->>FE: 在设备页处理告警
     FE->>API: updateAlarmStatus(id,status)
     API->>C: PATCH /api/alarms/{id}/status
     C->>S: update status + timestamp
@@ -274,6 +274,7 @@ curl -X POST "http://127.0.0.1:8080/api/analysis/reports/trigger" \
 
 > Dashboard 故障率图表说明：横坐标按 1 分钟粒度展示且仅显示 `HH:mm`，纵坐标语义为“故障率”（`error` 设备数 / 全部设备数 × 100）。
 > Dashboard 设备仿真视角说明：场景静止不自动移动，PC 端支持中央区域左键拖动旋转、边缘区域左键拖动平移、滚轮缩放手动查看全景。
+> Frontend UI 主题说明：全站（Dashboard / Devices / Analysis / Login）已迁移为 GitHub Light 风格，Dashboard 仍保留 Three.js 仿真能力。
 
 ## Analysis Center 触发流程（Kafka 对齐）
 

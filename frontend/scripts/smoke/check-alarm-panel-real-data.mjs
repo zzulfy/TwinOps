@@ -13,23 +13,13 @@ const byStatus = {
       status: "new",
     },
   ],
-  acknowledged: [
-    {
-      id: 2,
-      name: "A-ACK",
-      event: "ack-event",
-      type: 2,
-      time: "2026-01-01 10:01:00",
-      status: "acknowledged",
-    },
-  ],
   resolved: [
     {
-      id: 3,
+      id: 2,
       name: "A-RES",
       event: "res-event",
-      type: 1,
-      time: "2026-01-01 10:02:00",
+      type: 2,
+      time: "2026-01-01 10:01:00",
       status: "resolved",
     },
   ],
@@ -77,6 +67,25 @@ const byStatus = {
           );
         }
 
+        if (parsedUrl.pathname === "/api/dashboard/fault-rate/trend") {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              message: "ok",
+              data: {
+                history: [{ time: "10:00", value: 23.0, forecast: false, confidence: null }],
+                forecast: [{ time: "10:01", value: 24.0, forecast: true, confidence: 88.0 }],
+                granularity: "minute",
+                precision: 1,
+              },
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
+
         if (parsedUrl.pathname === "/api/alarms") {
           const status = parsedUrl.searchParams.get("status") || "new";
           const payload = dataset[status] || [];
@@ -115,20 +124,16 @@ const byStatus = {
 
     const buttons = await page.$$(".status-tabs .tab-btn");
     await buttons[1].click();
-    await page.waitForFunction(() => document.body.innerText.includes("A-ACK"));
+    await page.waitForFunction(() => document.body.innerText.includes("A-RES"));
     await page.waitForFunction(() => !document.body.innerText.includes("A-NEW"));
 
-    const contrastOk = await page.$eval(".item-status.is-acknowledged", (el) => {
+    const contrastOk = await page.$eval(".item-status.is-resolved", (el) => {
       const style = window.getComputedStyle(el);
       return style.color !== style.backgroundColor;
     });
     if (!contrastOk) {
-      throw new Error("acknowledged badge color and background are visually identical");
+      throw new Error("resolved badge color and background are visually identical");
     }
-
-    await buttons[2].click();
-    await page.waitForFunction(() => document.body.innerText.includes("A-RES"));
-    await page.waitForFunction(() => !document.body.innerText.includes("A-ACK"));
 
     console.log("PASS alarm panel real data + contrast smoke");
   } catch (error) {

@@ -31,7 +31,6 @@ export default function DeviceDetailPage({ route, onNavigate }: { route: RouteMa
 
   const alarmTabs: Array<{ label: string; value: AlarmStatus }> = [
     { label: "新告警", value: "new" },
-    { label: "已确认", value: "acknowledged" },
     { label: "已解决", value: "resolved" },
   ];
 
@@ -233,23 +232,6 @@ export default function DeviceDetailPage({ route, onNavigate }: { route: RouteMa
                             </div>
                           </div>
                           {alarm.status === "new" ? (
-                            <button
-                              className="alarm-action-btn"
-                              disabled={alarmUpdatingId === alarm.id}
-                              onClick={async () => {
-                                try {
-                                  setAlarmUpdatingId(alarm.id);
-                                  await updateAlarmStatus(alarm.id, "acknowledged");
-                                  await loadAlarmItems(currentDeviceCode, alarmStatus);
-                                } finally {
-                                  setAlarmUpdatingId(null);
-                                }
-                              }}
-                            >
-                              确认
-                            </button>
-                          ) : null}
-                          {alarm.status === "acknowledged" ? (
                             <button
                               className="alarm-action-btn"
                               disabled={alarmUpdatingId === alarm.id}

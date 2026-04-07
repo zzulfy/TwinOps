@@ -8,7 +8,7 @@ const alarmRows = Array.from({ length: 18 }, (_, idx) => ({
   event: `event-${idx + 1}`,
   type: (idx % 3) + 1,
   time: `2026-01-01 10:${String(idx).padStart(2, "0")}:00`,
-  status: idx % 3 === 0 ? "new" : idx % 3 === 1 ? "acknowledged" : "resolved",
+  status: idx % 2 === 0 ? "new" : "resolved",
 }));
 
 (async () => {
@@ -44,6 +44,22 @@ const alarmRows = Array.from({ length: 18 }, (_, idx) => ({
                 alarms: rows,
                 faultRate: { labels: ["10:00"], values: [23] },
                 resourceUsage: { labels: ["10:00"], values: [42] },
+              },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
+        if (parsedUrl.pathname === "/api/dashboard/fault-rate/trend") {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              message: "ok",
+              data: {
+                history: [{ time: "10:00", value: 23.0, forecast: false, confidence: null }],
+                forecast: [{ time: "10:01", value: 24.0, forecast: true, confidence: 88.0 }],
+                granularity: "minute",
+                precision: 1,
               },
             }),
             { status: 200, headers: { "Content-Type": "application/json" } }

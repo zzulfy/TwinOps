@@ -14,6 +14,7 @@
     "smoke:analysis-auto-refresh": "node scripts/smoke/check-analysis-auto-refresh.mjs",
     "smoke:alarm-real-data": "node scripts/smoke/check-alarm-panel-real-data.mjs",
     "smoke:alarm-manual-scroll": "node scripts/smoke/check-alarm-scroll-smooth.mjs",
+    "smoke:device-alarm-two-status": "node scripts/smoke/check-device-alarm-two-status.mjs",
     "build-only": "vite build",
     "type-check": "tsc -p tsconfig.react.json --noEmit",
     "type-check:react": "tsc -p tsconfig.react.json --noEmit",

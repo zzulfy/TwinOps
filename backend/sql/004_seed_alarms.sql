@@ -5,7 +5,6 @@ INSERT INTO alarms (
   level,
   status,
   occurred_at,
-  acknowledged_at,
   resolved_at
 )
 SELECT
@@ -24,12 +23,10 @@ SELECT
     ELSE 1
   END AS level,
   CASE
-    WHEN MOD(d.id, 8) = 0 THEN 'resolved'
-    WHEN MOD(d.id, 3) = 0 THEN 'acknowledged'
+    WHEN MOD(d.id, 3) = 0 THEN 'resolved'
     ELSE 'new'
   END AS status,
   DATE_SUB(NOW(), INTERVAL MOD(d.id * 3, 72) HOUR) AS occurred_at,
-  CASE WHEN MOD(d.id, 3) = 0 THEN DATE_SUB(NOW(), INTERVAL MOD(d.id * 2, 48) HOUR) END AS acknowledged_at,
-  CASE WHEN MOD(d.id, 8) = 0 THEN DATE_SUB(NOW(), INTERVAL MOD(d.id, 24) HOUR) END AS resolved_at
+  CASE WHEN MOD(d.id, 3) = 0 THEN DATE_SUB(NOW(), INTERVAL MOD(d.id, 24) HOUR) END AS resolved_at
 FROM devices d
 WHERE d.id <= 35;

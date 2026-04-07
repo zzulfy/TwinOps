@@ -4,6 +4,7 @@ import com.twinops.backend.common.dto.AlarmItemDto;
 import com.twinops.backend.common.dto.ApiResponse;
 import com.twinops.backend.alarm.service.AlarmService;
 import com.twinops.backend.common.logging.LogFields;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +54,7 @@ public class AlarmController {
     }
 
     @PatchMapping("/{id}/status")
-    public ApiResponse<AlarmItemDto> updateStatus(@PathVariable Long id, @RequestBody AlarmStatusRequest body) {
+    public ApiResponse<AlarmItemDto> updateStatus(@PathVariable Long id, @Valid @RequestBody AlarmStatusRequest body) {
         log.info("{}={} {}={} {}={} {}={} id={} status={}",
             LogFields.REQUEST_ID, safeRequestId(),
             LogFields.MODULE, "alarm",
@@ -66,7 +67,7 @@ public class AlarmController {
     }
 
     public record AlarmStatusRequest(
-        @Pattern(regexp = "new|acknowledged|resolved", message = "status must be new/acknowledged/resolved")
+        @Pattern(regexp = "new|resolved", message = "status must be new/resolved")
         String status
     ) {
     }

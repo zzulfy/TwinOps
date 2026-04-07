@@ -3,7 +3,7 @@
 Define the aggregate device list-view behavior and route resolution expectations for device browsing.
 ## Requirements
 ### Requirement: Aggregate device list display
-The device module SHALL provide a searchable list-first experience for all devices and SHALL allow navigation from list items to focused single-device detail pages. The device list surface SHALL include alarm lifecycle operations so operators can acknowledge and resolve alarms in an operational context.
+The device module SHALL provide a searchable list-first experience for all devices and SHALL allow navigation from list items to focused single-device detail pages. The device list surface SHALL include alarm lifecycle operations so operators can resolve alarms in an operational context.
 
 #### Scenario: Default list view shows all devices
 - **WHEN** admin opens `/devices`
@@ -17,7 +17,7 @@ The device module SHALL provide a searchable list-first experience for all devic
 
 #### Scenario: Operator executes alarm action in device list
 - **WHEN** a device-associated alarm is actionable in the list page
-- **THEN** operator can trigger `acknowledged` or `resolved` action according to current state
+- **THEN** operator can trigger `resolved` action on `new` alarms according to current state
 - **AND** action result updates visible status and related dashboard-alarm snapshots after data refresh
 
 ### Requirement: Independent device routing

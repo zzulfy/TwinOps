@@ -1,61 +1,49 @@
 :root {
-  --tw-font-title: Douyu, "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", sans-serif;
-  --tw-font-body: "Microsoft YaHei UI", "PingFang SC", "Noto Sans SC", "Helvetica Neue", Arial, sans-serif;
+  --tw-font-title: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --tw-font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
 
-  --tw-color-text-primary: #d9e7ff;
-  --tw-color-text-secondary: #9cb5de;
-  --tw-color-text-muted: #6e86ab;
-  --tw-color-text-on-dark: #e8f2ff;
-  --tw-color-text-on-dark-secondary: #b8cdee;
-  --tw-color-text-on-dark-muted: #8fa8c8;
-  --tw-color-text-on-light: #102039;
-  --tw-color-text-on-light-secondary: #395171;
-  --tw-color-text-on-light-muted: #5e738d;
+  --tw-color-text-primary: #24292f;
+  --tw-color-text-secondary: #57606a;
+  --tw-color-text-muted: #6e7781;
+  --tw-color-text-on-dark: #24292f;
+  --tw-color-text-on-dark-secondary: #57606a;
+  --tw-color-text-on-dark-muted: #6e7781;
+  --tw-color-text-on-light: #24292f;
+  --tw-color-text-on-light-secondary: #57606a;
+  --tw-color-text-on-light-muted: #6e7781;
 
-  --tw-bg-ink: #050b17;
-  --tw-bg-deep: #0b1528;
-  --tw-bg-haze: #111f36;
-  --tw-bg-panel-start: rgba(17, 31, 52, 0.9);
-  --tw-bg-panel-end: rgba(10, 21, 37, 0.92);
-  --tw-bg-footer-start: rgba(10, 23, 41, 0.84);
-  --tw-bg-footer-end: rgba(7, 18, 34, 0.9);
+  --tw-bg-ink: #ffffff;
+  --tw-bg-deep: #f6f8fa;
+  --tw-bg-haze: #f3f4f6;
+  --tw-bg-panel-start: #ffffff;
+  --tw-bg-panel-end: #ffffff;
+  --tw-bg-footer-start: #f6f8fa;
+  --tw-bg-footer-end: #f6f8fa;
 
-  --tw-state-normal: #48b4ff;
-  --tw-state-warning: #f4bd43;
-  --tw-state-danger: #ff6d6d;
-  --tw-state-success: #3ed795;
+  --tw-state-normal: #0969da;
+  --tw-state-warning: #9a6700;
+  --tw-state-danger: #cf222e;
+  --tw-state-success: #1a7f37;
 
-  --tw-border-soft: rgba(96, 135, 191, 0.3);
-  --tw-border-panel: rgba(86, 133, 193, 0.44);
-  --tw-border-strong: rgba(94, 164, 241, 0.66);
-  --tw-panel-edge: rgba(78, 137, 205, 0.5);
+  --tw-border-soft: #d0d7de;
+  --tw-border-panel: #d0d7de;
+  --tw-border-strong: #8c959f;
+  --tw-panel-edge: #d0d7de;
 
-  --tw-glow-cyan: rgba(69, 163, 255, 0.2);
-  --tw-glow-lime: rgba(70, 215, 160, 0.16);
-  --tw-noise-alpha: 0.06;
+  --tw-glow-cyan: rgba(9, 105, 218, 0.08);
+  --tw-glow-lime: rgba(26, 127, 55, 0.08);
+  --tw-noise-alpha: 0;
 
-  --tw-cta-start: rgba(33, 108, 205, 0.95);
-  --tw-cta-end: rgba(42, 152, 245, 0.9);
-  --tw-cta-border: rgba(128, 196, 255, 0.65);
-  --tw-cta-shadow: 0 10px 24px rgba(12, 71, 138, 0.5);
-  --tw-status-bg: rgba(15, 33, 58, 0.76);
-  --tw-status-border: rgba(89, 144, 209, 0.42);
-  --tw-status-error: rgba(95, 26, 34, 0.75);
-  --tw-alarm-row-bg-1: linear-gradient(
-    90deg,
-    rgba(62, 215, 149, 0.26) 0%,
-    rgba(13, 27, 47, 0.9) 100%
-  );
-  --tw-alarm-row-bg-2: linear-gradient(
-    90deg,
-    rgba(244, 189, 67, 0.42) 0%,
-    rgba(13, 27, 47, 0.92) 100%
-  );
-  --tw-alarm-row-bg-3: linear-gradient(
-    90deg,
-    rgba(255, 109, 109, 0.3) 0%,
-    rgba(13, 27, 47, 0.9) 100%
-  );
+  --tw-cta-start: #2da44e;
+  --tw-cta-end: #2c974b;
+  --tw-cta-border: rgba(27, 31, 36, 0.15);
+  --tw-cta-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+  --tw-status-bg: #f6f8fa;
+  --tw-status-border: #d0d7de;
+  --tw-status-error: #ffebe9;
+  --tw-alarm-row-bg-1: #dafbe1;
+  --tw-alarm-row-bg-2: #fff8c5;
+  --tw-alarm-row-bg-3: #ffebe9;
 
   --tw-radius-sm: 8px;
   --tw-radius-md: 12px;
@@ -67,9 +55,9 @@
   --tw-space-4: 16px;
   --tw-space-5: 20px;
 
-  --tw-shadow-panel: 0 12px 28px rgba(3, 10, 24, 0.5);
-  --tw-shadow-panel-hover: 0 16px 34px rgba(3, 10, 24, 0.62);
-  --tw-shadow-elevated: 0 24px 44px rgba(2, 8, 20, 0.68);
+  --tw-shadow-panel: 0 1px 0 rgba(27, 31, 36, 0.04);
+  --tw-shadow-panel-hover: 0 3px 12px rgba(140, 149, 159, 0.2);
+  --tw-shadow-elevated: 0 8px 24px rgba(140, 149, 159, 0.2);
 
   --tw-motion-duration-fast: 180ms;
   --tw-motion-duration-base: 300ms;

@@ -50,22 +50,8 @@ class AlarmServiceTest {
     }
 
     @Test
-    void shouldSetAcknowledgedTimestampWhenUpdatingStatus() {
-        AlarmEntity entity = alarm(3L, "3# 电源柜", "电压波动", 2, "new", LocalDateTime.of(2026, 3, 30, 9, 0));
-        entity.setAcknowledgedAt(null);
-
-        when(alarmMapper.selectById(3L)).thenReturn(entity);
-
-        AlarmItemDto dto = alarmService.updateStatus(3L, "acknowledged");
-
-        assertEquals("acknowledged", dto.status());
-        assertNotNull(entity.getAcknowledgedAt());
-        verify(alarmMapper).updateById(entity);
-    }
-
-    @Test
     void shouldSetResolvedTimestampWhenUpdatingStatus() {
-        AlarmEntity entity = alarm(4L, "4# 电源柜", "电流过高", 2, "acknowledged", LocalDateTime.of(2026, 3, 30, 9, 5));
+        AlarmEntity entity = alarm(4L, "4# 电源柜", "电流过高", 2, "new", LocalDateTime.of(2026, 3, 30, 9, 5));
         entity.setResolvedAt(null);
 
         when(alarmMapper.selectById(4L)).thenReturn(entity);
@@ -75,6 +61,14 @@ class AlarmServiceTest {
         assertEquals("resolved", dto.status());
         assertNotNull(entity.getResolvedAt());
         verify(alarmMapper).updateById(entity);
+    }
+
+    @Test
+    void shouldThrowWhenStatusIsInvalid() {
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class,
+            () -> alarmService.updateStatus(7L, "acknowledged"));
+
+        assertEquals("status must be new/resolved", ex.getMessage());
     }
 
     @Test

@@ -41,7 +41,6 @@ CREATE TABLE IF NOT EXISTS alarms (
   level TINYINT NOT NULL,
   status VARCHAR(32) NOT NULL DEFAULT 'new',
   occurred_at DATETIME NOT NULL,
-  acknowledged_at DATETIME NULL,
   resolved_at DATETIME NULL,
   KEY idx_alarm_device_time (device_code, occurred_at),
   KEY idx_alarm_status_time (status, occurred_at)
