@@ -286,6 +286,7 @@ curl -X POST "http://127.0.0.1:8080/api/analysis/reports/trigger" \
 - 前端通过异步查询（列表或 latest 接口）获取并展示该 single final report。
 - 整体链路为 `Frontend click trigger -> Producer ONE job -> Consumer aggregated query -> ONE LLM analysis -> ONE final report -> Frontend async fetch`。
 - Analysis Center 卡片主标题统一为“报告编号 + 生成时间”，不再使用固定 `AGGREGATED` 作为标题展示。
+- 若后端异常中断导致报告长时间停留 `processing`，后端会在查询分析列表/详情时将超过 10 分钟的挂起报告自动回收为 `failed` 并写入超时错误信息。
 
 ## Frontend 自动刷新与性能约束
 

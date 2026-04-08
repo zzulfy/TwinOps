@@ -114,6 +114,7 @@ Kafka 关键映射：
 - Consumer 聚合查询全部目标设备数据并执行 1 次 LLM analysis
 - 最终持久化 1 条聚合报告（`deviceCode=AGGREGATED`）
 - 幂等键使用 `batch:slot`（manual 场景为 `batch:manual-yyyyMMddHHmmss`）
+- 若服务中断导致报告长期停留 `processing`，后端在查询报告列表/详情时会将超出 10 分钟的挂起任务自动回收为 `failed` 并写入超时错误信息
 
 ## 9. Structured Logging 规范
 

@@ -13,6 +13,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -125,6 +126,45 @@ class AnalysisServiceTest {
         verify(analysisReportMapper).updateById(updateCaptor.capture());
         assertEquals("failed", updateCaptor.getValue().getStatus());
         assertTrue(updateCaptor.getValue().getErrorMessage().contains("provider down"));
+    }
+
+    @Test
+    void shouldMarkStaleProcessingReportAsFailedWhenListing() {
+        AnalysisReportEntity stale = new AnalysisReportEntity();
+        stale.setId(18L);
+        stale.setDeviceCode("AGGREGATED");
+        stale.setMetricSummary("auto-analysis slot=manual-20260408123542");
+        stale.setStatus("processing");
+        stale.setCreatedAt(LocalDateTime.now().minusMinutes(30));
+        stale.setUpdatedAt(LocalDateTime.now().minusMinutes(30));
+
+        when(analysisReportMapper.selectList(any(QueryWrapper.class))).thenReturn(List.of(stale));
+
+        List<AnalysisReportDto> result = analysisService.listReports(20);
+
+        assertEquals(1, result.size());
+        assertEquals("failed", result.get(0).status());
+        assertTrue(result.get(0).errorMessage().contains("processing timeout"));
+        verify(analysisReportMapper).updateById(stale);
+    }
+
+    @Test
+    void shouldMarkStaleProcessingReportAsFailedWhenGettingDetail() {
+        AnalysisReportEntity stale = new AnalysisReportEntity();
+        stale.setId(19L);
+        stale.setDeviceCode("AGGREGATED");
+        stale.setMetricSummary("auto-analysis slot=manual-20260408124000");
+        stale.setStatus("processing");
+        stale.setCreatedAt(LocalDateTime.now().minusMinutes(20));
+        stale.setUpdatedAt(LocalDateTime.now().minusMinutes(20));
+
+        when(analysisReportMapper.selectById(19L)).thenReturn(stale);
+
+        AnalysisReportDto detail = analysisService.getReport(19L);
+
+        assertEquals("failed", detail.status());
+        assertTrue(detail.errorMessage().contains("processing timeout"));
+        verify(analysisReportMapper).updateById(stale);
     }
 }
 

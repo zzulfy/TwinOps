@@ -27,6 +27,7 @@ public class AnalysisService {
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final Duration PROVIDER_TIMEOUT = Duration.ofSeconds(5);
     private static final int MAX_RETRY = 2;
+    private static final Duration PROCESSING_STALE_TIMEOUT = Duration.ofMinutes(10);
 
     private final AnalysisReportMapper analysisReportMapper;
     private final LlmProviderAdapter llmProviderAdapter;
@@ -228,7 +229,10 @@ public class AnalysisService {
     public List<AnalysisReportDto> listReports(int limit) {
         QueryWrapper<AnalysisReportEntity> wrapper = new QueryWrapper<>();
         wrapper.orderByDesc("created_at").last("LIMIT " + limit);
-        return analysisReportMapper.selectList(wrapper).stream().map(this::toDto).toList();
+        return analysisReportMapper.selectList(wrapper).stream()
+            .map(this::reconcileStaleProcessingReport)
+            .map(this::toDto)
+            .toList();
     }
 
     public AnalysisReportDto getReport(Long id) {
@@ -236,7 +240,34 @@ public class AnalysisService {
         if (entity == null) {
             throw new NotFoundException("analysis report not found: " + id);
         }
-        return toDto(entity);
+        return toDto(reconcileStaleProcessingReport(entity));
+    }
+
+    private AnalysisReportEntity reconcileStaleProcessingReport(AnalysisReportEntity report) {
+        if (report == null || !"processing".equalsIgnoreCase(report.getStatus()) || report.getCreatedAt() == null) {
+            return report;
+        }
+        Duration age = Duration.between(report.getCreatedAt(), LocalDateTime.now());
+        if (age.compareTo(PROCESSING_STALE_TIMEOUT) <= 0) {
+            return report;
+        }
+        String timeoutMessage = "analysis processing timeout: backend interrupted or consumer unavailable";
+        report.setStatus("failed");
+        if (report.getErrorMessage() == null || report.getErrorMessage().isBlank()) {
+            report.setErrorMessage(timeoutMessage);
+        }
+        analysisReportMapper.updateById(report);
+        log.warn("{}={} {}={} {}={} {}={} {}={} reportId={} ageMinutes={} timeoutMinutes={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "analysis",
+            LogFields.EVENT, "analysis.processing.reconcile",
+            LogFields.RESULT, "failed",
+            LogFields.ERROR_CODE, "ANALYSIS_PROCESSING_TIMEOUT",
+            report.getId(),
+            age.toMinutes(),
+            PROCESSING_STALE_TIMEOUT.toMinutes()
+        );
+        return report;
     }
 
     private LlmPredictionResult callWithTimeout(String deviceCode, String metricSummary) throws Exception {
