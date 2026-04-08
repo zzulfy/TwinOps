@@ -155,9 +155,9 @@ export default function DeviceDetailPage({ route, onNavigate }: { route: RouteMa
                 className={`list-item ${currentDevice?.deviceCode === device.deviceCode ? "active" : ""}`.trim()}
               >
                 <div className="list-item-main" onClick={() => onNavigate(`/devices/${encodeURIComponent(device.deviceCode)}`)}>
-                  <div className="name">{device.name}</div>
-                  <div className="meta">
-                    {device.deviceCode} · {device.status}
+                  <div className="name">{`${device.deviceCode} ${device.name}`}</div>
+                  <div className="device-status-row">
+                    <span className={`device-status-tag status-${device.status}`}>{device.status}</span>
                   </div>
                 </div>
                 <button

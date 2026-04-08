@@ -112,6 +112,7 @@ npm run smoke:device-alarm-two-status
 - 告警状态：`new | resolved`
 - 告警状态变更通过 `PATCH /api/alarms/{id}/status`
 - 设备页支持筛选、关注（watchlist）、单设备详情跳转
+- 设备列表卡片标题展示为 `deviceCode + 设备名称`（如 `DEV001 服务器机柜`），并在下方仅展示状态标签（`normal | warning | error`）
 
 ### 6) 资源路径
 
