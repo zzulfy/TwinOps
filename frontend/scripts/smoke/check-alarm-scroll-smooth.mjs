@@ -73,8 +73,19 @@ const alarmRows = Array.from({ length: 18 }, (_, idx) => ({
           );
         }
 
+        if (parsedUrl.pathname === "/api/auth/me") {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              message: "ok",
+              data: { username: "admin", displayName: "Admin", role: "admin" },
+            }),
+            { status: 200, headers: { "Content-Type": "application/json" } }
+          );
+        }
+
         return new Response(
-          JSON.stringify({ success: true, message: "ok", data: {} }),
+          JSON.stringify({ success: true, message: "ok", data: [] }),
           { status: 200, headers: { "Content-Type": "application/json" } }
         );
       };

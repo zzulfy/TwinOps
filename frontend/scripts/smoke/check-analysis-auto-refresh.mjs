@@ -99,7 +99,7 @@ const BASE_URL = process.env.SMOKE_URL || "http://127.0.0.1:8090/";
         }
 
         return new Response(
-          JSON.stringify({ success: true, message: "ok", data: {} }),
+          JSON.stringify({ success: true, message: "ok", data: [] }),
           {
             status: 200,
             headers: { "Content-Type": "application/json" },

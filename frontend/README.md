@@ -85,7 +85,7 @@ npm run smoke:device-alarm-two-status
 - `fetchDashboardSummary` 采用共享 in-flight 策略，避免并发重复请求。
 - `fetchFaultRateTrend` 提供分钟级（minute）故障率历史曲线，并返回未来 5 分钟 AI 预测点位。
 - 故障率口径与后端一致：`error` 设备数 / 全部设备数 × 100。
-- Dashboard 右侧设备仿真画面由 `useDashboardScene` 驱动，采用 Three.js deferred loading，从 `/models/base.glb` 与 `/models/devices.glb` 加载模型；仅在模型全部加载失败时回退到程序化设备阵列渲染。
+- Dashboard 右侧设备仿真画面由 `useDashboardScene` 驱动，采用 Three.js deferred loading，从 `/models/base.glb` 与 `/models/devices.glb` 加载模型；场景基线为日间风格（浅色背景与中性日光照明），仅在模型全部加载失败时回退到程序化设备阵列渲染。
 - 设备仿真默认禁用巡检类叠加元素（含箭头/路径线），并保留鼠标视角切换（PC 端：中央区域左键拖动旋转，边缘区域左键拖动平移，滚轮缩放）。
 - 场景不再自动旋转或漂移，视角变化仅由用户手动交互触发。
 - Dashboard 支持自动刷新 + 手动刷新，并展示最近一次成功刷新时间。

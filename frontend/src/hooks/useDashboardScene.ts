@@ -41,7 +41,7 @@ export default function useDashboardScene(canvasRef: CanvasRef): void {
       }
 
       const scene = new Scene();
-      scene.background = new Color(0x061326);
+      scene.background = new Color(0xe9f3ff);
 
       const camera = new PerspectiveCamera(46, 1, 0.1, 200);
       camera.position.set(10, 9, 12);
@@ -104,18 +104,18 @@ export default function useDashboardScene(canvasRef: CanvasRef): void {
       window.addEventListener("pointercancel", onPointerUp);
       window.addEventListener("blur", onWindowBlur);
 
-      const ambientLight = new AmbientLight(0x79a7ff, 1.25);
+      const ambientLight = new AmbientLight(0xffffff, 1.1);
       scene.add(ambientLight);
-      const keyLight = new DirectionalLight(0x8fd4ff, 1.2);
+      const keyLight = new DirectionalLight(0xfff3d9, 1.15);
       keyLight.position.set(8, 12, 7);
       scene.add(keyLight);
-      const rimLight = new DirectionalLight(0x69ffc6, 0.7);
+      const rimLight = new DirectionalLight(0xc8dcff, 0.55);
       rimLight.position.set(-10, 8, -9);
       scene.add(rimLight);
 
       const ground = new Mesh(
         new PlaneGeometry(26, 26),
-        new MeshStandardMaterial({ color: 0x0b213f, roughness: 0.85, metalness: 0.15 })
+        new MeshStandardMaterial({ color: 0xd7e4f1, roughness: 0.9, metalness: 0.08 })
       );
       ground.rotation.x = -Math.PI / 2;
       ground.position.y = -0.9;
@@ -134,23 +134,23 @@ export default function useDashboardScene(canvasRef: CanvasRef): void {
 
       const rackGeometry = new BoxGeometry(0.9, 2.2, 0.9);
       const rackMaterial = new MeshStandardMaterial({
-        color: 0x4f8cf6,
-        emissive: 0x123a78,
-        roughness: 0.35,
-        metalness: 0.55,
+        color: 0x6e88aa,
+        emissive: 0x12253b,
+        roughness: 0.5,
+        metalness: 0.28,
       });
       const topGeometry = new BoxGeometry(0.95, 0.12, 0.95);
       const topMaterial = new MeshStandardMaterial({
-        color: 0x1d2f4f,
-        emissive: 0x12304f,
-        roughness: 0.42,
-        metalness: 0.4,
+        color: 0xd3deea,
+        emissive: 0x0f1f32,
+        roughness: 0.58,
+        metalness: 0.2,
       });
       const statusLightGeometry = new BoxGeometry(0.08, 0.08, 0.08);
       const statusLightMaterial = new MeshStandardMaterial({
-        color: 0x4effc3,
-        emissive: 0x31a87f,
-        roughness: 0.25,
+        color: 0x47d39f,
+        emissive: 0x257a5d,
+        roughness: 0.35,
         metalness: 0.1,
       });
 
@@ -225,9 +225,34 @@ export default function useDashboardScene(canvasRef: CanvasRef): void {
           console.info(`[DashboardScene] hidden inspection overlays: ${hiddenCount}`);
         }
       };
+      const tuneModelMaterialsForDaylight = (root: any) => {
+        root.traverse((node: any) => {
+          const materials = Array.isArray(node.material)
+            ? node.material
+            : node.material
+            ? [node.material]
+            : [];
+          materials.forEach((material: any) => {
+            if (material?.color?.offsetHSL) {
+              material.color.offsetHSL(0, -0.03, 0.08);
+            }
+            if (typeof material?.roughness === "number") {
+              material.roughness = Math.max(material.roughness, 0.45);
+            }
+            if (typeof material?.metalness === "number") {
+              material.metalness = Math.min(material.metalness, 0.35);
+            }
+            if (material?.emissive?.multiplyScalar) {
+              material.emissive.multiplyScalar(0.7);
+            }
+            material?.needsUpdate && (material.needsUpdate = true);
+          });
+        });
+      };
       expectedModels.forEach((item) => {
         loadModel(item.url, (model) => {
           hideInspectionOverlays(model);
+          tuneModelMaterialsForDaylight(model);
           model.scale.set(item.scale, item.scale, item.scale);
           model.position.set(0, item.y, 0);
           modelGroup.add(model);

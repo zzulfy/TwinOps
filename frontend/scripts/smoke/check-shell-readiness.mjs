@@ -6,7 +6,15 @@ const VIEWPORTS = [
   { name: 'mobile', width: 390, height: 844, isMobile: true, hasTouch: true, deviceScaleFactor: 2 },
 ];
 
-const REQUIRED_SELECTORS = ['.layout', '.layout-header', '.layout-main', '.main-left', '.main-right'];
+const REQUIRED_SELECTORS = [
+  '.appshell-root',
+  '.appshell-sidebar',
+  '.appshell-content',
+  '.layout',
+  '.layout-main',
+  '.main-left',
+  '.main-right',
+];
 
 async function assertShell(page, viewportName) {
   for (const selector of REQUIRED_SELECTORS) {
@@ -74,8 +82,24 @@ async function runViewport(browser, viewport) {
         );
       }
 
+      if (parsedUrl.pathname === "/api/dashboard/fault-rate/trend") {
+        return new Response(
+          JSON.stringify({
+            success: true,
+            message: "ok",
+            data: {
+              history: [{ time: "10:00", value: 10.0, forecast: false, confidence: null }],
+              forecast: [{ time: "10:01", value: 11.0, forecast: true, confidence: 90.0 }],
+              granularity: "minute",
+              precision: 1,
+            },
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        );
+      }
+
       return new Response(
-        JSON.stringify({ success: true, message: "ok", data: {} }),
+        JSON.stringify({ success: true, message: "ok", data: [] }),
         { status: 200, headers: { "Content-Type": "application/json" } }
       );
     };
@@ -88,7 +112,7 @@ async function runViewport(browser, viewport) {
     }
   });
 
-  await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE_URL}#/`, { waitUntil: 'domcontentloaded' });
   await assertShell(page, viewport.name);
 
   await page.close();
