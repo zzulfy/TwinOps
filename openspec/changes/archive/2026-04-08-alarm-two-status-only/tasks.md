@@ -7,7 +7,7 @@
 ## 2. Backend 与数据迁移
 
 - [x] 2.1 更新告警状态入参校验与服务状态流转规则，仅允许 `new` 与 `resolved`。
-- [ ] 2.2 编写并执行迁移：将历史 `status='acknowledged'` 批量改写为 `resolved`。
+- [x] 2.2 编写并执行迁移：将历史 `status='acknowledged'` 批量改写为 `resolved`。
 - [x] 2.3 删除 schema 中 `acknowledged_at` 字段，并同步修正实体/mapper/seed 中的字段引用。
 
 ## 3. 测试与文档同步
