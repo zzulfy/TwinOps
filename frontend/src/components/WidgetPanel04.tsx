@@ -58,7 +58,7 @@ export default function WidgetPanel04({ dashboardSummaryVersion }: { dashboardSu
           legend: {
             right: 0,
             top: 4,
-            textStyle: { color: "#d8e7ff", fontSize: 11 },
+            textStyle: { color: "#000", fontSize: 11 },
             data: ["历史故障率", "未来5分钟预测故障率(AI)"],
           },
           grid: { left: 36, right: 14, top: 32, bottom: 42 },
@@ -66,14 +66,14 @@ export default function WidgetPanel04({ dashboardSummaryVersion }: { dashboardSu
             type: "category",
             boundaryGap: false,
             data: labels,
-            axisLabel: { color: "#b8cef0", fontSize: 10, formatter: (value: string) => value.slice(-5) },
+            axisLabel: { color: "#000", fontSize: 10, formatter: (value: string) => value.slice(-5) },
           },
           yAxis: {
             type: "value",
             name: "故障率",
             min: 0,
             max: 100,
-            axisLabel: { color: "#b8cef0", formatter: "{value}%" },
+            axisLabel: { color: "#000", formatter: "{value}%" },
             splitLine: { lineStyle: { color: "rgba(128,164,211,0.25)" } },
           },
           dataZoom: [
