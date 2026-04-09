@@ -3,9 +3,16 @@ package com.twinops.backend.analysis.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twinops.backend.common.logging.LogFields;
+import dev.langchain4j.data.message.ChatMessage;
+import dev.langchain4j.data.message.SystemMessage;
+import dev.langchain4j.data.message.UserMessage;
+import dev.langchain4j.model.chat.ChatModel;
+import dev.langchain4j.model.chat.response.ChatResponse;
+import dev.langchain4j.model.openai.OpenAiChatModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
@@ -14,13 +21,8 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Duration;
 import java.util.List;
-import java.util.Map;
 import java.util.Locale;
 
 @Component
@@ -30,9 +32,10 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
 
     private static final Logger log = LoggerFactory.getLogger(OpenAiLlmProviderAdapter.class);
     private static final Duration HTTP_TIMEOUT = Duration.ofSeconds(10);
+    private static final String CHAT_COMPLETION_SUFFIX = "/chat/completions";
 
     private final ObjectMapper objectMapper;
-    private final HttpClient httpClient;
+    private final ChatModel chatModel;
     private final String endpoint;
     private final String apiKey;
     private final String model;
@@ -40,6 +43,7 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
     private final int maxTokens;
     private final boolean fallbackToMock;
 
+    @Autowired
     public OpenAiLlmProviderAdapter(
         @Value("${twinops.analysis.llm.base-url:https://ark.cn-beijing.volces.com/api/coding/v3}") String baseUrl,
         @Value("${twinops.analysis.llm.path:/chat/completions}") String path,
@@ -50,8 +54,35 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
         @Value("${twinops.analysis.llm.fallback-to-mock:true}") boolean fallbackToMock
     ) {
         this.objectMapper = new ObjectMapper();
-        this.httpClient = HttpClient.newBuilder().connectTimeout(HTTP_TIMEOUT).build();
         this.endpoint = normalizeEndpoint(baseUrl, path);
+        this.chatModel = OpenAiChatModel.builder()
+            .baseUrl(resolveLangChainBaseUrl(this.endpoint, baseUrl))
+            .apiKey(apiKey)
+            .modelName(model)
+            .temperature(temperature)
+            .maxTokens(maxTokens)
+            .timeout(HTTP_TIMEOUT)
+            .maxRetries(0)
+            .build();
+        this.apiKey = apiKey;
+        this.model = model;
+        this.temperature = temperature;
+        this.maxTokens = maxTokens;
+        this.fallbackToMock = fallbackToMock;
+    }
+
+    OpenAiLlmProviderAdapter(
+        ChatModel chatModel,
+        String endpoint,
+        String apiKey,
+        String model,
+        double temperature,
+        int maxTokens,
+        boolean fallbackToMock
+    ) {
+        this.objectMapper = new ObjectMapper();
+        this.chatModel = chatModel;
+        this.endpoint = endpoint;
         this.apiKey = apiKey;
         this.model = model;
         this.temperature = temperature;
@@ -76,51 +107,16 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
                 deviceCode
             );
 
-            String body = objectMapper.writeValueAsString(Map.of(
-                "model", model,
-                "temperature", temperature,
-                "max_tokens", maxTokens,
-                "messages", List.of(
-                    Map.of(
-                        "role", "system",
-                        "content", "You are an industrial operations analysis assistant. Return only JSON with keys: prediction, confidence, riskLevel, recommendedAction."
-                    ),
-                    Map.of(
-                        "role", "user",
-                        "content", """
-                            Analyze the following telemetry summary and predict short-term operational risk.
-                            deviceCode: %s
-                            metricSummary: %s
-                            
-                            Rules:
-                            1) riskLevel must be one of: low, medium, high.
-                            2) confidence is a number between 0 and 100.
-                            3) Return JSON only, no markdown, no extra text.
-                            """.formatted(deviceCode, metricSummary)
-                    )
-                )
-            ));
-
-            HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(endpoint))
-                .timeout(HTTP_TIMEOUT)
-                .header("Content-Type", "application/json")
-                .header("Authorization", "Bearer " + apiKey)
-                .POST(HttpRequest.BodyPublishers.ofString(body))
-                .build();
-
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            if (response.statusCode() < 200 || response.statusCode() >= 300) {
-                throw new RuntimeException("llm http " + response.statusCode() + ": " + truncate(response.body()));
+            ChatResponse response = chatModel.chat(buildMessages(deviceCode, metricSummary));
+            if (response == null || response.aiMessage() == null) {
+                throw new RuntimeException("llm response missing ai message");
+            }
+            String content = response.aiMessage().text();
+            if (content == null || content.isBlank()) {
+                throw new RuntimeException("llm response missing message text");
             }
 
-            JsonNode root = objectMapper.readTree(response.body());
-            JsonNode contentNode = root.path("choices").path(0).path("message").path("content");
-            if (contentNode.isMissingNode() || contentNode.isNull() || contentNode.asText().isBlank()) {
-                throw new RuntimeException("llm response missing choices[0].message.content");
-            }
-
-            JsonNode payload = parseModelContent(contentNode.asText());
+            JsonNode payload = parseModelContent(content);
             String prediction = payload.path("prediction").asText("").trim();
             String recommendedAction = payload.path("recommendedAction").asText("").trim();
             if (prediction.isBlank()) {
@@ -224,10 +220,26 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
     }
 
     private String normalizeRiskLevel(String level) {
-        return switch (level == null ? "" : level.trim().toLowerCase()) {
-            case "low", "medium", "high" -> level.trim().toLowerCase();
-            default -> "medium";
-        };
+            return switch (level == null ? "" : level.trim().toLowerCase()) {
+                case "low", "medium", "high" -> level.trim().toLowerCase();
+                default -> "medium";
+            };
+    }
+
+    private List<ChatMessage> buildMessages(String deviceCode, String metricSummary) {
+        return List.of(
+            SystemMessage.from("You are an industrial operations analysis assistant. Return only JSON with keys: prediction, confidence, riskLevel, recommendedAction."),
+            UserMessage.from("""
+                Analyze the following telemetry summary and predict short-term operational risk.
+                deviceCode: %s
+                metricSummary: %s
+
+                Rules:
+                1) riskLevel must be one of: low, medium, high.
+                2) confidence is a number between 0 and 100.
+                3) Return JSON only, no markdown, no extra text.
+                """.formatted(deviceCode, metricSummary))
+        );
     }
 
     private String normalizeEndpoint(String baseUrl, String path) {
@@ -242,10 +254,40 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
         return base + suffix;
     }
 
-    private String truncate(String input) {
-        if (input == null) {
+    private String resolveLangChainBaseUrl(String endpoint, String fallbackBaseUrl) {
+        String mapped = toLangChainBaseUrl(endpoint);
+        if (mapped.equals(endpoint)) {
+            String fallback = trimTrailingSlash(fallbackBaseUrl);
+            log.warn("{}={} {}={} {}={} {}={} {}={} endpoint={} fallbackBaseUrl={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "analysis",
+                LogFields.EVENT, "llm.endpoint.mapping_fallback",
+                LogFields.RESULT, "fallback",
+                LogFields.ERROR_CODE, "LLM_ENDPOINT_UNSUPPORTED",
+                endpoint,
+                fallback
+            );
+            return fallback.isBlank() ? mapped : fallback;
+        }
+        return mapped;
+    }
+
+    static String toLangChainBaseUrl(String endpoint) {
+        String normalized = trimTrailingSlash(endpoint);
+        if (normalized.toLowerCase(Locale.ROOT).endsWith(CHAT_COMPLETION_SUFFIX)) {
+            return normalized.substring(0, normalized.length() - CHAT_COMPLETION_SUFFIX.length());
+        }
+        return normalized;
+    }
+
+    private static String trimTrailingSlash(String value) {
+        if (value == null) {
             return "";
         }
-        return input.length() <= 240 ? input : input.substring(0, 240) + "...";
+        String trimmed = value.trim();
+        while (trimmed.endsWith("/")) {
+            trimmed = trimmed.substring(0, trimmed.length() - 1);
+        }
+        return trimmed;
     }
 }
