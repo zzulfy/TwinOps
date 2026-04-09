@@ -37,7 +37,9 @@ import static org.mockito.Mockito.when;
     "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}",
     "twinops.analysis.automation.enabled=true",
     "twinops.analysis.automation.scheduler-enabled=false",
-    "twinops.analysis.llm.provider=mock"
+    "twinops.analysis.llm.provider=openai",
+    "twinops.analysis.llm.api-key=",
+    "twinops.analysis.llm.fallback-to-mock=true"
 })
 class AnalysisKafkaIntegrationTest {
 

@@ -3,12 +3,12 @@ twinops:
     llm:
       provider: openai
       base-url:
-      path: /chat/completions
       api-key:
       model:
       temperature: 0.2
       max-tokens: 512
       fallback-to-mock: true 
+      # 迁移说明：LangChain4j 接入后仅使用 base-url，path 参数已移除。
       #当真实 LLM（OpenAI 兼容接口）调用失败时，系统会自动降级到本地 mock 逻辑继续返回分析结果，而不是直接报错失败。
       #- true：失败就走 mock（更稳，适合演示/容错）
       #- false：失败就直接失败，返回错误状态（更严格，适合生产排障)

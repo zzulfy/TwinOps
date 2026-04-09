@@ -35,7 +35,7 @@ CREATE DATABASE IF NOT EXISTS twinops DEFAULT CHARSET utf8mb4;
 - `server.port`
 - `spring.datasource.url/username/password`
 - `twinops.auth.admin.username/password/display-name`
-- `twinops.analysis.llm.provider/base-url/path/api-key/model/temperature/max-tokens/fallback-to-mock`
+- `twinops.analysis.llm.provider/base-url/api-key/model/temperature/max-tokens/fallback-to-mock`（LangChain4j 版本不再使用 `path`）
 
 ## 4. 启动后端
 

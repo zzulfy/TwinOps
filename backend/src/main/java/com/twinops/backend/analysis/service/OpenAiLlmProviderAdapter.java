@@ -46,7 +46,6 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
     @Autowired
     public OpenAiLlmProviderAdapter(
         @Value("${twinops.analysis.llm.base-url:https://ark.cn-beijing.volces.com/api/coding/v3}") String baseUrl,
-        @Value("${twinops.analysis.llm.path:/chat/completions}") String path,
         @Value("${twinops.analysis.llm.api-key:}") String apiKey,
         @Value("${twinops.analysis.llm.model:ark-code-latest}") String model,
         @Value("${twinops.analysis.llm.temperature:0.2}") double temperature,
@@ -54,9 +53,9 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
         @Value("${twinops.analysis.llm.fallback-to-mock:true}") boolean fallbackToMock
     ) {
         this.objectMapper = new ObjectMapper();
-        this.endpoint = normalizeEndpoint(baseUrl, path);
+        this.endpoint = trimTrailingSlash(baseUrl);
         this.chatModel = OpenAiChatModel.builder()
-            .baseUrl(resolveLangChainBaseUrl(this.endpoint, baseUrl))
+            .baseUrl(toLangChainBaseUrl(this.endpoint))
             .apiKey(apiKey)
             .modelName(model)
             .temperature(temperature)
@@ -240,36 +239,6 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
                 3) Return JSON only, no markdown, no extra text.
                 """.formatted(deviceCode, metricSummary))
         );
-    }
-
-    private String normalizeEndpoint(String baseUrl, String path) {
-        String base = baseUrl == null ? "" : baseUrl.trim();
-        String suffix = path == null ? "" : path.trim();
-        if (base.endsWith("/") && suffix.startsWith("/")) {
-            return base.substring(0, base.length() - 1) + suffix;
-        }
-        if (!base.endsWith("/") && !suffix.startsWith("/")) {
-            return base + "/" + suffix;
-        }
-        return base + suffix;
-    }
-
-    private String resolveLangChainBaseUrl(String endpoint, String fallbackBaseUrl) {
-        String mapped = toLangChainBaseUrl(endpoint);
-        if (mapped.equals(endpoint)) {
-            String fallback = trimTrailingSlash(fallbackBaseUrl);
-            log.warn("{}={} {}={} {}={} {}={} {}={} endpoint={} fallbackBaseUrl={}",
-                LogFields.REQUEST_ID, safeRequestId(),
-                LogFields.MODULE, "analysis",
-                LogFields.EVENT, "llm.endpoint.mapping_fallback",
-                LogFields.RESULT, "fallback",
-                LogFields.ERROR_CODE, "LLM_ENDPOINT_UNSUPPORTED",
-                endpoint,
-                fallback
-            );
-            return fallback.isBlank() ? mapped : fallback;
-        }
-        return mapped;
     }
 
     static String toLangChainBaseUrl(String endpoint) {

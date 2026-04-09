@@ -49,7 +49,6 @@ class OpenAiLlmProviderAdapterTest {
     void shouldInitializeLangChainModelFromConfigValues() {
         OpenAiLlmProviderAdapter adapter = new OpenAiLlmProviderAdapter(
             "https://example.com/proxy/v1",
-            "/chat/completions",
             "test-key",
             "demo-model",
             0.2,
