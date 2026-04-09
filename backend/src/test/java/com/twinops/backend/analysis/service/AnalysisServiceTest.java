@@ -12,7 +12,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -135,8 +138,8 @@ class AnalysisServiceTest {
         stale.setDeviceCode("AGGREGATED");
         stale.setMetricSummary("auto-analysis slot=manual-20260408123542");
         stale.setStatus("processing");
-        stale.setCreatedAt(LocalDateTime.now().minusMinutes(30));
-        stale.setUpdatedAt(LocalDateTime.now().minusMinutes(30));
+        stale.setCreatedAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(30));
+        stale.setUpdatedAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(30));
 
         when(analysisReportMapper.selectList(any(QueryWrapper.class))).thenReturn(List.of(stale));
 
@@ -155,8 +158,8 @@ class AnalysisServiceTest {
         stale.setDeviceCode("AGGREGATED");
         stale.setMetricSummary("auto-analysis slot=manual-20260408124000");
         stale.setStatus("processing");
-        stale.setCreatedAt(LocalDateTime.now().minusMinutes(20));
-        stale.setUpdatedAt(LocalDateTime.now().minusMinutes(20));
+        stale.setCreatedAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(20));
+        stale.setUpdatedAt(LocalDateTime.now(ZoneOffset.UTC).minusMinutes(20));
 
         when(analysisReportMapper.selectById(19L)).thenReturn(stale);
 
@@ -165,6 +168,34 @@ class AnalysisServiceTest {
         assertEquals("failed", detail.status());
         assertTrue(detail.errorMessage().contains("processing timeout"));
         verify(analysisReportMapper).updateById(stale);
+    }
+
+    @Test
+    void shouldKeepRecentUtcProcessingReportAndFormatCreatedAtForShanghai() {
+        Clock fixedClock = Clock.fixed(Instant.parse("2026-04-09T04:45:00Z"), ZoneOffset.UTC);
+        analysisService = new AnalysisService(
+            analysisReportMapper,
+            llmProviderAdapter,
+            "UTC",
+            "Asia/Shanghai",
+            fixedClock
+        );
+
+        AnalysisReportEntity recent = new AnalysisReportEntity();
+        recent.setId(65L);
+        recent.setDeviceCode("AGGREGATED");
+        recent.setMetricSummary("auto-analysis slot=manual-20260409124447");
+        recent.setStatus("processing");
+        recent.setCreatedAt(LocalDateTime.of(2026, 4, 9, 4, 44, 47));
+        recent.setUpdatedAt(LocalDateTime.of(2026, 4, 9, 4, 44, 47));
+
+        when(analysisReportMapper.selectById(65L)).thenReturn(recent);
+
+        AnalysisReportDto detail = analysisService.getReport(65L);
+
+        assertEquals("processing", detail.status());
+        assertEquals("2026-04-09 12:44:47", detail.createdAt());
+        verify(analysisReportMapper, never()).updateById(any(AnalysisReportEntity.class));
     }
 }
 

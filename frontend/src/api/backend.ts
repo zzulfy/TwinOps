@@ -90,7 +90,8 @@ export interface AnalysisReport {
 
 export interface TriggerAnalysisResponse {
   triggerId: string;
-  status: "processing" | "partial" | "failed";
+  reportId: number | null;
+  status: "processing" | "partial" | "failed" | "skipped";
   targetCount: number;
   acceptedCount: number;
   failedCount: number;

@@ -9,10 +9,17 @@ import com.twinops.backend.common.logging.LogFields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
+import java.time.DateTimeException;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -31,10 +38,36 @@ public class AnalysisService {
 
     private final AnalysisReportMapper analysisReportMapper;
     private final LlmProviderAdapter llmProviderAdapter;
+    private final ZoneId storageZoneId;
+    private final ZoneId displayZoneId;
+    private final Clock clock;
+
+    @Autowired
+    public AnalysisService(
+        AnalysisReportMapper analysisReportMapper,
+        LlmProviderAdapter llmProviderAdapter,
+        @Value("${twinops.analysis.time.storage-zone-id:UTC}") String storageZoneId,
+        @Value("${twinops.analysis.time.display-zone-id:Asia/Shanghai}") String displayZoneId
+    ) {
+        this(analysisReportMapper, llmProviderAdapter, storageZoneId, displayZoneId, Clock.systemUTC());
+    }
 
     public AnalysisService(AnalysisReportMapper analysisReportMapper, LlmProviderAdapter llmProviderAdapter) {
+        this(analysisReportMapper, llmProviderAdapter, "UTC", "Asia/Shanghai", Clock.systemUTC());
+    }
+
+    AnalysisService(
+        AnalysisReportMapper analysisReportMapper,
+        LlmProviderAdapter llmProviderAdapter,
+        String storageZoneId,
+        String displayZoneId,
+        Clock clock
+    ) {
         this.analysisReportMapper = analysisReportMapper;
         this.llmProviderAdapter = llmProviderAdapter;
+        this.storageZoneId = parseZoneId(storageZoneId, "twinops.analysis.time.storage-zone-id", ZoneOffset.UTC);
+        this.displayZoneId = parseZoneId(displayZoneId, "twinops.analysis.time.display-zone-id", ZoneId.of("Asia/Shanghai"));
+        this.clock = clock;
     }
 
     public AnalysisReportDto createReport(String deviceCode, String metricSummary) {
@@ -247,7 +280,8 @@ public class AnalysisService {
         if (report == null || !"processing".equalsIgnoreCase(report.getStatus()) || report.getCreatedAt() == null) {
             return report;
         }
-        Duration age = Duration.between(report.getCreatedAt(), LocalDateTime.now());
+        Instant createdAtInstant = report.getCreatedAt().atZone(storageZoneId).toInstant();
+        Duration age = Duration.between(createdAtInstant, Instant.now(clock));
         if (age.compareTo(PROCESSING_STALE_TIMEOUT) <= 0) {
             return report;
         }
@@ -293,7 +327,13 @@ public class AnalysisService {
 
     private AnalysisReportDto toDto(AnalysisReportEntity entity) {
         LocalDateTime created = entity.getCreatedAt();
-        String createdAt = created == null ? "--" : created.format(TIME_FMT);
+        String createdAt = created == null
+            ? "--"
+            : created
+                .atZone(storageZoneId)
+                .withZoneSameInstant(displayZoneId)
+                .toLocalDateTime()
+                .format(TIME_FMT);
         Double confidence = entity.getConfidence() == null ? null : entity.getConfidence().doubleValue();
         return new AnalysisReportDto(
             entity.getId(),
@@ -307,6 +347,24 @@ public class AnalysisService {
             entity.getErrorMessage(),
             createdAt
         );
+    }
+
+    private ZoneId parseZoneId(String rawZoneId, String property, ZoneId fallback) {
+        try {
+            return ZoneId.of(rawZoneId);
+        } catch (DateTimeException ex) {
+            log.warn("{}={} {}={} {}={} {}={} {}={} property={} configuredValue={} fallback={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "analysis",
+                LogFields.EVENT, "analysis.timezone.parse_failed",
+                LogFields.RESULT, "fallback",
+                LogFields.ERROR_CODE, "ANALYSIS_TIMEZONE_INVALID",
+                property,
+                rawZoneId,
+                fallback.getId()
+            );
+            return fallback;
+        }
     }
 
     private String safeRequestId() {

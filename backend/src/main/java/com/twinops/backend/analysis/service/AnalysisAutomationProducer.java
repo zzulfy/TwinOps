@@ -3,6 +3,7 @@ package com.twinops.backend.analysis.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.twinops.backend.analysis.dto.AnalysisAutomationMessage;
 import com.twinops.backend.common.logging.LogFields;
+import org.apache.kafka.clients.producer.RecordMetadata;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 public class AnalysisAutomationProducer {
 
     private static final Logger log = LoggerFactory.getLogger(AnalysisAutomationProducer.class);
+    private static final java.time.Duration SEND_TIMEOUT = java.time.Duration.ofSeconds(5);
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
@@ -34,15 +36,20 @@ public class AnalysisAutomationProducer {
     public void publish(AnalysisAutomationMessage message) {
         try {
             String payload = objectMapper.writeValueAsString(message);
-            kafkaTemplate.send(new ProducerRecord<>(topic, message.idempotencyKey(), payload));
-            log.info("{}={} {}={} {}={} {}={} topic={} deviceCode={} idempotencyKey={}",
+            RecordMetadata metadata = kafkaTemplate
+                .send(new ProducerRecord<>(topic, message.idempotencyKey(), payload))
+                .get(SEND_TIMEOUT.toMillis(), java.util.concurrent.TimeUnit.MILLISECONDS)
+                .getRecordMetadata();
+            log.info("{}={} {}={} {}={} {}={} topic={} deviceCode={} idempotencyKey={} partition={} offset={}",
                 LogFields.REQUEST_ID, safeRequestId(),
                 LogFields.MODULE, "analysis",
                 LogFields.EVENT, "analysis.automation.publish",
                 LogFields.RESULT, "success",
                 topic,
                 message.deviceCode(),
-                message.idempotencyKey()
+                message.idempotencyKey(),
+                metadata.partition(),
+                metadata.offset()
             );
         } catch (Exception ex) {
             log.error("{}={} {}={} {}={} {}={} {}={} topic={} deviceCode={} idempotencyKey={} message={}",

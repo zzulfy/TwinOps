@@ -7,7 +7,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.times;
@@ -59,8 +60,20 @@ class AnalysisAutomationConsumerTest {
     }
 
     @Test
-    void shouldThrowWhenPayloadIsInvalid() {
-        assertThrows(RuntimeException.class, () -> consumer.onMessage("not-json"));
+    void shouldMarkReportFailedWhenBatchConsumptionFails() {
+        doThrow(new RuntimeException("aggregate failed"))
+            .when(analysisAggregationService).processAggregatedBatch("manual-2026040312", "batch:manual-2026040312");
+
+        assertDoesNotThrow(() -> consumer.onMessage("""
+            {"jobType":"analysis-batch","deviceCode":"AGGREGATED","metricSummary":"batch","slot":"manual-2026040312","idempotencyKey":"batch:manual-2026040312","reportId":5}
+            """.trim()));
+
+        verify(analysisService).failExistingProcessingReport(5L, "aggregate failed");
+    }
+
+    @Test
+    void shouldNotThrowWhenPayloadIsInvalid() {
+        assertDoesNotThrow(() -> consumer.onMessage("not-json"));
     }
 }
 

@@ -37,6 +37,19 @@ const BASE_URL = process.env.SMOKE_URL || "http://127.0.0.1:8090/";
               ? input.url
               : String(input);
         const parsedUrl = new URL(requestUrl, window.location.origin);
+        if (parsedUrl.pathname === "/api/auth/me") {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              message: "ok",
+              data: { username: "admin", displayName: "Admin", role: "admin" },
+            }),
+            {
+              status: 200,
+              headers: { "Content-Type": "application/json" },
+            }
+          );
+        }
         if (!parsedUrl.pathname.startsWith("/api/analysis/reports")) {
           return originalFetch(input, init);
         }
@@ -48,18 +61,20 @@ const BASE_URL = process.env.SMOKE_URL || "http://127.0.0.1:8090/";
             id: nextId,
             createdAt: "2026-01-01 00:01:00",
           });
+          window.__analysisSmoke.latestTriggeredReportId = nextId;
           return new Response(
             JSON.stringify({
               success: true,
               message: "ok",
-                data: {
-                  triggerId: "manual-20260101000100",
-                  status: "processing",
-                  targetCount: 2,
-                  acceptedCount: 1,
-                  failedCount: 0,
-                },
-              }),
+              data: {
+                triggerId: "manual-20260101000100",
+                reportId: nextId,
+                status: "processing",
+                targetCount: 2,
+                acceptedCount: 1,
+                failedCount: 0,
+              },
+            }),
             {
               status: 200,
               headers: { "Content-Type": "application/json" },
@@ -81,6 +96,11 @@ const BASE_URL = process.env.SMOKE_URL || "http://127.0.0.1:8090/";
         }
         const detailMatch = parsedUrl.pathname.match(/^\/api\/analysis\/reports\/(\d+)$/);
         if (detailMatch) {
+          if (Number(detailMatch[1]) === 100) {
+            await new Promise((resolve) => {
+              setTimeout(resolve, 600);
+            });
+          }
           const matched = reports.find((item) => item.id === Number(detailMatch[1]));
           return new Response(
             JSON.stringify({
@@ -105,6 +125,14 @@ const BASE_URL = process.env.SMOKE_URL || "http://127.0.0.1:8090/";
     if (!triggerText.includes("任务ID")) {
       throw new Error(`unexpected trigger message: ${triggerText}`);
     }
+    await page.waitForFunction(() => {
+      const title = document.querySelector(".detail-title");
+      return title && title.textContent && title.textContent.includes("#101");
+    });
+    const selectedDetailTitle = await page.$eval(".detail-title", (el) => el.textContent || "");
+    if (!selectedDetailTitle.includes("#101")) {
+      throw new Error(`expected selected report detail #101, got: ${selectedDetailTitle}`);
+    }
     const smokeState = await page.evaluate(() => window.__analysisSmoke);
     if (!smokeState || smokeState.reports.length < 2) {
       throw new Error("expected reports list to contain newly generated aggregated report");
@@ -122,6 +150,9 @@ const BASE_URL = process.env.SMOKE_URL || "http://127.0.0.1:8090/";
   } catch (error) {
     console.error("FAIL analysis trigger smoke");
     console.error(error instanceof Error ? error.message : String(error));
+    if (error instanceof Error && error.stack) {
+      console.error(error.stack);
+    }
     process.exitCode = 1;
   } finally {
     await browser.close();

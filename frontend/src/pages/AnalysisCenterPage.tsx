@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import {
   fetchAnalysisReport,
   fetchAnalysisReports,
@@ -16,27 +16,36 @@ export default function AnalysisCenterPage() {
   const [triggerMessage, setTriggerMessage] = useState("");
   const [listLoading, setListLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
+  const detailRequestSeqRef = useRef(0);
 
-  const formatTriggerStatus = (status: "processing" | "partial" | "failed"): string => {
+  const formatTriggerStatus = (status: "processing" | "partial" | "failed" | "skipped"): string => {
     if (status === "processing") return "聚合分析任务已受理，正在生成报告。";
     if (status === "partial") return "聚合分析任务已受理，部分数据处理失败，请关注结果状态。";
+    if (status === "skipped") return "当前没有异常设备，未生成新的分析任务。";
     return "聚合分析任务触发失败，请稍后重试。";
   };
 
   const selectReport = async (id: number) => {
-    if (detailLoading) {
-      return;
-    }
+    const requestSeq = ++detailRequestSeqRef.current;
+    setSelectedId(id);
+    setDetailLoading(true);
     try {
-      setDetailLoading(true);
-      setSelectedId(id);
-      setSelectedReport(await fetchAnalysisReport(id));
+      const report = await fetchAnalysisReport(id);
+      if (requestSeq === detailRequestSeqRef.current) {
+        setSelectedReport(report);
+      }
+    } catch (error) {
+      if (requestSeq === detailRequestSeqRef.current) {
+        setErrorMessage(error instanceof Error ? error.message : String(error));
+      }
     } finally {
-      setDetailLoading(false);
+      if (requestSeq === detailRequestSeqRef.current) {
+        setDetailLoading(false);
+      }
     }
   };
 
-  const loadReports = async () => {
+  const loadReports = async (preferredReportId?: number | null) => {
     if (listLoading) {
       return;
     }
@@ -44,11 +53,19 @@ export default function AnalysisCenterPage() {
       setListLoading(true);
       const list = await fetchAnalysisReports(30);
       setReports(list);
-      if (list.length > 0 && selectedId === null) {
-        await selectReport(list[0].id);
-      } else if (selectedId !== null) {
-        await selectReport(selectedId);
+      if (list.length === 0) {
+        setSelectedId(null);
+        setSelectedReport(null);
+        return;
       }
+      let nextReportId = preferredReportId ?? selectedId;
+      if (nextReportId === null || nextReportId === undefined) {
+        nextReportId = list[0].id;
+      }
+      if (!list.some((item) => item.id === nextReportId)) {
+        nextReportId = list[0].id;
+      }
+      await selectReport(nextReportId);
     } finally {
       setListLoading(false);
     }
@@ -84,7 +101,10 @@ export default function AnalysisCenterPage() {
               setTriggerMessage("");
               const result = await triggerAnalysisReport();
               setTriggerMessage(`${formatTriggerStatus(result.status)}（任务ID：${result.triggerId}）`);
-              await loadReports();
+              if (result.reportId !== null) {
+                await selectReport(result.reportId);
+              }
+              await loadReports(result.reportId);
             } catch (error) {
               setErrorMessage(error instanceof Error ? error.message : String(error));
             } finally {

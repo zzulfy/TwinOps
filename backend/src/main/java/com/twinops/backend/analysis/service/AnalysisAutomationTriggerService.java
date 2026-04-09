@@ -65,7 +65,7 @@ public class AnalysisAutomationTriggerService {
                 LogFields.ERROR_CODE, "ANALYSIS_TARGET_EMPTY",
                 slot
             );
-            return new TriggerAnalysisResponse(slot, "skipped", 0, 0, 0);
+            return new TriggerAnalysisResponse(slot, null, "skipped", 0, 0, 0);
         }
 
         Long reportId = null;
@@ -118,6 +118,7 @@ public class AnalysisAutomationTriggerService {
 
         return new TriggerAnalysisResponse(
             slot,
+            reportId,
             failedCount == 0 ? "processing" : (acceptedCount > 0 ? "partial" : "failed"),
             targets.size(),
             acceptedCount,

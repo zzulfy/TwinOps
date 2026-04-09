@@ -11,6 +11,13 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   config:
     import: classpath:llm.yml
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:127.0.0.1:9092}
+    consumer:
+      group-id: ${KAFKA_CONSUMER_GROUP:twinops-analysis-consumer}
+      auto-offset-reset: latest
+    producer:
+      acks: all
 
 mybatis-plus:
   configuration:
@@ -37,6 +44,9 @@ twinops:
       password: admin123456
       display-name: System Administrator
   analysis:
+    time:
+      storage-zone-id: UTC
+      display-zone-id: Asia/Shanghai
     automation:
       enabled: true
       topic: analysis.request

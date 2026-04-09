@@ -24,6 +24,8 @@ coverage
 *.njsproj
 *.sln
 *.sw?
+.github
+.codex
 
 *.tsbuildinfo
 stats.html

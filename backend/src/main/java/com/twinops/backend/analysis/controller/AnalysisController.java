@@ -1,8 +1,10 @@
 package com.twinops.backend.analysis.controller;
 
 import com.twinops.backend.analysis.dto.AnalysisReportDto;
+import com.twinops.backend.analysis.dto.AnalysisAutomationHealthDto;
 import com.twinops.backend.analysis.dto.CreateAnalysisRequest;
 import com.twinops.backend.analysis.dto.TriggerAnalysisResponse;
+import com.twinops.backend.analysis.service.AnalysisAutomationHealthService;
 import com.twinops.backend.analysis.service.AnalysisAutomationTriggerService;
 import com.twinops.backend.analysis.service.AnalysisAutomationProducer;
 import com.twinops.backend.analysis.service.AnalysisService;
@@ -32,15 +34,18 @@ public class AnalysisController {
     private final AnalysisService analysisService;
     private final AnalysisAutomationProducer analysisAutomationProducer;
     private final AnalysisAutomationTriggerService analysisAutomationTriggerService;
+    private final AnalysisAutomationHealthService analysisAutomationHealthService;
 
     public AnalysisController(
         AnalysisService analysisService,
         AnalysisAutomationProducer analysisAutomationProducer,
-        AnalysisAutomationTriggerService analysisAutomationTriggerService
+        AnalysisAutomationTriggerService analysisAutomationTriggerService,
+        AnalysisAutomationHealthService analysisAutomationHealthService
     ) {
         this.analysisService = analysisService;
         this.analysisAutomationProducer = analysisAutomationProducer;
         this.analysisAutomationTriggerService = analysisAutomationTriggerService;
+        this.analysisAutomationHealthService = analysisAutomationHealthService;
     }
 
     @PostMapping("/reports")
@@ -98,6 +103,22 @@ public class AnalysisController {
             id
         );
         return ApiResponse.ok(analysisService.getReport(id));
+    }
+
+    @GetMapping("/health")
+    public ApiResponse<AnalysisAutomationHealthDto> health() {
+        AnalysisAutomationHealthDto health = analysisAutomationHealthService.getHealth();
+        log.info("{}={} {}={} {}={} {}={} status={} listenerRunning={} kafkaReachable={} topic={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "analysis",
+            LogFields.EVENT, "analysis.automation.health.request",
+            LogFields.RESULT, "success",
+            health.status(),
+            health.listenerRunning(),
+            health.kafkaReachable(),
+            health.topic()
+        );
+        return ApiResponse.ok(health);
     }
 
     private TriggerContext triggerInternal(CreateAnalysisRequest body) {

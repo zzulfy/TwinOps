@@ -1,7 +1,9 @@
 package com.twinops.backend.analysis.controller;
 
 import com.twinops.backend.analysis.dto.AnalysisReportDto;
+import com.twinops.backend.analysis.dto.AnalysisAutomationHealthDto;
 import com.twinops.backend.analysis.dto.TriggerAnalysisResponse;
+import com.twinops.backend.analysis.service.AnalysisAutomationHealthService;
 import com.twinops.backend.analysis.service.AnalysisAutomationProducer;
 import com.twinops.backend.analysis.service.AnalysisAutomationTriggerService;
 import com.twinops.backend.analysis.service.AnalysisService;
@@ -39,6 +41,9 @@ class AnalysisControllerTest {
     private AnalysisAutomationTriggerService analysisAutomationTriggerService;
 
     @MockBean
+    private AnalysisAutomationHealthService analysisAutomationHealthService;
+
+    @MockBean
     private com.twinops.backend.auth.service.AuthTokenResolver authTokenResolver;
 
     @MockBean
@@ -72,7 +77,7 @@ class AnalysisControllerTest {
             new com.twinops.backend.auth.dto.AdminIdentityDto("admin", "System Administrator", "admin")
         );
         when(analysisAutomationTriggerService.triggerManualBatch()).thenReturn(
-            new TriggerAnalysisResponse("manual-20260403123000", "processing", 4, 4, 0)
+            new TriggerAnalysisResponse("manual-20260403123000", 10L, "processing", 4, 4, 0)
         );
 
         mockMvc.perform(post("/api/analysis/reports/trigger")
@@ -81,6 +86,7 @@ class AnalysisControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data.triggerId").value("manual-20260403123000"))
+            .andExpect(jsonPath("$.data.reportId").value(10))
             .andExpect(jsonPath("$.data.targetCount").value(4))
             .andExpect(jsonPath("$.data.acceptedCount").value(4))
             .andExpect(jsonPath("$.data.failedCount").value(0))
@@ -95,7 +101,7 @@ class AnalysisControllerTest {
             new com.twinops.backend.auth.dto.AdminIdentityDto("admin", "System Administrator", "admin")
         );
         when(analysisAutomationTriggerService.triggerManualBatch()).thenReturn(
-            new TriggerAnalysisResponse("manual-20260403123001", "processing", 2, 1, 0)
+            new TriggerAnalysisResponse("manual-20260403123001", 11L, "processing", 2, 1, 0)
         );
 
         mockMvc.perform(post("/api/analysis/reports/trigger")
@@ -103,6 +109,7 @@ class AnalysisControllerTest {
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data.triggerId").value("manual-20260403123001"))
+            .andExpect(jsonPath("$.data.reportId").value(11))
             .andExpect(jsonPath("$.data.status").value("processing"));
         verify(analysisAutomationTriggerService, times(1)).triggerManualBatch();
     }
@@ -147,6 +154,34 @@ class AnalysisControllerTest {
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data.id").value(2))
             .andExpect(jsonPath("$.data.deviceCode").value("DEV002"));
+    }
+
+    @Test
+    void shouldReturnAutomationHealthAfterAuthGuardPasses() throws Exception {
+        when(authTokenResolver.resolve(any(), any())).thenReturn("token");
+        when(adminAuthService.getIdentityByToken("token")).thenReturn(
+            new com.twinops.backend.auth.dto.AdminIdentityDto("admin", "System Administrator", "admin")
+        );
+        when(analysisAutomationHealthService.getHealth()).thenReturn(
+            new AnalysisAutomationHealthDto(
+                "up",
+                true,
+                true,
+                true,
+                true,
+                "analysis.request",
+                "127.0.0.1:9092",
+                "analysis automation consumer is running and kafka topic is reachable"
+            )
+        );
+
+        mockMvc.perform(get("/api/analysis/health").header("Authorization", "Bearer token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.status").value("up"))
+            .andExpect(jsonPath("$.data.listenerRunning").value(true))
+            .andExpect(jsonPath("$.data.kafkaReachable").value(true))
+            .andExpect(jsonPath("$.data.topic").value("analysis.request"));
     }
 }
 

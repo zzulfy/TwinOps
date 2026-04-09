@@ -35,12 +35,14 @@ public class AnalysisAutomationConsumer {
     }
 
     @KafkaListener(
+        id = "analysisAutomationConsumer",
         topics = "${twinops.analysis.automation.topic:analysis.request}",
         groupId = "${twinops.analysis.automation.consumer-group:twinops-analysis-consumer}"
     )
     public void onMessage(String payload) {
+        AnalysisAutomationMessage message = null;
         try {
-            AnalysisAutomationMessage message = objectMapper.readValue(payload, AnalysisAutomationMessage.class);
+            message = objectMapper.readValue(payload, AnalysisAutomationMessage.class);
             log.info("{}={} {}={} {}={} {}={} topic={} deviceCode={} idempotencyKey={}",
                 LogFields.REQUEST_ID, safeRequestId(),
                 LogFields.MODULE, "analysis",
@@ -75,6 +77,7 @@ public class AnalysisAutomationConsumer {
                 message.idempotencyKey()
             );
         } catch (Exception ex) {
+            markReportFailedSafely(message, ex.getMessage());
             log.error("{}={} {}={} {}={} {}={} {}={} topic={} message={}",
                 LogFields.REQUEST_ID, safeRequestId(),
                 LogFields.MODULE, "analysis",
@@ -85,7 +88,31 @@ public class AnalysisAutomationConsumer {
                 ex.getMessage(),
                 ex
             );
-            throw new RuntimeException("analysis automation consume failed", ex);
+            // Do not rethrow here; otherwise one poison message can block the whole partition
+            // and make subsequent manual-trigger jobs stay in processing until timeout.
+        }
+    }
+
+    private void markReportFailedSafely(AnalysisAutomationMessage message, String errorMessage) {
+        if (message == null || message.reportId() == null) {
+            return;
+        }
+        try {
+            analysisService.failExistingProcessingReport(
+                message.reportId(),
+                errorMessage == null || errorMessage.isBlank() ? "analysis automation consume failed" : errorMessage
+            );
+        } catch (Exception updateEx) {
+            log.error("{}={} {}={} {}={} {}={} {}={} reportId={} message={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "analysis",
+                LogFields.EVENT, "analysis.automation.consume.mark_failed",
+                LogFields.RESULT, "failed",
+                LogFields.ERROR_CODE, "ANALYSIS_MARK_FAILED_ERROR",
+                message.reportId(),
+                updateEx.getMessage(),
+                updateEx
+            );
         }
     }
 
