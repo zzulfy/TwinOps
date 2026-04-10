@@ -213,6 +213,35 @@ npm run preview
 
 Frontend 默认预览地址：`http://127.0.0.1:4173`
 
+### 6) 一键启动前后端（Windows PowerShell）
+
+前置依赖：
+
+- Node.js 与 npm
+- JDK 17+
+- Maven 3.9+
+
+在项目根目录执行：
+
+```powershell
+.\start-dev.ps1
+```
+
+脚本会按固定顺序执行：
+
+1. 后端：`cd backend` -> `mvn -DskipTests package` -> `java -jar target/backend-0.0.1-SNAPSHOT.jar > backend.log 2>&1`（后台运行）
+2. 前端：`cd frontend` -> `npm install` -> `npm run build` -> `npm run dev`（前台运行）
+
+运行时会输出后端 PID 与日志路径，默认日志文件为：
+
+- `backend/backend.log`
+
+停止后端可使用脚本输出的 PID，例如：
+
+```powershell
+Stop-Process -Id <backend-pid>
+```
+
 ### Docker 备选方案（仅在本机未安装 MySQL/Kafka 时使用）
 
 ```bash
