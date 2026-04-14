@@ -1,20 +1,26 @@
 # dashboard-scene-daylight-visuals Specification
 
 ## Purpose
-TBD - created by syncing change dashboard-scene-daylight-theme. Update Purpose after archive.
+Define the dashboard simulation scene as a modern indoor control-room environment while preserving the existing manual interaction model and 1:1 simulation-device mapping behavior.
+
 ## Requirements
-### Requirement: Dashboard scene SHALL present daylight visuals
-The dashboard simulation scene SHALL render with daylight-oriented visual settings, including bright neutral sky/background, balanced sunlight-style lighting, and readable device materials aligned with the light UI shell.
+### Requirement: Dashboard scene SHALL present modern indoor control-room visuals
+The dashboard simulation scene SHALL render as an enclosed modern control-room environment centered on indoor equipment visibility, using restrained indoor lighting, device-led composition, and no exterior shell or sky-first presentation.
 
-#### Scenario: Scene renders in daylight mode on dashboard load
+#### Scenario: Scene opens with indoor device-first composition
 - **WHEN** the user opens the dashboard page and the simulation canvas initializes
-- **THEN** the scene background and primary lighting SHALL use daylight-oriented tones instead of night-style dark tones
-- **AND** device models or fallback geometries SHALL remain visually distinguishable against the brighter environment
+- **THEN** the default view SHALL present near-field equipment and interior depth as the primary visual focus
+- **AND** the initial composition SHALL NOT be dominated by empty floor, exterior shell, or sky-like background treatment
 
-### Requirement: Daylight visual migration SHALL preserve interaction behavior
-The daylight visual update MUST NOT alter existing camera interaction semantics, model loading paths, or fallback trigger conditions.
+#### Scenario: Scene remains indoor and enclosed during interaction
+- **WHEN** the user rotates, pans, or zooms within the simulation canvas
+- **THEN** walls, ceiling, and end-of-room boundaries SHALL continue to define an indoor control-room setting
+- **AND** the camera SHALL remain constrained to interior viewpoints rather than exposing an outside-house view
 
-#### Scenario: Existing camera and loading behavior remains unchanged
-- **WHEN** users drag and zoom in the simulation canvas after the daylight update
-- **THEN** central rotate, edge pan, and wheel zoom interactions SHALL behave exactly as before
-- **AND** model loading SHALL still use existing GLB/DRACO paths with fallback activation only when model loading fails
+### Requirement: Control-room visual migration SHALL preserve manual interaction behavior
+The control-room visual refresh MUST NOT alter existing manual camera interaction semantics, device click behavior, or 1:1 simulation-device data mapping.
+
+#### Scenario: Existing interaction model remains intact after visual refresh
+- **WHEN** users drag and zoom in the simulation canvas after the visual rebuild
+- **THEN** left-drag zone behavior, wheel zoom, indoor camera constraints, and device click-to-dialog behavior SHALL continue to work
+- **AND** visual changes SHALL NOT break the configured 1:1 device mapping between scene objects and runtime data

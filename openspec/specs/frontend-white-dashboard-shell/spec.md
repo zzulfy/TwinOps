@@ -1,6 +1,7 @@
 ## Purpose
 
 Define white-first dashboard shell visual presentation and its readability characteristics across layouts and responsive contexts.
+
 ## Requirements
 ### Requirement: White-first dashboard shell
 The frontend SHALL provide a GitHub Light-style dashboard shell as the primary board presentation, using neutral light backgrounds, subtle panel borders, and restrained semantic status accents while preserving operational readability.
@@ -19,10 +20,14 @@ The dashboard SHALL preserve readable hierarchy for telemetry labels, values, an
 - **AND** no critical widget text blends into decorative effects or background layers
 
 ### Requirement: White-shell responsive consistency
-The GitHub Light dashboard shell SHALL remain visually consistent and functional across existing desktop and mobile breakpoints, and the 3D simulation area SHALL be preserved as a light-themed card container rather than removed.
+The GitHub Light dashboard shell SHALL remain visually consistent and functional across existing desktop and mobile breakpoints, and the 3D simulation area SHALL remain a light-shell card container whose internal scene chrome is visually subordinate to the equipment-focused control-room scene.
 
 #### Scenario: Layout scales across breakpoints
 - **WHEN** viewport width transitions between configured screen sizes
 - **THEN** dashboard panel spacing and typography remain usable
 - **AND** shell framing does not cause clipping or overlap of critical content
 
+#### Scenario: Simulation panel chrome stays compatible with white shell
+- **WHEN** the right-side simulation panel renders within the dashboard shell
+- **THEN** the outer container SHALL continue to read as part of the white dashboard layout
+- **AND** internal title boards, badges, and scene overlays SHALL use restrained scene-integrated styling rather than competing card chrome
