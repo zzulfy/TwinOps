@@ -5,6 +5,7 @@ import com.twinops.backend.alarm.entity.AlarmEntity;
 import com.twinops.backend.alarm.mapper.AlarmMapper;
 import com.twinops.backend.common.dto.DeviceAlarmDto;
 import com.twinops.backend.common.dto.DeviceDetailDto;
+import com.twinops.backend.common.dto.SimulationDeviceDataDto;
 import com.twinops.backend.common.exception.NotFoundException;
 import com.twinops.backend.common.logging.LogFields;
 import com.twinops.backend.device.entity.DeviceEntity;
@@ -18,7 +19,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 public class DeviceService {
@@ -54,7 +57,30 @@ public class DeviceService {
                 LogFields.ERROR_CODE, "DEVICE_LIST_EMPTY"
             );
         }
+        warnInvalidLabelKeys(entities);
         return entities.stream().map(this::toDetail).toList();
+    }
+
+    public List<SimulationDeviceDataDto> listSimulationData() {
+        log.info("{}={} {}={} {}={} {}={}",
+            LogFields.REQUEST_ID, safeRequestId(),
+            LogFields.MODULE, "device",
+            LogFields.EVENT, "device.service.simulation_data.list",
+            LogFields.RESULT, "started"
+        );
+        QueryWrapper<DeviceEntity> wrapper = new QueryWrapper<>();
+        wrapper.orderByAsc("device_code");
+        List<DeviceEntity> entities = deviceMapper.selectList(wrapper);
+        if (entities.isEmpty()) {
+            log.warn("{}={} {}={} {}={} {}={} {}={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "device",
+                LogFields.EVENT, "device.service.simulation_data.list",
+                LogFields.RESULT, "empty",
+                LogFields.ERROR_CODE, "SIMULATION_DEVICE_LIST_EMPTY"
+            );
+        }
+        return entities.stream().map(this::toSimulationData).toList();
     }
 
     public DeviceDetailDto getByDeviceCode(String deviceCode) {
@@ -87,6 +113,7 @@ public class DeviceService {
         List<DeviceAlarmDto> alarms = recentDeviceAlarms(device.getDeviceCode());
         return new DeviceDetailDto(
             device.getDeviceCode(),
+            device.getLabelKey(),
             device.getName(),
             device.getType(),
             normalizeStatus(device.getStatus()),
@@ -103,6 +130,66 @@ public class DeviceService {
             decimal(metric, "networkTraffic"),
             alarms
         );
+    }
+
+    private SimulationDeviceDataDto toSimulationData(DeviceEntity device) {
+        TelemetryEntity metric = latestMetric(device.getDeviceCode());
+        List<DeviceAlarmDto> alarms = recentDeviceAlarms(device.getDeviceCode());
+        return new SimulationDeviceDataDto(
+            device.getDeviceCode(),
+            device.getType(),
+            normalizeStatus(device.getStatus()),
+            device.getSerialNumber(),
+            device.getLocation(),
+            decimal(metric, "temperature"),
+            decimal(metric, "humidity"),
+            decimal(metric, "voltage"),
+            decimal(metric, "current"),
+            decimal(metric, "power"),
+            decimal(metric, "cpuLoad"),
+            decimal(metric, "memoryUsage"),
+            decimal(metric, "diskUsage"),
+            decimal(metric, "networkTraffic"),
+            alarms
+        );
+    }
+
+    private void warnInvalidLabelKeys(List<DeviceEntity> entities) {
+        Map<String, Integer> labelKeyCount = new HashMap<>();
+        int blankCount = 0;
+        for (DeviceEntity entity : entities) {
+            String labelKey = entity.getLabelKey();
+            if (labelKey == null || labelKey.isBlank()) {
+                blankCount += 1;
+                continue;
+            }
+            labelKeyCount.merge(labelKey, 1, Integer::sum);
+        }
+        if (blankCount > 0) {
+            log.warn("{}={} {}={} {}={} {}={} {}={} blankCount={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "device",
+                LogFields.EVENT, "device.service.label_key_validation",
+                LogFields.RESULT, "invalid",
+                LogFields.ERROR_CODE, "DEVICE_LABEL_KEY_BLANK",
+                blankCount
+            );
+        }
+        List<String> duplicateKeys = labelKeyCount.entrySet().stream()
+            .filter(entry -> entry.getValue() > 1)
+            .map(Map.Entry::getKey)
+            .sorted()
+            .toList();
+        if (!duplicateKeys.isEmpty()) {
+            log.warn("{}={} {}={} {}={} {}={} {}={} duplicates={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "device",
+                LogFields.EVENT, "device.service.label_key_validation",
+                LogFields.RESULT, "invalid",
+                LogFields.ERROR_CODE, "DEVICE_LABEL_KEY_DUPLICATE",
+                String.join(",", duplicateKeys)
+            );
+        }
     }
 
     private TelemetryEntity latestMetric(String deviceCode) {

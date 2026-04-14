@@ -1,0 +1,140 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgA" x1="200" y1="40" x2="1380" y2="860" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0D1B2E"/>
+      <stop offset="1" stop-color="#07111E"/>
+    </linearGradient>
+    <linearGradient id="wallA" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#21324A"/>
+      <stop offset="1" stop-color="#122238"/>
+    </linearGradient>
+    <linearGradient id="floorA" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#1E3150"/>
+      <stop offset="1" stop-color="#0D182B"/>
+    </linearGradient>
+    <linearGradient id="aisleA" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#7897C1"/>
+      <stop offset="1" stop-color="#436182"/>
+    </linearGradient>
+    <linearGradient id="cabBody" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#D8E2EE"/>
+      <stop offset="1" stop-color="#AEBCCC"/>
+    </linearGradient>
+    <linearGradient id="cabDoorGreen" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#6F9C86"/>
+      <stop offset="1" stop-color="#4E7360"/>
+    </linearGradient>
+    <linearGradient id="cabDoorBlue" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#6E8FB4"/>
+      <stop offset="1" stop-color="#4E6C8E"/>
+    </linearGradient>
+    <linearGradient id="cabDoorAmber" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#AA8F66"/>
+      <stop offset="1" stop-color="#7D684A"/>
+    </linearGradient>
+    <filter id="shadowA" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#02101D" flood-opacity="0.55"/>
+    </filter>
+    <filter id="glowA" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="10" flood-color="#5AB4FF" flood-opacity="0.85"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" rx="28" fill="url(#bgA)"/>
+
+  <polygon points="0,88 690,336 690,742 0,900" fill="url(#wallA)" opacity="0.9"/>
+  <polygon points="1600,76 910,336 910,742 1600,900" fill="#14243A" opacity="0.92"/>
+  <polygon points="258,0 800,344 1342,0 1600,0 1600,96 920,384 680,384 0,94 0,0" fill="#081321"/>
+  <polygon points="0,900 512,576 1088,576 1600,900" fill="url(#floorA)"/>
+  <polygon points="638,562 962,562 1116,900 484,900" fill="url(#aisleA)" opacity="0.98"/>
+  <rect x="640" y="546" width="324" height="10" rx="5" fill="#A9C6EA" opacity="0.55"/>
+
+  <rect x="356" y="44" width="288" height="10" rx="5" transform="rotate(39 356 44)" fill="#55B2FF" opacity="0.86" filter="url(#glowA)"/>
+  <rect x="977" y="54" width="308" height="10" rx="5" transform="rotate(-39 977 54)" fill="#55B2FF" opacity="0.86" filter="url(#glowA)"/>
+
+  <g opacity="0.8">
+    <rect x="246" y="138" width="24" height="542" fill="#26384C"/>
+    <rect x="1330" y="118" width="24" height="562" fill="#243749"/>
+  </g>
+
+  <g filter="url(#shadowA)">
+    <g transform="translate(120 635)">
+      <polygon points="0,132 96,92 96,-98 0,-58" fill="url(#cabBody)"/>
+      <polygon points="96,92 208,132 208,-58 96,-98" fill="#C5D1DE"/>
+      <polygon points="18,110 84,84 84,-70 18,-46" fill="url(#cabDoorGreen)"/>
+      <rect x="92" y="-80" width="8" height="150" fill="#1E3149"/>
+      <rect x="92" y="-14" width="26" height="8" rx="4" fill="#12253A"/>
+      <rect x="92" y="44" width="26" height="8" rx="4" fill="#12253A"/>
+    </g>
+    <g transform="translate(284 598) scale(0.92)">
+      <polygon points="0,132 96,92 96,-98 0,-58" fill="url(#cabBody)"/>
+      <polygon points="96,92 208,132 208,-58 96,-98" fill="#C4D2DF"/>
+      <polygon points="18,110 84,84 84,-70 18,-46" fill="url(#cabDoorBlue)"/>
+      <rect x="92" y="-80" width="8" height="150" fill="#1E3149"/>
+      <rect x="112" y="-70" width="66" height="16" rx="6" fill="#2C4966"/>
+      <rect x="118" y="-64" width="54" height="4" rx="2" fill="#9EDBFF"/>
+      <rect x="92" y="12" width="26" height="8" rx="4" fill="#12253A"/>
+      <rect x="92" y="64" width="26" height="8" rx="4" fill="#12253A"/>
+    </g>
+    <g transform="translate(420 570) scale(0.82)">
+      <polygon points="0,132 96,92 96,-98 0,-58" fill="url(#cabBody)"/>
+      <polygon points="96,92 208,132 208,-58 96,-98" fill="#C4CFDA"/>
+      <polygon points="18,110 84,84 84,-70 18,-46" fill="url(#cabDoorAmber)"/>
+      <rect x="110" y="-78" width="56" height="18" rx="6" fill="#D8A043"/>
+      <rect x="112" y="-8" width="60" height="6" rx="3" fill="#1E3148"/>
+      <rect x="112" y="8" width="60" height="6" rx="3" fill="#1E3148"/>
+      <rect x="112" y="24" width="60" height="6" rx="3" fill="#1E3148"/>
+    </g>
+  </g>
+
+  <g filter="url(#shadowA)" opacity="0.96">
+    <g transform="translate(1128 628) scale(0.94)">
+      <polygon points="0,132 96,92 96,-98 0,-58" fill="url(#cabBody)"/>
+      <polygon points="96,92 208,132 208,-58 96,-98" fill="#C4D0DC"/>
+      <polygon points="18,110 84,84 84,-70 18,-46" fill="url(#cabDoorGreen)"/>
+      <rect x="92" y="-80" width="8" height="150" fill="#1E3149"/>
+      <rect x="112" y="-70" width="58" height="6" rx="3" fill="#243B56"/>
+      <rect x="112" y="-56" width="58" height="6" rx="3" fill="#243B56"/>
+      <rect x="112" y="-42" width="58" height="6" rx="3" fill="#243B56"/>
+    </g>
+    <g transform="translate(1224 590) scale(0.86)">
+      <polygon points="0,132 96,92 96,-98 0,-58" fill="url(#cabBody)"/>
+      <polygon points="96,92 208,132 208,-58 96,-98" fill="#C7D4E0"/>
+      <polygon points="18,110 84,84 84,-70 18,-46" fill="url(#cabDoorBlue)"/>
+      <rect x="92" y="-80" width="8" height="150" fill="#1E3149"/>
+      <rect x="118" y="-68" width="48" height="12" rx="5" fill="#355573"/>
+      <circle cx="140" cy="-14" r="5" fill="#42CC8C"/>
+      <circle cx="154" cy="-14" r="5" fill="#4EB4FF"/>
+      <circle cx="168" cy="-14" r="5" fill="#EAC04F"/>
+    </g>
+    <g transform="translate(1308 560) scale(0.78)">
+      <polygon points="0,132 96,92 96,-98 0,-58" fill="url(#cabBody)"/>
+      <polygon points="96,92 208,132 208,-58 96,-98" fill="#C9D5E0"/>
+      <polygon points="18,110 84,84 84,-70 18,-46" fill="url(#cabDoorGreen)"/>
+      <rect x="92" y="-80" width="8" height="150" fill="#1E3149"/>
+      <rect x="112" y="-8" width="58" height="6" rx="3" fill="#20354D"/>
+      <rect x="112" y="8" width="58" height="6" rx="3" fill="#20354D"/>
+      <rect x="112" y="24" width="58" height="6" rx="3" fill="#20354D"/>
+    </g>
+    <g transform="translate(1380 536) scale(0.7)">
+      <polygon points="0,132 96,92 96,-98 0,-58" fill="url(#cabBody)"/>
+      <polygon points="96,92 208,132 208,-58 96,-98" fill="#C9D3DE"/>
+      <polygon points="18,110 84,84 84,-70 18,-46" fill="url(#cabDoorAmber)"/>
+      <rect x="92" y="-80" width="8" height="150" fill="#1E3149"/>
+    </g>
+  </g>
+
+  <rect x="54" y="42" width="268" height="64" rx="20" fill="#E9EDF4"/>
+  <text x="86" y="83" fill="#122338" font-family="Segoe UI, Arial, sans-serif" font-size="32" font-weight="700">Concept A</text>
+
+  <g>
+    <rect x="70" y="734" width="258" height="114" rx="22" fill="#12283D" stroke="#2C4C69"/>
+    <text x="96" y="778" fill="#DCEBFA" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">Interior Start Camera</text>
+    <text x="96" y="812" fill="#AFC6DB" font-family="Segoe UI, Arial, sans-serif" font-size="20">Walls stay as framing, not exterior shell.</text>
+  </g>
+  <g>
+    <rect x="1228" y="120" width="292" height="110" rx="22" fill="#12283D" stroke="#2C4C69"/>
+    <text x="1256" y="164" fill="#DCEBFA" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">Wider Aisle</text>
+    <text x="1256" y="198" fill="#AFC6DB" font-family="Segoe UI, Arial, sans-serif" font-size="20">Clearer motion path and less cramped depth.</text>
+  </g>
+</svg>

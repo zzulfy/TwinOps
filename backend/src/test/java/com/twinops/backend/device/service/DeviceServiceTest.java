@@ -3,6 +3,7 @@ package com.twinops.backend.device.service;
 import com.twinops.backend.alarm.entity.AlarmEntity;
 import com.twinops.backend.alarm.mapper.AlarmMapper;
 import com.twinops.backend.common.dto.DeviceDetailDto;
+import com.twinops.backend.common.dto.SimulationDeviceDataDto;
 import com.twinops.backend.common.exception.NotFoundException;
 import com.twinops.backend.device.entity.DeviceEntity;
 import com.twinops.backend.device.mapper.DeviceMapper;
@@ -61,6 +62,7 @@ class DeviceServiceTest {
         assertEquals(1, result.size());
         DeviceDetailDto dto = result.get(0);
         assertEquals("DEV001", dto.deviceCode());
+        assertEquals("1# 服务器机柜", dto.labelKey());
         assertEquals("normal", dto.status());
         assertEquals(new BigDecimal("24.5"), dto.temperature());
         assertEquals(new BigDecimal("187.0"), dto.networkTraffic());
@@ -104,9 +106,33 @@ class DeviceServiceTest {
         assertEquals("device not found: DEV404", ex.getMessage());
     }
 
+    @Test
+    void shouldMapSimulationDataWithoutUiFields() {
+        DeviceEntity device = device("DEV010", "10# 服务器机柜", "服务器机柜", "warning");
+        TelemetryEntity metric = metric("DEV010", new BigDecimal("28.6"), new BigDecimal("57.2"), new BigDecimal("220.1"),
+            new BigDecimal("6.2"), new BigDecimal("1490.0"), new BigDecimal("52.0"), new BigDecimal("58.0"),
+            new BigDecimal("46.0"), new BigDecimal("196.0"));
+        AlarmEntity alarm = alarm(10L, "DEV010", "湿度过高", 2, LocalDateTime.of(2026, 4, 12, 9, 11));
+
+        when(deviceMapper.selectList(any())).thenReturn(List.of(device));
+        when(telemetryMapper.selectOne(any())).thenReturn(metric);
+        when(alarmMapper.selectList(any())).thenReturn(List.of(alarm));
+
+        List<SimulationDeviceDataDto> result = deviceService.listSimulationData();
+
+        assertEquals(1, result.size());
+        SimulationDeviceDataDto dto = result.get(0);
+        assertEquals("DEV010", dto.deviceCode());
+        assertEquals("warning", dto.status());
+        assertEquals("服务器机柜", dto.type());
+        assertEquals(new BigDecimal("28.6"), dto.temperature());
+        assertEquals("warning", dto.alarms().get(0).type());
+    }
+
     private static DeviceEntity device(String code, String name, String type, String status) {
         DeviceEntity entity = new DeviceEntity();
         entity.setDeviceCode(code);
+        entity.setLabelKey(name);
         entity.setName(name);
         entity.setType(type);
         entity.setStatus(status);

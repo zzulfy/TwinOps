@@ -15,6 +15,12 @@ TwinOps 后端基于 Spring Boot + MyBatis-Plus + MySQL，采用 modular monolit
 CREATE DATABASE IF NOT EXISTS twinops DEFAULT CHARSET utf8mb4;
 ```
 
+先生成 dataset-driven seed SQL（建议每次更新 `data/` 或 `../frontend/src/config/simulationDeviceCatalog.json` 后执行）：
+
+```bash
+python scripts/generate_dataset_seeds.py
+```
+
 按顺序执行：
 
 1. `sql/001_schema.sql`
@@ -22,6 +28,18 @@ CREATE DATABASE IF NOT EXISTS twinops DEFAULT CHARSET utf8mb4;
 3. `sql/003_seed_metrics.sql`
 4. `sql/004_seed_alarms.sql`
 5. `sql/005_verify_retention.sql`
+
+其中：
+
+- `002_seed_devices.sql` / `003_seed_metrics.sql` / `004_seed_alarms.sql` 由 `scripts/generate_dataset_seeds.py` 生成
+- `007_simulation_object_map.csv` 同样由 `scripts/generate_dataset_seeds.py` 生成，作为 GLB 对象到交互设备的一致性基线
+- 生成输入来自：
+  - `../data/SMD/test.csv` + `../data/SMD/labels.csv`
+  - `../data/MSDS/test.csv` + `../data/MSDS/labels.csv`
+  - `../frontend/public/models/devices.glb`
+  - `../frontend/src/config/simulationDeviceCatalog.json`
+- 设备编码固定为 `DEV001`~`DEV032`，并与当前裁剪后的仿真设备清单一一对应
+- 仿真设备目录只使用户内设备名称和类型，但 `label_key` 继续保留 GLB 节点名称以保证映射稳定
 
 ## 3. 配置说明
 
@@ -36,6 +54,8 @@ CREATE DATABASE IF NOT EXISTS twinops DEFAULT CHARSET utf8mb4;
 - `spring.datasource.url/username/password`
 - `twinops.auth.admin.username/password/display-name`
 - `twinops.analysis.llm.provider/base-url/api-key/model/temperature/max-tokens/fallback-to-mock`（LangChain4j 版本不再使用 `path`）
+- `twinops.simulation.devices-model-path`（仿真设备模型路径，默认 `../frontend/public/models/devices.glb`）
+- `twinops.simulation.seed-devices-sql-path`（设备种子 SQL 路径，默认 `./sql/002_seed_devices.sql`）
 
 ## 4. 启动后端
 
@@ -80,6 +100,7 @@ Kafka 关键映射：
 - `GET /api/auth/me`
 - `GET /api/devices`
 - `GET /api/devices/{deviceCode}`
+- `GET /api/devices/simulation-consistency?autoRepair=true|false`
 - `GET /api/watchlist`
 - `POST /api/watchlist`
 - `DELETE /api/watchlist/{deviceCode}`
@@ -100,6 +121,14 @@ Kafka 关键映射：
 - 全局 auth interceptor 对 `/api/**` 生效（白名单除外）
 - OpenAPI：`GET /v3/api-docs`
 - Swagger UI：`GET /swagger-ui/index.html`
+
+## 7.1 仿真设备一致性接口说明
+
+- `GET /api/devices/simulation-consistency` 返回仿真设备集合与数据库设备集合的一致性报告。
+- `autoRepair=true` 时按“先删后补”修复：
+  - 删除数据库多余设备及关联数据（watchlist、alarms、metrics、devices）
+  - 补齐缺失设备并写入基础 telemetry
+- 响应字段包含：`consistent`、`repaired`、`deletedCount`、`addedCount`、`extraInDatabase`、`missingInDatabase`、`errors`。
 
 ## Dashboard 故障率趋势约定
 
@@ -147,4 +176,19 @@ VITE_BACKEND_BASE_URL=http://127.0.0.1:8080
 - 后续代码变更必须补齐：
   - Integration Tests
   - Regression Tests
+
+## 12. 集成测试（localhost 模式）
+
+- `AuthFlowIntegrationTest` 与 `AnalysisKafkaIntegrationTest` 使用 localhost HTTP 集成方式：
+  - 默认目标：`http://127.0.0.1:8080`
+  - 可覆盖：`-Dit.base-url=http://<host>:<port>`
+- 运行命令：
+
+```bash
+cmd /c mvn "-Dtest=AnalysisKafkaIntegrationTest,AuthFlowIntegrationTest" test
+```
+
+- 说明：
+  - 测试前置检查 localhost 可达性；
+  - 若服务不可达，测试将跳过而非误报业务失败。
 

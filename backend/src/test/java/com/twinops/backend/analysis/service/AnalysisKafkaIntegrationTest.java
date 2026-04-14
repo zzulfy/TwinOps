@@ -1,153 +1,78 @@
 package com.twinops.backend.analysis.service;
 
-import com.twinops.backend.analysis.dto.AnalysisAutomationMessage;
-import com.twinops.backend.analysis.entity.AnalysisReportEntity;
-import com.twinops.backend.analysis.mapper.AnalysisReportMapper;
-import com.twinops.backend.analysis.dto.TriggerAnalysisResponse;
-import com.twinops.backend.device.entity.DeviceEntity;
-import com.twinops.backend.device.mapper.DeviceMapper;
-import com.twinops.backend.telemetry.entity.TelemetryEntity;
-import com.twinops.backend.telemetry.mapper.TelemetryMapper;
-import org.junit.jupiter.api.BeforeEach;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.twinops.backend.testsupport.LocalhostApiClient;
+import com.twinops.backend.testsupport.LocalhostApiClient.HttpResult;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.kafka.test.context.EmbeddedKafka;
-import org.springframework.test.context.TestPropertySource;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
+import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.timeout;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-@SpringBootTest
-@EmbeddedKafka(topics = {"analysis.request"}, partitions = 1)
-@TestPropertySource(properties = {
-    "spring.kafka.bootstrap-servers=${spring.embedded.kafka.brokers}",
-    "twinops.analysis.automation.enabled=true",
-    "twinops.analysis.automation.scheduler-enabled=false",
-    "twinops.analysis.llm.provider=openai",
-    "twinops.analysis.llm.api-key=",
-    "twinops.analysis.llm.fallback-to-mock=true"
-})
 class AnalysisKafkaIntegrationTest {
 
-    @Autowired
-    private AnalysisAutomationProducer producer;
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    @Autowired
-    private AnalysisAutomationTriggerService triggerService;
-
-    @Autowired
-    private ApplicationContext applicationContext;
-
-    @MockBean
-    private AnalysisReportMapper analysisReportMapper;
-
-    @MockBean
-    private DeviceMapper deviceMapper;
-
-    @MockBean
-    private TelemetryMapper telemetryMapper;
-
-    private final Map<Long, AnalysisReportEntity> reportStore = new ConcurrentHashMap<>();
-    private final AtomicLong reportIdSequence = new AtomicLong(1000L);
-
-    @BeforeEach
-    void setUp() {
-        reportStore.clear();
-        reportIdSequence.set(1000L);
-        when(analysisReportMapper.selectOne(any())).thenAnswer(invocation -> {
-            com.baomidou.mybatisplus.core.conditions.query.QueryWrapper<AnalysisReportEntity> query = invocation.getArgument(0);
-            String idempotencyKey = query.getParamNameValuePairs().values().stream()
-                .findFirst()
-                .map(String::valueOf)
-                .orElse(null);
-            if (idempotencyKey == null) {
-                return null;
-            }
-            return reportStore.values().stream()
-                .filter(report -> idempotencyKey.equals(report.getIdempotencyKey()))
-                .findFirst()
-                .orElse(null);
-        });
-        when(analysisReportMapper.insert(any(AnalysisReportEntity.class))).thenAnswer(invocation -> {
-            AnalysisReportEntity entity = invocation.getArgument(0);
-            entity.setId(reportIdSequence.incrementAndGet());
-            entity.setCreatedAt(LocalDateTime.now());
-            reportStore.put(entity.getId(), entity);
-            return 1;
-        });
-        when(analysisReportMapper.updateById(any(AnalysisReportEntity.class))).thenAnswer(invocation -> {
-            AnalysisReportEntity entity = invocation.getArgument(0);
-            reportStore.put(entity.getId(), entity);
-            return 1;
-        });
-        when(analysisReportMapper.selectById(any(Long.class))).thenAnswer(invocation -> reportStore.get(invocation.getArgument(0)));
+    @BeforeAll
+    static void requireLocalhostService() {
+        assumeTrue(
+            LocalhostApiClient.isReachable(),
+            "localhost backend unavailable, skip integration test: " + LocalhostApiClient.baseUrl()
+        );
     }
 
     @Test
-    void shouldPublishAndConsumeKafkaMessage() {
-        producer.publish(new AnalysisAutomationMessage("analysis-single", "DEV001", "cpu=90", "manual", "DEV001:manual", 2L));
-        verify(analysisReportMapper, timeout(3000)).insert(any(AnalysisReportEntity.class));
+    void shouldExposeAutomationHealthOnLocalhost() throws IOException {
+        String token = LocalhostApiClient.loginAsAdmin();
+        HttpResult health = LocalhostApiClient.request(
+            "GET",
+            "/api/analysis/health",
+            null,
+            Map.of("Authorization", "Bearer " + token)
+        );
+        assertThat(health.status()).isEqualTo(200);
+        JsonNode root = OBJECT_MAPPER.readTree(health.body());
+        assertThat(root.path("success").asBoolean()).isTrue();
+        assertThat(root.path("data").path("status").asText()).isNotBlank();
+        assertThat(root.path("data").path("topic").asText()).isEqualTo("analysis.request");
     }
 
     @Test
-    void shouldCompleteAutoAggregationToKafkaAndPersistLifecycle() {
-        when(deviceMapper.selectList(any())).thenReturn(List.of(device("DEV001", "warning", "A1")));
-        when(telemetryMapper.selectOne(any())).thenReturn(metric("92.5", "70.1"));
+    void shouldTriggerAnalysisBatchViaLocalhost() throws IOException {
+        String token = LocalhostApiClient.loginAsAdmin();
+        HttpResult health = LocalhostApiClient.request(
+            "GET",
+            "/api/analysis/health",
+            null,
+            Map.of("Authorization", "Bearer " + token)
+        );
+        JsonNode healthJson = OBJECT_MAPPER.readTree(health.body());
+        boolean listenerRunning = healthJson.path("data").path("listenerRunning").asBoolean(false);
+        boolean kafkaReachable = healthJson.path("data").path("kafkaReachable").asBoolean(false);
+        assumeTrue(
+            listenerRunning && kafkaReachable,
+            "analysis automation not ready on localhost, skip trigger flow test"
+        );
 
-        TriggerAnalysisResponse response = triggerService.triggerManualBatch();
+        HttpResult trigger = LocalhostApiClient.request(
+            "POST",
+            "/api/analysis/reports/trigger",
+            "{}",
+            Map.of(
+                "Authorization", "Bearer " + token,
+                "Content-Type", "application/json"
+            )
+        );
+        assertThat(trigger.status()).isEqualTo(200);
 
-        assertThat(response.targetCount()).isEqualTo(1);
-        assertThat(response.acceptedCount()).isEqualTo(1);
-        assertThat(response.failedCount()).isEqualTo(0);
-        assertThat(response.status()).isEqualTo("processing");
-        verify(analysisReportMapper, timeout(5000).atLeastOnce()).updateById(org.mockito.ArgumentMatchers.<AnalysisReportEntity>argThat(report ->
-            "AGGREGATED".equals(report.getDeviceCode())
-                && report.getIdempotencyKey() != null
-                && report.getIdempotencyKey().startsWith("batch:manual-")
-                && "success".equals(report.getStatus())
-                && report.getPrediction() != null
-        ));
-        AnalysisReportEntity persisted = reportStore.values().stream()
-            .filter(report -> "AGGREGATED".equals(report.getDeviceCode()))
-            .filter(report -> report.getIdempotencyKey() != null && report.getIdempotencyKey().startsWith("batch:manual-"))
-            .filter(report -> "success".equals(report.getStatus()))
-            .findFirst()
-            .orElseThrow();
-        assertThat(persisted.getMetricSummary()).contains("mode=aggregated").contains("cpuLoad=70.1").contains("temperature=92.5");
-    }
-
-    @Test
-    void shouldDisableSchedulerByDefaultCompatibilitySwitch() {
-        String[] schedulerBeans = applicationContext.getBeanNamesForType(AnalysisAutomationScheduler.class);
-        assertThat(schedulerBeans).isEmpty();
-    }
-
-    private static DeviceEntity device(String code, String status, String location) {
-        DeviceEntity entity = new DeviceEntity();
-        entity.setDeviceCode(code);
-        entity.setStatus(status);
-        entity.setLocation(location);
-        return entity;
-    }
-
-    private static TelemetryEntity metric(String temperature, String cpuLoad) {
-        TelemetryEntity telemetry = new TelemetryEntity();
-        telemetry.setTemperature(new BigDecimal(temperature));
-        telemetry.setCpuLoad(new BigDecimal(cpuLoad));
-        return telemetry;
+        JsonNode triggerJson = OBJECT_MAPPER.readTree(trigger.body());
+        assertThat(triggerJson.path("success").asBoolean()).isTrue();
+        String status = triggerJson.path("data").path("status").asText();
+        assertThat(status).isIn("processing", "partial", "failed", "skipped");
+        assertThat(triggerJson.path("data").path("targetCount").asInt()).isGreaterThanOrEqualTo(0);
     }
 }

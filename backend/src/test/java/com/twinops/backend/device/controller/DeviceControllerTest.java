@@ -2,10 +2,13 @@ package com.twinops.backend.device.controller;
 
 import com.twinops.backend.common.dto.DeviceAlarmDto;
 import com.twinops.backend.common.dto.DeviceDetailDto;
+import com.twinops.backend.common.dto.SimulationDeviceDataDto;
 import com.twinops.backend.auth.dto.AdminIdentityDto;
 import com.twinops.backend.auth.service.AdminAuthService;
 import com.twinops.backend.auth.service.AuthTokenResolver;
+import com.twinops.backend.device.dto.SimulationDeviceConsistencyDto;
 import com.twinops.backend.device.service.DeviceService;
+import com.twinops.backend.device.service.SimulationDeviceConsistencyService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -30,6 +33,9 @@ class DeviceControllerTest {
     private DeviceService deviceService;
 
     @MockBean
+    private SimulationDeviceConsistencyService simulationDeviceConsistencyService;
+
+    @MockBean
     private AuthTokenResolver authTokenResolver;
 
     @MockBean
@@ -41,6 +47,7 @@ class DeviceControllerTest {
         when(adminAuthService.getIdentityByToken("token")).thenReturn(new AdminIdentityDto("admin", "System Administrator", "admin"));
         DeviceDetailDto dto = new DeviceDetailDto(
             "DEV001",
+            "1# 服务器机柜",
             "1# 服务器机柜",
             "服务器机柜",
             "normal",
@@ -74,6 +81,7 @@ class DeviceControllerTest {
         DeviceDetailDto dto = new DeviceDetailDto(
             "DEV002",
             "2# 服务器机柜",
+            "2# 服务器机柜",
             "服务器机柜",
             "warning",
             "SN000034",
@@ -97,5 +105,67 @@ class DeviceControllerTest {
             .andExpect(jsonPath("$.success").value(true))
             .andExpect(jsonPath("$.data.deviceCode").value("DEV002"))
             .andExpect(jsonPath("$.data.status").value("warning"));
+    }
+
+    @Test
+    void shouldListSimulationDataWithoutUiFields() throws Exception {
+        when(authTokenResolver.resolve(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn("token");
+        when(adminAuthService.getIdentityByToken("token")).thenReturn(new AdminIdentityDto("admin", "System Administrator", "admin"));
+        SimulationDeviceDataDto dto = new SimulationDeviceDataDto(
+            "DEV003",
+            "服务器机柜",
+            "error",
+            "SN000051",
+            "数据中心 A 区 1 排",
+            new BigDecimal("31.2"),
+            new BigDecimal("54.0"),
+            new BigDecimal("219.5"),
+            new BigDecimal("7.1"),
+            new BigDecimal("1550.0"),
+            new BigDecimal("68.0"),
+            new BigDecimal("63.0"),
+            new BigDecimal("52.0"),
+            new BigDecimal("220.0"),
+            List.of(new DeviceAlarmDto(2L, "过载", "error", "08:31"))
+        );
+
+        when(deviceService.listSimulationData()).thenReturn(List.of(dto));
+
+        mockMvc.perform(get("/api/devices/simulation-data").header("Authorization", "Bearer token"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data[0].deviceCode").value("DEV003"))
+            .andExpect(jsonPath("$.data[0].status").value("error"))
+            .andExpect(jsonPath("$.data[0].name").doesNotExist())
+            .andExpect(jsonPath("$.data[0].labelKey").doesNotExist());
+    }
+
+    @Test
+    void shouldReturnSimulationConsistencyReport() throws Exception {
+        when(authTokenResolver.resolve(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).thenReturn("token");
+        when(adminAuthService.getIdentityByToken("token")).thenReturn(new AdminIdentityDto("admin", "System Administrator", "admin"));
+        when(simulationDeviceConsistencyService.checkAndRepair(true)).thenReturn(new SimulationDeviceConsistencyDto(
+            "repaired",
+            true,
+            true,
+            51,
+            49,
+            51,
+            0,
+            2,
+            List.of(),
+            List.of(),
+            List.of(),
+            "simulation-device consistency repaired successfully"
+        ));
+
+        mockMvc.perform(get("/api/devices/simulation-consistency")
+                .header("Authorization", "Bearer token")
+                .queryParam("autoRepair", "true"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.success").value(true))
+            .andExpect(jsonPath("$.data.status").value("repaired"))
+            .andExpect(jsonPath("$.data.consistent").value(true))
+            .andExpect(jsonPath("$.data.addedCount").value(2));
     }
 }

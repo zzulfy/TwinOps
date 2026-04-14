@@ -70,14 +70,17 @@ npm run smoke:analysis-auto-refresh
 npm run smoke:alarm-real-data
 npm run smoke:alarm-manual-scroll
 npm run smoke:device-alarm-two-status
+npm run smoke:scene-centered-dialog
+npm run test:unit:scene-centered-dialog
 ```
 
 ## 关键约定
 
 ### 1) Deferred Loading
 
-- ECharts 在 `useEcharts` 中动态加载，避免阻塞首屏。
+- ECharts 运行时在图表组件内通过 `src/utils/echartsRuntime.ts` 动态加载，避免阻塞首屏。
 - Three.js 非关键 addons 按需加载。
+- `vite.config.ts` 对 React、ECharts、zrender 和 Three.js 做手工分块，并把已知延迟 3D 包的 chunk warning 阈值调整为 700 kB。
 - Deferred 模块失败时优先局部降级，不阻断整个 Shell。
 
 ### 2) 数据一致性与刷新
@@ -85,8 +88,20 @@ npm run smoke:device-alarm-two-status
 - `fetchDashboardSummary` 采用共享 in-flight 策略，避免并发重复请求。
 - `fetchFaultRateTrend` 提供分钟级（minute）故障率历史曲线，并返回未来 5 分钟 AI 预测点位。
 - 故障率口径与后端一致：`error` 设备数 / 全部设备数 × 100。
-- Dashboard 右侧设备仿真画面由 `useDashboardScene` 驱动，采用 Three.js deferred loading，从 `/models/base.glb` 与 `/models/devices.glb` 加载模型；场景基线为日间风格（浅色背景与中性日光照明），仅在模型全部加载失败时回退到程序化设备阵列渲染。
-- 设备仿真默认禁用巡检类叠加元素（含箭头/路径线），并保留鼠标视角切换（PC 端：中央区域左键拖动旋转，边缘区域左键拖动平移，滚轮缩放）。
+- Dashboard 右侧设备仿真画面由 `useDashboardScene` 驱动，当前使用 Three.js 程序化构建现代室内配电与控制室展示廊，默认镜头直接位于舱内，并把相机与目标点持续约束在室内范围；场景采用裁剪后的 32 台设备演示集、中轴窄通道 + 左右设备平台 + 前/中/后/尾端分层柜列、偏轴低机位镜头、按 `visualFamily` 区分轮廓和面板语言的柜体家族、现代化吊顶灯槽、分缝墙面、暗色磨砂标题牌、阻尼平滑移动、更大范围的自由旋转和局部状态灯效，不依赖运行时 GLB 模型加载。
+- `frontend/public/models/devices.glb` 当前主要用于 seed 生成与仿真对象映射基线，不是 Dashboard 右侧仿真区的直接渲染入口。
+- Dashboard 右侧仿真 UI 由 `src/config/simulationDeviceCatalog.json` 作为共享户内设备目录，`src/config/simulationDeviceUiConfig.ts` 只负责把目录映射成前端 UI 配置；当前固定维护 32 台可交互设备（`DEV001` ~ `DEV032`）。
+- Dashboard 标题板会直接显示“演示数 / 数据数”，当前前端演示设备与数据库 seed 设备保持 32:32 的 1:1 对齐。
+- 共享目录只收录户内设备，右侧仿真区展示的名称、类型和短标识都从这份目录读取。
+- 后端 `GET /api/devices/simulation-data` 只返回设备业务数据，Dashboard 在前端完成“固定 UI 配置 + 实时数据”的合并渲染。
+- Dashboard 初始化会先调用 `GET /api/devices/simulation-consistency` 并自动修复；若仍存在不一致，仅记录日志，不在仿真画面叠加提示框。
+- 场景交互节点通过前端固定 `objectId -> deviceCode` 配置绑定；后端一致性服务则独立维护模型/对象映射与数据库设备集合对齐。
+- 用户点击设备节点后，会在仿真画面中央显示设备信息对话框（状态/位置/遥测/告警）。
+- 可点击设备通过局部状态灯、边缘光条和面板信号表达后端状态，不再对整柜做大面积染色。
+- 对话框关闭方式：点击空白区域、点击对话框关闭按钮、按 `Esc`。
+- 命中策略：使用 `pointerdown + pointerup`（小位移阈值）触发射线命中，确保拖动视角与设备点击不互相误判。
+- 事件冲突修复：仿真容器不再用父级 `onClick` 直接清空选中，避免“点中设备后同次事件被立即关闭”。
+- 设备仿真默认禁用巡检类叠加元素（含箭头/路径线），并保留鼠标视角切换（PC 端：左键拖动时，边缘区域平移、中部区域旋转，滚轮缩放）；相机不会退出室内去观察外壳。
 - 场景不再自动旋转或漂移，视角变化仅由用户手动交互触发。
 - Dashboard 支持自动刷新 + 手动刷新，并展示最近一次成功刷新时间。
 - 自动刷新具备页面可见性控制，避免隐藏页面无效轮询。

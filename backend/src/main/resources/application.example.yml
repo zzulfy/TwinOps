@@ -51,3 +51,7 @@ twinops:
       enabled: true
       topic: analysis.request
       consumer-group: twinops-analysis-consumer
+  simulation:
+    devices-model-path: ../frontend/public/models/devices.glb
+    seed-devices-sql-path: ./sql/002_seed_devices.sql
+    object-map-path: ./sql/007_simulation_object_map.csv

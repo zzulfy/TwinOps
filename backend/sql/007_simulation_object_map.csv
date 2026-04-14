@@ -1,0 +1,54 @@
+object_name,label_key,device_code,interactive
+1# 550kV I 线高抗,1# 550kV I 线高抗,DEV001,true
+1#220KW 二次设备舱,1#220KW 二次设备舱,DEV002,true
+1#变压器,1#变压器,DEV003,true
+1#设备,1#设备,DEV004,true
+1#设备.001,1#设备.001,DEV005,true
+1#设备.002,1#设备.002,DEV006,true
+1#隔离开关,1#隔离开关,DEV007,true
+10#设备,10#设备,DEV008,true
+10#设备.001,10#设备.001,DEV009,true
+11#设备,11#设备,DEV010,true
+11#设备.001,11#设备.001,DEV011,true
+12#设备,12#设备,DEV012,true
+12#设备.001,12#设备.001,DEV013,true
+2# 550kV I 线高抗,2# 550kV I 线高抗,DEV014,true
+2#220KW 二次设备舱,2#220KW 二次设备舱,DEV015,true
+2#变压器,2#变压器,DEV016,true
+2#设备,2#设备,DEV017,true
+2#设备.001,2#设备.001,DEV018,true
+2#设备.002,2#设备.002,DEV019,true
+2#隔离开关,2#隔离开关,DEV020,true
+3# 550kV I 线高抗,3# 550kV I 线高抗,DEV021,true
+3#220KW 二次设备舱,3#220KW 二次设备舱,DEV022,true
+3#变压器,3#变压器,DEV023,true
+3#设备,3#设备,DEV024,true
+3#设备.001,3#设备.001,DEV025,true
+3#设备.002,3#设备.002,DEV026,true
+3#隔离开关,3#隔离开关,DEV027,true
+4# 550kV I 线高抗,4# 550kV I 线高抗,DEV028,true
+4#变压器,4#变压器,DEV029,true
+4#设备,4#设备,DEV030,true
+4#设备.001,4#设备.001,DEV031,true
+4#设备.002,4#设备.002,DEV032,true
+1#管道,,,false
+1#管道.001,,,false
+4#隔离开关,,,false
+5# 550kV I 线高抗,,,false
+5#变压器,,,false
+5#设备,,,false
+5#设备.001,,,false
+5#设备.002,,,false
+5#隔离开关,,,false
+6# 550kV I 线高抗,,,false
+6#变压器,,,false
+6#设备,,,false
+6#设备.001,,,false
+6#设备.002,,,false
+6#隔离开关,,,false
+7#设备,,,false
+7#设备.001,,,false
+8#设备,,,false
+8#设备.001,,,false
+9#设备,,,false
+9#设备.001,,,false

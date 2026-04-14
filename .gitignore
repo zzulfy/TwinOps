@@ -18,6 +18,7 @@ coverage
 /cypress/screenshots/
 
 /.vscode/
+/data/
 .idea
 *.suo
 *.ntvs*

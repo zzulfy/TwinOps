@@ -1,0 +1,290 @@
+[
+  {
+    "deviceCode": "DEV001",
+    "objectId": "rack-001",
+    "labelKey": "1# 550kV I 线高抗",
+    "name": "1号SVG无功补偿柜",
+    "deviceType": "静止无功发生柜",
+    "displayLabel": "SVG-01",
+    "visualFamily": "svg-cabinet"
+  },
+  {
+    "deviceCode": "DEV002",
+    "objectId": "rack-002",
+    "labelKey": "1#220KW 二次设备舱",
+    "name": "1号智能控制柜",
+    "deviceType": "智能控制柜",
+    "displayLabel": "CTL-01",
+    "visualFamily": "control-cabinet"
+  },
+  {
+    "deviceCode": "DEV003",
+    "objectId": "rack-003",
+    "labelKey": "1#变压器",
+    "name": "1号综合配电柜",
+    "deviceType": "综合配电柜",
+    "displayLabel": "PDC-01",
+    "visualFamily": "integrated-power-cabinet"
+  },
+  {
+    "deviceCode": "DEV004",
+    "objectId": "rack-004",
+    "labelKey": "1#设备",
+    "name": "1号中压进线柜",
+    "deviceType": "中置式中压开关柜",
+    "displayLabel": "MVS-01",
+    "visualFamily": "mv-switchgear"
+  },
+  {
+    "deviceCode": "DEV005",
+    "objectId": "rack-005",
+    "labelKey": "1#设备.001",
+    "name": "1号低压馈线柜",
+    "deviceType": "智能低压开关柜",
+    "displayLabel": "LVS-01",
+    "visualFamily": "lv-switchgear"
+  },
+  {
+    "deviceCode": "DEV006",
+    "objectId": "rack-006",
+    "labelKey": "1#设备.002",
+    "name": "1号低压动力柜",
+    "deviceType": "低压动力柜",
+    "displayLabel": "LVP-01",
+    "visualFamily": "power-distribution"
+  },
+  {
+    "deviceCode": "DEV007",
+    "objectId": "rack-007",
+    "labelKey": "1#隔离开关",
+    "name": "1号气体绝缘开关柜",
+    "deviceType": "气体绝缘开关柜",
+    "displayLabel": "GIS-01",
+    "visualFamily": "gis-switchgear"
+  },
+  {
+    "deviceCode": "DEV008",
+    "objectId": "rack-008",
+    "labelKey": "10#设备",
+    "name": "10号精密列头柜",
+    "deviceType": "精密列头柜",
+    "displayLabel": "IPD-01",
+    "visualFamily": "precision-pdu"
+  },
+  {
+    "deviceCode": "DEV009",
+    "objectId": "rack-009",
+    "labelKey": "10#设备.001",
+    "name": "10号UPS输入输出柜",
+    "deviceType": "UPS柜",
+    "displayLabel": "UPS-01",
+    "visualFamily": "ups-cabinet"
+  },
+  {
+    "deviceCode": "DEV010",
+    "objectId": "rack-010",
+    "labelKey": "11#设备",
+    "name": "11号直流馈电柜",
+    "deviceType": "直流电源柜",
+    "displayLabel": "DCP-01",
+    "visualFamily": "dc-power-cabinet"
+  },
+  {
+    "deviceCode": "DEV011",
+    "objectId": "rack-011",
+    "labelKey": "11#设备.001",
+    "name": "11号网络监控柜",
+    "deviceType": "网络机柜",
+    "displayLabel": "NET-01",
+    "visualFamily": "network-cabinet"
+  },
+  {
+    "deviceCode": "DEV012",
+    "objectId": "rack-012",
+    "labelKey": "12#设备",
+    "name": "12号终端配电箱",
+    "deviceType": "智能配电箱",
+    "displayLabel": "DBX-01",
+    "visualFamily": "distribution-box"
+  },
+  {
+    "deviceCode": "DEV013",
+    "objectId": "rack-013",
+    "labelKey": "12#设备.001",
+    "name": "12号有源滤波柜",
+    "deviceType": "动态滤波补偿柜",
+    "displayLabel": "APF-01",
+    "visualFamily": "apf-cabinet"
+  },
+  {
+    "deviceCode": "DEV014",
+    "objectId": "rack-014",
+    "labelKey": "2# 550kV I 线高抗",
+    "name": "2号SVG无功补偿柜",
+    "deviceType": "静止无功发生柜",
+    "displayLabel": "SVG-02",
+    "visualFamily": "svg-cabinet"
+  },
+  {
+    "deviceCode": "DEV015",
+    "objectId": "rack-015",
+    "labelKey": "2#220KW 二次设备舱",
+    "name": "2号智能控制柜",
+    "deviceType": "智能控制柜",
+    "displayLabel": "CTL-02",
+    "visualFamily": "control-cabinet"
+  },
+  {
+    "deviceCode": "DEV016",
+    "objectId": "rack-016",
+    "labelKey": "2#变压器",
+    "name": "2号UPS电源柜",
+    "deviceType": "UPS柜",
+    "displayLabel": "UPS-02",
+    "visualFamily": "ups-cabinet"
+  },
+  {
+    "deviceCode": "DEV017",
+    "objectId": "rack-017",
+    "labelKey": "2#设备",
+    "name": "2号中压进线柜",
+    "deviceType": "中置式中压开关柜",
+    "displayLabel": "MVS-02",
+    "visualFamily": "mv-switchgear"
+  },
+  {
+    "deviceCode": "DEV018",
+    "objectId": "rack-018",
+    "labelKey": "2#设备.001",
+    "name": "2号低压馈线柜",
+    "deviceType": "智能低压开关柜",
+    "displayLabel": "LVS-02",
+    "visualFamily": "lv-switchgear"
+  },
+  {
+    "deviceCode": "DEV019",
+    "objectId": "rack-019",
+    "labelKey": "2#设备.002",
+    "name": "2号低压动力柜",
+    "deviceType": "低压动力柜",
+    "displayLabel": "LVP-02",
+    "visualFamily": "power-distribution"
+  },
+  {
+    "deviceCode": "DEV020",
+    "objectId": "rack-020",
+    "labelKey": "2#隔离开关",
+    "name": "2号中压开关柜",
+    "deviceType": "中置式中压开关柜",
+    "displayLabel": "MVS-03",
+    "visualFamily": "mv-switchgear"
+  },
+  {
+    "deviceCode": "DEV021",
+    "objectId": "rack-021",
+    "labelKey": "3# 550kV I 线高抗",
+    "name": "3号SVG无功补偿柜",
+    "deviceType": "静止无功发生柜",
+    "displayLabel": "SVG-03",
+    "visualFamily": "svg-cabinet"
+  },
+  {
+    "deviceCode": "DEV022",
+    "objectId": "rack-022",
+    "labelKey": "3#220KW 二次设备舱",
+    "name": "3号智能控制柜",
+    "deviceType": "智能控制柜",
+    "displayLabel": "CTL-03",
+    "visualFamily": "control-cabinet"
+  },
+  {
+    "deviceCode": "DEV023",
+    "objectId": "rack-023",
+    "labelKey": "3#变压器",
+    "name": "3号通信电源柜",
+    "deviceType": "直流电源柜",
+    "displayLabel": "DCP-02",
+    "visualFamily": "dc-power-cabinet"
+  },
+  {
+    "deviceCode": "DEV024",
+    "objectId": "rack-024",
+    "labelKey": "3#设备",
+    "name": "3号精密列头柜",
+    "deviceType": "精密列头柜",
+    "displayLabel": "IPD-02",
+    "visualFamily": "precision-pdu"
+  },
+  {
+    "deviceCode": "DEV025",
+    "objectId": "rack-025",
+    "labelKey": "3#设备.001",
+    "name": "3号UPS输入输出柜",
+    "deviceType": "UPS柜",
+    "displayLabel": "UPS-03",
+    "visualFamily": "ups-cabinet"
+  },
+  {
+    "deviceCode": "DEV026",
+    "objectId": "rack-026",
+    "labelKey": "3#设备.002",
+    "name": "3号直流馈电柜",
+    "deviceType": "直流电源柜",
+    "displayLabel": "DCP-03",
+    "visualFamily": "dc-power-cabinet"
+  },
+  {
+    "deviceCode": "DEV027",
+    "objectId": "rack-027",
+    "labelKey": "3#隔离开关",
+    "name": "3号气体绝缘开关柜",
+    "deviceType": "气体绝缘开关柜",
+    "displayLabel": "GIS-02",
+    "visualFamily": "gis-switchgear"
+  },
+  {
+    "deviceCode": "DEV028",
+    "objectId": "rack-028",
+    "labelKey": "4# 550kV I 线高抗",
+    "name": "4号SVG无功补偿柜",
+    "deviceType": "静止无功发生柜",
+    "displayLabel": "SVG-04",
+    "visualFamily": "svg-cabinet"
+  },
+  {
+    "deviceCode": "DEV029",
+    "objectId": "rack-029",
+    "labelKey": "4#变压器",
+    "name": "4号综合配电柜",
+    "deviceType": "综合配电柜",
+    "displayLabel": "PDC-02",
+    "visualFamily": "integrated-power-cabinet"
+  },
+  {
+    "deviceCode": "DEV030",
+    "objectId": "rack-030",
+    "labelKey": "4#设备",
+    "name": "4号网络监控柜",
+    "deviceType": "网络机柜",
+    "displayLabel": "NET-02",
+    "visualFamily": "network-cabinet"
+  },
+  {
+    "deviceCode": "DEV031",
+    "objectId": "rack-031",
+    "labelKey": "4#设备.001",
+    "name": "4号终端配电箱",
+    "deviceType": "智能配电箱",
+    "displayLabel": "DBX-02",
+    "visualFamily": "distribution-box"
+  },
+  {
+    "deviceCode": "DEV032",
+    "objectId": "rack-032",
+    "labelKey": "4#设备.002",
+    "name": "4号有源滤波柜",
+    "deviceType": "动态滤波补偿柜",
+    "displayLabel": "APF-02",
+    "visualFamily": "apf-cabinet"
+  }
+]

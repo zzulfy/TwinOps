@@ -1,190 +1,54 @@
 # TwinOps
 
-TwinOps 是面向数据中心的 digital twin 运维系统，核心能力包括设备状态监控、告警流转、资源趋势分析与自动化 AI 报告。
-目标是让运维用户在一个 dashboard 中完成「看状态 -> 查设备 -> 处理告警 -> 读分析报告」的完整闭环。
+TwinOps 是一个面向数据中心场景的数字孪生运维系统。当前仓库提供一套前后端同仓的完整闭环：
 
-## 技术架构图
+- Dashboard：查看设备规模、故障率趋势、告警与右侧仿真画面
+- Devices：查看单设备详情、处理告警、管理关注列表
+- Analysis：触发并查看聚合 AI 分析报告
 
-```mermaid
-flowchart LR
-    U[Operator / Browser]
+## 技术栈
 
-    subgraph FE_LAYER[Frontend Layer - React + Vite]
-      FE_APP[React App + Hash Router]
-      FE_DASH[DashboardPage]
-      FE_DEV[DeviceDetailPage / DeviceList]
-      FE_ANALYSIS[AnalysisCenterPage]
-      FE_API[src/api/backend.ts<br/>ApiResponse parser]
-      FE_APP --> FE_DASH
-      FE_APP --> FE_DEV
-      FE_APP --> FE_ANALYSIS
-      FE_DASH --> FE_API
-      FE_DEV --> FE_API
-      FE_ANALYSIS --> FE_API
-    end
+- Frontend：React 19 + TypeScript + Vite + Three.js + ECharts
+- Backend：Spring Boot 3.3 + MyBatis-Plus + MySQL + Kafka + LangChain4j
 
-    subgraph BE_LAYER[Backend Layer - Spring Boot Modular Monolith]
-      BE_CTRL[Controller Layer<br/>/api/*]
-      BE_AUTH[auth module]
-      BE_WATCH[watchlist module]
-      BE_DEVICE[device module]
-      BE_TELEMETRY[telemetry module]
-      BE_ALARM[alarm module]
-      BE_DASH[dashboard module]
-      BE_ANALYSIS[analysis module]
-      BE_SERVICE[Service Layer]
-      BE_MAPPER[Mapper Layer<br/>MyBatis-Plus QueryWrapper]
-      BE_CTRL --> BE_AUTH
-      BE_CTRL --> BE_WATCH
-      BE_CTRL --> BE_DEVICE
-      BE_CTRL --> BE_TELEMETRY
-      BE_CTRL --> BE_ALARM
-      BE_CTRL --> BE_DASH
-      BE_CTRL --> BE_ANALYSIS
-      BE_AUTH --> BE_SERVICE
-      BE_WATCH --> BE_SERVICE
-      BE_DEVICE --> BE_SERVICE
-      BE_TELEMETRY --> BE_SERVICE
-      BE_ALARM --> BE_SERVICE
-      BE_DASH --> BE_SERVICE
-      BE_ANALYSIS --> BE_SERVICE
-      BE_SERVICE --> BE_MAPPER
-    end
+## 仓库结构
 
-    subgraph DATA_LAYER[Data & Messaging Layer]
-      DB[(MySQL<br/>devices / telemetry / alarms / analysis_reports)]
-      SCH["Scheduled Trigger<br/>00:00 and 12:00"]
-      MQ[(Kafka Topic<br/>analysis.request)]
-      CON[Kafka Consumer<br/>createReportWithIdempotency]
-    end
+- `frontend/`：前端应用与页面交互
+- `backend/`：后端 API、SQL、seed 脚本、测试
+- `data/`：SMD / MSDS 数据集
+- `reports/`：截图与验证产物
+- `openspec/`：需求与规格工件
 
-    U --> FE_APP
-    FE_API -->|HTTP JSON| BE_CTRL
-    BE_MAPPER --> DB
-    SCH -->|publish| MQ
-    MQ -->|consume| CON
-    CON --> BE_ANALYSIS
-    BE_ANALYSIS --> BE_SERVICE
-    BE_SERVICE --> BE_MAPPER
-```
+## 当前实现要点
 
-```mermaid
-sequenceDiagram
-    participant User as Operator
-    participant FE as Frontend Router/Page
-    participant API as frontend api client
-    participant C as Backend Controller
-    participant S as Service Layer
-    participant DB as MySQL
-    participant SCH as Scheduler
-    participant MQ as Kafka
-    participant CON as Kafka Consumer
+- 前端使用 Hash Router，受保护页面为 `/`、`/devices`、`/devices/:deviceCode`、`/analysis`
+- 管理员 token 存在后端进程内存中，默认有效期 12 小时；后端重启后需要重新登录
+- Dashboard 右侧仿真区由 `frontend/src/hooks/useDashboardScene.ts` 程序化构建 Three.js 场景，当前采用 32 台设备演示集与现代控制室展示廊构图：中轴窄通道 + 双侧设备平台 + 前/中/后/尾端分层柜列、偏轴低机位默认镜头、按 `visualFamily` 区分轮廓的柜体家族、现代化吊顶灯槽、分缝墙面、暗色磨砂标题牌、阻尼平滑移动、左键边缘平移/中部旋转、室内范围内的大角度自由旋转和局部状态灯效
+- 前端构建对 React、图表运行时和 Three.js 依赖做手工分块，已把受控延迟包的 chunk warning 阈值调整为 700 kB
+- 仿真 UI 由前端共享目录 `frontend/src/config/simulationDeviceCatalog.json` 持有，当前维护 32 台户内设备：`DEV001` ~ `DEV032`，并与数据库 seed 设备集保持 1:1
+- 后端 `/api/devices/simulation-data` 只返回业务数据，前端负责“固定 UI 配置 + 实时数据”合并渲染
+- `label_key` 继续保留 GLB 节点名称以保证映射稳定，对外展示的设备名称和类型统一收敛为户内配电、控制与机柜设备
+- `/api/devices/simulation-consistency` 会检查并可自动修复仿真设备集合与数据库设备集合一致性
+- Analysis 采用聚合批处理：一次 trigger 只发布 1 条 Kafka job，并最终生成 1 条聚合报告（`deviceCode=AGGREGATED`）
+- LLM 调用默认允许 fallback 到本地 mock，避免演示环境因外部模型不可用而完全失败
 
-    User->>FE: 打开 Dashboard (/)
-    FE->>API: fetchDashboardSummary()
-    API->>C: GET /api/dashboard/summary
-    C->>S: aggregate device/alarm/telemetry
-    S->>DB: query + group + sort
-    DB-->>S: records
-    S-->>C: DashboardSummaryDto
-    C-->>API: ApiResponse<DashboardSummaryDto>
-    API-->>FE: render widgets/charts
+## 环境要求
 
-    User->>FE: 在设备页处理告警
-    FE->>API: updateAlarmStatus(id,status)
-    API->>C: PATCH /api/alarms/{id}/status
-    C->>S: update status + timestamp
-    S->>DB: update alarms
-    DB-->>S: updated row
-    S-->>C: AlarmItemDto
-    C-->>API: ApiResponse<AlarmItemDto>
-    API-->>FE: refresh list and summary
+- Node.js 20+
+- npm 9+
+- JDK 17+
+- Maven 3.9+
+- MySQL 8+
+- Kafka 3.x
 
-    FE->>API: triggerAnalysisBatch()
-    API->>C: POST /api/analysis/reports/trigger
-    C->>S: triggerManualBatch()
-    S->>DB: 记录一次 batch trigger（不按设备拆分任务）
-    S->>MQ: publish ONE analysis.request(batchJobId,slot,idempotencyKey)
-    MQ-->>CON: deliver message
-    CON->>DB: 查询所有目标设备 + latest telemetry
-    CON->>S: run one aggregated LLM analysis
-    S->>DB: persist ONE final aggregated report
-    DB-->>S: final report persisted
+## 快速启动
 
-    User->>FE: 异步打开 Analysis (/analysis)
-    FE->>API: fetchAnalysisReports(limit) / fetchLatestAggregatedReport()
-    API->>C: GET /api/analysis/reports
-    C->>S: listReports(limit)
-    S->>DB: query analysis_reports
-    DB-->>S: reports
-    S-->>C: aggregated AnalysisReportDto
-    C-->>API: ApiResponse<AnalysisReportDto>
-    API-->>FE: render single final report
-```
-
-## 目录结构
-
-- `frontend/`：React 应用（Dashboard、Analysis、Device List/Detail）
-- `backend/`：Spring Boot API、SQL 初始化脚本、测试
-- `openspec/`：需求与变更工件
-- `data/`：项目级样例数据（如设备/告警/摘要快照）
-- `reports/`：项目级验证日志与诊断输出
-
-> Dashboard 主视图右侧已恢复 Three.js 设备仿真画面（默认日间视觉基线：浅色背景 + 中性日光照明）；若外部模型加载失败，将自动回退到内置设备阵列渲染，保证看板不空白。
-
-### 目录整理迁移说明（reorganize-project-structure）
-
-- `frontend` 根目录已收敛为运行入口层，非入口脚本按用途归档：
-  - `scripts/smoke/`：npm smoke 命令调用脚本
-  - `scripts/checks/`：手工检查脚本
-  - `scripts/tests/`：页面与场景回归脚本
-  - `scripts/debug/`：调试辅助脚本
-  - `reports/`：验证日志与快照产物
-  - `tmp/`：临时文件与一次性验证脚本
-- 项目根目录数据/日志迁移：
-  - `alarms.json` -> `data/samples/alarms.json`
-  - `devices.json` -> `data/samples/devices.json`
-  - `summary.json` -> `data/samples/summary.json`
-  - `verify-ux.log` -> `reports/logs/verify-ux.log`
-
-## 本地部署（直接部署）
-
-### 1) 安装并启动 MySQL 8
+### 1. 初始化数据库
 
 ```bash
-# Ubuntu/Debian
-sudo apt-get update
-sudo apt-get install -y mysql-server
-sudo systemctl enable mysql
-sudo systemctl start mysql
-
-# 创建数据库
 mysql -uroot -p -e "CREATE DATABASE IF NOT EXISTS twinops DEFAULT CHARSET utf8mb4;"
-```
+python backend/scripts/generate_dataset_seeds.py
 
-### 2) 安装并启动 Kafka（单机）
-
-```bash
-# 安装 JDK17（如未安装）
-java -version
-
-# 安装 Kafka（示例用 Apache Kafka 3.x）
-wget https://archive.apache.org/dist/kafka/3.8.0/kafka_2.13-3.8.0.tgz
-tar -xzf kafka_2.13-3.8.0.tgz
-cd kafka_2.13-3.8.0
-
-# 启动 Kafka（KRaft 单节点）
-bin/kafka-storage.sh random-uuid > /tmp/kraft-cluster-id
-bin/kafka-storage.sh format -t "$(cat /tmp/kraft-cluster-id)" -c config/kraft/server.properties
-nohup bin/kafka-server-start.sh config/kraft/server.properties > logs/server.log 2>&1 &
-
-# 创建分析 topic
-bin/kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --create --topic analysis.request --partitions 1 --replication-factor 1
-```
-
-### 3) 初始化数据库
-
-```bash
 mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/001_schema.sql
 mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/002_seed_devices.sql
 mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/003_seed_metrics.sql
@@ -192,7 +56,15 @@ mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/004_seed_alarms.s
 mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/005_verify_retention.sql
 ```
 
-### 4) 启动后端
+### 2. 启动 Kafka
+
+确保本地有可用的 Kafka，并创建 topic：
+
+```bash
+kafka-topics.sh --bootstrap-server 127.0.0.1:9092 --create --topic analysis.request --partitions 1 --replication-factor 1
+```
+
+### 3. 启动后端
 
 ```bash
 cd backend
@@ -200,76 +72,9 @@ mvn -DskipTests package
 java -jar target/backend-0.0.1-SNAPSHOT.jar
 ```
 
-Backend 默认地址：`http://127.0.0.1:8080`
+默认地址：`http://127.0.0.1:8080`
 
-### 5) 启动前端
-
-```bash
-cd frontend
-npm ci
-npm run build
-npm run preview
-```
-
-Frontend 默认预览地址：`http://127.0.0.1:4173`
-
-### 6) 一键启动前后端（Windows PowerShell）
-
-前置依赖：
-
-- Node.js 与 npm
-- JDK 17+
-- Maven 3.9+
-
-在项目根目录执行：
-
-```powershell
-.\start-dev.ps1
-```
-
-脚本会按固定顺序执行：
-
-1. 后端：`cd backend` -> `mvn -DskipTests package` -> `java -jar target/backend-0.0.1-SNAPSHOT.jar > backend.log 2>&1`（后台运行）
-2. 前端：`cd frontend` -> `npm install` -> `npm run build` -> `npm run dev`（前台运行）
-
-运行时会输出后端 PID 与日志路径，默认日志文件为：
-
-- `backend/backend.log`
-
-停止后端可使用脚本输出的 PID，例如：
-
-```powershell
-Stop-Process -Id <backend-pid>
-```
-
-### Docker 备选方案（仅在本机未安装 MySQL/Kafka 时使用）
-
-```bash
-# 1) 启动 MySQL 容器
-docker run -d --name twinops-mysql -e MYSQL_ROOT_PASSWORD=root -e MYSQL_DATABASE=twinops -p 3306:3306 mysql:8.0
-
-# 2) 启动 Kafka
-docker run -d --name twinops-kafka -p 9092:9092 apache/kafka:3.8.0
-
-# 3) 初始化数据库（在宿主机执行）
-mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/001_schema.sql
-mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/002_seed_devices.sql
-mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/003_seed_metrics.sql
-mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/004_seed_alarms.sql
-mysql -h 127.0.0.1 -P 3306 -uroot -proot twinops < backend/sql/005_verify_retention.sql
-```
-
-## 生产部署
-
-### Backend
-
-```bash
-cd backend
-mvn -DskipTests package
-java -jar target/backend-0.0.1-SNAPSHOT.jar > backend.log 2>&1
-```
-
-### Frontend
+### 4. 启动前端
 
 ```bash
 cd frontend
@@ -278,89 +83,47 @@ npm run build
 npm run dev
 ```
 
-将 `frontend/docs` 作为静态目录部署到 Nginx，并将 `/api/*` reverse proxy 到 `http://127.0.0.1:8080`。
+开发地址默认由 Vite 输出。
 
-## 启动后验证
+### 5. Windows 一键启动
 
-```bash
-# 先登录获取 token（按实际返回提取 token）
-curl -X POST "http://127.0.0.1:8080/api/auth/login" \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123456"}'
-
-# 受保护接口访问需要携带 Authorization: Bearer <token>
-curl "http://127.0.0.1:8080/api/dashboard/summary" \
-  -H "Authorization: Bearer <token>"
-curl "http://127.0.0.1:8080/api/dashboard/fault-rate/trend?predictMinutes=5" \
-  -H "Authorization: Bearer <token>"
-curl "http://127.0.0.1:8080/api/analysis/reports?limit=20" \
-  -H "Authorization: Bearer <token>"
-
-# Analysis Center 一键触发分析（异步，无需传 deviceCode）
-curl -X POST "http://127.0.0.1:8080/api/analysis/reports/trigger" \
-  -H "Authorization: Bearer <token>"
+```powershell
+.\start-dev.ps1
 ```
 
-> Dashboard 故障率图表说明：横坐标按 1 分钟粒度展示且仅显示 `HH:mm`，纵坐标语义为“故障率”（`error` 设备数 / 全部设备数 × 100）。
-> Dashboard 设备仿真视角说明：场景静止不自动移动，默认以日间视觉渲染；PC 端支持中央区域左键拖动旋转、边缘区域左键拖动平移、滚轮缩放手动查看全景。
-> Frontend UI 主题说明：全站（Dashboard / Devices / Analysis / Login）已迁移为 GitHub Light 风格，Dashboard 仍保留 Three.js 仿真能力。
+脚本会：
 
-## Analysis Center 触发流程（Kafka 对齐）
+1. 构建并后台启动后端
+2. 安装前端依赖
+3. 构建前端
+4. 前台启动前端 dev server
 
-- 前端 Analysis Center 仅提供“一键触发”，不再要求用户输入 `deviceCode` 或 `metricSummary`。
-- Backend `POST /api/analysis/reports/trigger` 执行 `triggerManualBatch()`：
-  - Producer 只写入 **1 条** Kafka job 到 `analysis.request`（batch job）；
-  - Consumer 消费该 job 后，统一查询全部目标 device + telemetry；
-  - Consumer 只执行 **1 次** LLM analysis，并持久化 **1 条**最终聚合报告。
-- 前端通过异步查询（列表或 latest 接口）获取并展示该 single final report。
-- 整体链路为 `Frontend click trigger -> Producer ONE job -> Consumer aggregated query -> ONE LLM analysis -> ONE final report -> Frontend async fetch`。
-- Analysis Center 卡片主标题统一为“报告编号 + 生成时间”，不再使用固定 `AGGREGATED` 作为标题展示。
-- 若后端异常中断导致报告长时间停留 `processing`，后端会在查询分析列表/详情时将超过 10 分钟的挂起报告自动回收为 `failed` 并写入超时错误信息。
+## 常用接口
 
-## Frontend 自动刷新与性能约束
+- `POST /api/auth/login`
+- `GET /api/auth/me`
+- `GET /api/dashboard/summary`
+- `GET /api/dashboard/fault-rate/trend?predictMinutes=5`
+- `GET /api/devices`
+- `GET /api/devices/{deviceCode}`
+- `GET /api/devices/simulation-data`
+- `GET /api/devices/simulation-consistency?autoRepair=true`
+- `GET /api/alarms?status=new&limit=20`
+- `PATCH /api/alarms/{id}/status`
+- `GET /api/watchlist`
+- `POST /api/watchlist`
+- `DELETE /api/watchlist/{deviceCode}`
+- `GET /api/analysis/reports?limit=20`
+- `POST /api/analysis/reports/trigger`
 
-- Dashboard / Alarm / Analysis 核心数据流使用页面可见性感知的自动刷新，不依赖浏览器手动刷新。
-- 自动刷新必须做 in-flight 去重，避免同一资源并发重复请求。
-- 页面隐藏时暂停或抑制非关键轮询，恢复可见时再续刷，降低无效请求与重渲染。
-- 告警展示禁止 fallback 到本地测试数据，后端失败时只显示明确 error/empty 状态。
-- 预警列表改为用户手动滑动（`overflow-y`），禁止自动轮转或自动位移动画干扰阅读。
+## 前端与后端补充文档
 
-## 工程质量策略
+- [frontend/README.md](./frontend/README.md)
+- [backend/README.md](./backend/README.md)
 
-- 任何后续代码变更（功能、修复、重构、配置）必须同时补充：
-  - Integration Tests（集成测试）
-  - Regression Tests（回归测试）
+## README 维护规则
 
-## README 文档语言规范
-
-- 从本次变更开始，项目内业务 README 统一使用中文表达。
-- 专业术语、框架名、协议名可保留英文（例如 React、Kafka、OpenAPI、Structured Logging）。
-
-## README Mermaid 兼容规范
-
-- Mermaid 图必须使用 GitHub 支持的语法子集，避免使用易触发 parser 歧义的节点文本写法。
-- 推荐在节点标签中使用引号包裹复杂文本，并用 `and` 等明确分隔替代歧义符号组合。
-- 更新架构图或时序图时，必须确保 GitHub rich display 可正常渲染且无 parse error。
-
-## Backend Logging Baseline（从本次 change 起强制执行）
-
-- 后续所有 backend 代码变更都必须在关键路径补齐日志（Controller/Service/Auth/Kafka），不能仅依赖异常堆栈被动排查。
-- 日志等级必须使用并区分 `info`、`warn`、`error`：
-  - `info`：请求入口、关键步骤开始/成功；
-  - `warn`：可恢复异常、边界输入、空结果、兼容分支；
-  - `error`：不可恢复失败、关键依赖异常、主流程中断。
-- 日志必须可定位代码来源（class/method/line），保证开发排障时可以直接定位日志打印位置。
-- 日志来源必须输出完整包名（如 `com.twinops.backend...`），禁止使用 `c.t.b...` 这类包名缩写。
-- 结构化字段保持统一：`request_id`、`module`、`event`、`result`、`error_code`（按需带 `latency_ms`）。
-
-验证页面：
-
-- Dashboard：`http://127.0.0.1:4173/#/`
-- Analysis：`http://127.0.0.1:4173/#/analysis`
-- Devices：`http://127.0.0.1:4173/#/devices`
-- Swagger UI：`http://127.0.0.1:8080/swagger-ui/index.html`
-
-## 详细文档
-
-- Backend API/配置：[`backend/README.md`](backend/README.md)
-- Frontend 页面与脚本：[`frontend/README.md`](frontend/README.md)
+- 从本次变更开始，只要修改了代码，就必须同步检查并更新根目录 `README.md`
+- `README.md` 只保留当前可运行、可维护的项目说明，不记录 OpenSpec 变更过程、归档记录、轮次验证流水账
+- 详细设计、变更历史和规格演进放在 `openspec/`，不要继续堆进 `README.md`
+- 如果某次代码变更不会影响 README 中任何事实，也需要显式确认“无需更新 README”后再结束该次工作

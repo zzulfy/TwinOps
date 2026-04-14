@@ -1,0 +1,131 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgC" x1="240" y1="40" x2="1380" y2="860" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0A1627"/>
+      <stop offset="1" stop-color="#050D17"/>
+    </linearGradient>
+    <linearGradient id="roomC" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#1C2C42"/>
+      <stop offset="1" stop-color="#101E31"/>
+    </linearGradient>
+    <linearGradient id="floorC" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#203755"/>
+      <stop offset="1" stop-color="#0C1728"/>
+    </linearGradient>
+    <linearGradient id="bodyC" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#DBE4EF"/>
+      <stop offset="1" stop-color="#A5B6C7"/>
+    </linearGradient>
+    <linearGradient id="doorC1" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#699085"/>
+      <stop offset="1" stop-color="#4B6E63"/>
+    </linearGradient>
+    <linearGradient id="doorC2" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#6E89A9"/>
+      <stop offset="1" stop-color="#506B87"/>
+    </linearGradient>
+    <filter id="shadowC" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="20" flood-color="#020D18" flood-opacity="0.58"/>
+    </filter>
+    <filter id="glowC" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="0" stdDeviation="8" flood-color="#63C0FF" flood-opacity="0.85"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="900" rx="28" fill="url(#bgC)"/>
+  <polygon points="0,104 700,332 700,900 0,900" fill="url(#roomC)" opacity="0.94"/>
+  <polygon points="1600,104 900,332 900,900 1600,900" fill="#122337" opacity="0.94"/>
+  <polygon points="216,0 800,346 1384,0 1600,0 1600,104 904,372 696,372 0,102 0,0" fill="#08111C"/>
+  <polygon points="0,900 488,586 1112,586 1600,900" fill="#0B1525"/>
+  <polygon points="608,574 992,574 1110,900 490,900" fill="url(#floorC)"/>
+  <rect x="606" y="564" width="388" height="10" rx="5" fill="#A9C8E9" opacity="0.54"/>
+
+  <rect x="354" y="28" width="300" height="10" rx="5" transform="rotate(39 354 28)" fill="#62BFFF" filter="url(#glowC)" opacity="0.86"/>
+  <rect x="946" y="38" width="302" height="10" rx="5" transform="rotate(-39 946 38)" fill="#62BFFF" filter="url(#glowC)" opacity="0.86"/>
+  <rect x="698" y="160" width="206" height="16" rx="8" fill="#264463"/>
+  <rect x="674" y="170" width="32" height="190" rx="8" fill="#24364A"/>
+  <rect x="894" y="170" width="32" height="190" rx="8" fill="#24364A"/>
+
+  <g opacity="0.88">
+    <rect x="228" y="166" width="24" height="520" fill="#26394D"/>
+    <rect x="1350" y="166" width="24" height="520" fill="#26394D"/>
+    <rect x="770" y="146" width="58" height="14" rx="7" fill="#1A3D5A"/>
+  </g>
+
+  <g filter="url(#shadowC)">
+    <g transform="translate(206 654) scale(1.02)">
+      <polygon points="0,138 104,96 104,-112 0,-66" fill="url(#bodyC)"/>
+      <polygon points="104,96 228,138 228,-66 104,-112" fill="#CBD6E1"/>
+      <polygon points="18,116 90,88 90,-82 18,-52" fill="url(#doorC1)"/>
+      <rect x="110" y="-82" width="8" height="160" fill="#1F3348"/>
+      <rect x="130" y="-70" width="64" height="18" rx="6" fill="#2F4C68"/>
+      <rect x="136" y="-62" width="52" height="4" rx="2" fill="#A6DFFF"/>
+      <circle cx="196" cy="-20" r="6" fill="#43CC8B"/>
+      <circle cx="212" cy="-20" r="6" fill="#F1C257"/>
+      <rect x="128" y="10" width="72" height="6" rx="3" fill="#20364D"/>
+      <rect x="128" y="26" width="72" height="6" rx="3" fill="#20364D"/>
+      <rect x="128" y="42" width="72" height="6" rx="3" fill="#20364D"/>
+    </g>
+    <g transform="translate(320 620) scale(0.9)">
+      <polygon points="0,138 104,96 104,-112 0,-66" fill="url(#bodyC)"/>
+      <polygon points="104,96 228,138 228,-66 104,-112" fill="#C8D4E0"/>
+      <polygon points="18,116 90,88 90,-82 18,-52" fill="url(#doorC2)"/>
+      <rect x="110" y="-82" width="8" height="160" fill="#1F3348"/>
+      <rect x="128" y="-6" width="74" height="6" rx="3" fill="#20364D"/>
+      <rect x="128" y="10" width="74" height="6" rx="3" fill="#20364D"/>
+      <rect x="128" y="26" width="74" height="6" rx="3" fill="#20364D"/>
+    </g>
+  </g>
+
+  <g filter="url(#shadowC)" opacity="0.96">
+    <g transform="translate(1054 646) scale(1.02)">
+      <polygon points="0,138 104,96 104,-112 0,-66" fill="url(#bodyC)"/>
+      <polygon points="104,96 228,138 228,-66 104,-112" fill="#CBD6E1"/>
+      <polygon points="18,116 90,88 90,-82 18,-52" fill="url(#doorC1)"/>
+      <rect x="110" y="-82" width="8" height="160" fill="#1F3348"/>
+      <rect x="130" y="-68" width="64" height="6" rx="3" fill="#20364D"/>
+      <rect x="130" y="-54" width="64" height="6" rx="3" fill="#20364D"/>
+      <rect x="130" y="-40" width="64" height="6" rx="3" fill="#20364D"/>
+    </g>
+    <g transform="translate(1164 606) scale(0.92)">
+      <polygon points="0,138 104,96 104,-112 0,-66" fill="url(#bodyC)"/>
+      <polygon points="104,96 228,138 228,-66 104,-112" fill="#CAD6E1"/>
+      <polygon points="18,116 90,88 90,-82 18,-52" fill="url(#doorC2)"/>
+      <rect x="110" y="-82" width="8" height="160" fill="#1F3348"/>
+      <rect x="132" y="-72" width="54" height="14" rx="6" fill="#335472"/>
+      <circle cx="142" cy="-20" r="5" fill="#43CC8B"/>
+      <circle cx="156" cy="-20" r="5" fill="#4CB6FF"/>
+      <circle cx="170" cy="-20" r="5" fill="#EE6161"/>
+    </g>
+    <g transform="translate(1256 576) scale(0.84)">
+      <polygon points="0,138 104,96 104,-112 0,-66" fill="url(#bodyC)"/>
+      <polygon points="104,96 228,138 228,-66 104,-112" fill="#C9D4DE"/>
+      <polygon points="18,116 90,88 90,-82 18,-52" fill="url(#doorC1)"/>
+      <rect x="110" y="-82" width="8" height="160" fill="#1F3348"/>
+    </g>
+    <g transform="translate(1330 550) scale(0.76)">
+      <polygon points="0,138 104,96 104,-112 0,-66" fill="url(#bodyC)"/>
+      <polygon points="104,96 228,138 228,-66 104,-112" fill="#C7D2DC"/>
+      <polygon points="18,116 90,88 90,-82 18,-52" fill="url(#doorC2)"/>
+      <rect x="110" y="-82" width="8" height="160" fill="#1F3348"/>
+    </g>
+  </g>
+
+  <path d="M803 594 C 810 640, 825 694, 846 750" stroke="#8FD0FF" stroke-width="6" stroke-linecap="round" stroke-dasharray="10 14" opacity="0.9"/>
+  <circle cx="800" cy="592" r="10" fill="#D8F0FF"/>
+  <circle cx="846" cy="750" r="10" fill="#D8F0FF"/>
+
+  <rect x="56" y="42" width="266" height="64" rx="20" fill="#E8EDF3"/>
+  <text x="86" y="83" fill="#13263A" font-family="Segoe UI, Arial, sans-serif" font-size="32" font-weight="700">Concept C</text>
+
+  <g>
+    <rect x="1108" y="108" width="374" height="128" rx="24" fill="#11273B" stroke="#30516E"/>
+    <text x="1140" y="152" fill="#E2EEFA" font-family="Segoe UI, Arial, sans-serif" font-size="26" font-weight="700">Cinematic Tracking Start</text>
+    <text x="1140" y="188" fill="#AEC7DB" font-family="Segoe UI, Arial, sans-serif" font-size="20">Default view is already inside, with room shell visible only as trim.</text>
+  </g>
+  <g>
+    <rect x="84" y="742" width="382" height="110" rx="24" fill="#11273B" stroke="#30516E"/>
+    <text x="116" y="786" fill="#E2EEFA" font-family="Segoe UI, Arial, sans-serif" font-size="24" font-weight="700">Smooth push-in path</text>
+    <text x="116" y="820" fill="#AEC7DB" font-family="Segoe UI, Arial, sans-serif" font-size="20">Wide aisle and guided camera easing instead of abrupt orbiting.</text>
+  </g>
+</svg>

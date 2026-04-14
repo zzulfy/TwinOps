@@ -5,6 +5,7 @@ import java.util.List;
 
 public record DeviceDetailDto(
     String deviceCode,
+    String labelKey,
     String name,
     String type,
     String status,

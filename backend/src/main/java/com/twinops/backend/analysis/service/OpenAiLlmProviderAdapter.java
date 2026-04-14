@@ -35,7 +35,8 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
     private static final String CHAT_COMPLETION_SUFFIX = "/chat/completions";
 
     private final ObjectMapper objectMapper;
-    private final ChatModel chatModel;
+    private volatile ChatModel chatModel;
+    private final Object modelInitLock = new Object();
     private final String endpoint;
     private final String apiKey;
     private final String model;
@@ -54,15 +55,7 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
     ) {
         this.objectMapper = new ObjectMapper();
         this.endpoint = trimTrailingSlash(baseUrl);
-        this.chatModel = OpenAiChatModel.builder()
-            .baseUrl(toLangChainBaseUrl(this.endpoint))
-            .apiKey(apiKey)
-            .modelName(model)
-            .temperature(temperature)
-            .maxTokens(maxTokens)
-            .timeout(HTTP_TIMEOUT)
-            .maxRetries(0)
-            .build();
+        this.chatModel = null;
         this.apiKey = apiKey;
         this.model = model;
         this.temperature = temperature;
@@ -106,7 +99,7 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
                 deviceCode
             );
 
-            ChatResponse response = chatModel.chat(buildMessages(deviceCode, metricSummary));
+            ChatResponse response = getOrCreateChatModel().chat(buildMessages(deviceCode, metricSummary));
             if (response == null || response.aiMessage() == null) {
                 throw new RuntimeException("llm response missing ai message");
             }
@@ -185,6 +178,27 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
                 ex
             );
             throw ex;
+        }
+    }
+
+    private ChatModel getOrCreateChatModel() {
+        ChatModel cached = this.chatModel;
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (modelInitLock) {
+            if (this.chatModel == null) {
+                this.chatModel = OpenAiChatModel.builder()
+                    .baseUrl(toLangChainBaseUrl(this.endpoint))
+                    .apiKey(apiKey)
+                    .modelName(model)
+                    .temperature(temperature)
+                    .maxTokens(maxTokens)
+                    .timeout(HTTP_TIMEOUT)
+                    .maxRetries(0)
+                    .build();
+            }
+            return this.chatModel;
         }
     }
 

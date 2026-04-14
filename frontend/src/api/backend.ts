@@ -9,7 +9,26 @@ export interface DeviceAlarm {
 
 export interface DeviceData {
   deviceCode: string;
+  labelKey: string;
   name: string;
+  type: string;
+  status: "normal" | "warning" | "error";
+  serialNumber: string;
+  location: string;
+  temperature: number;
+  humidity: number;
+  voltage: number;
+  current: number;
+  power: number;
+  cpuLoad: number;
+  memoryUsage: number;
+  diskUsage: number;
+  networkTraffic: number;
+  alarms: DeviceAlarm[];
+}
+
+export interface SimulationDeviceData {
+  deviceCode: string;
   type: string;
   status: "normal" | "warning" | "error";
   serialNumber: string;
@@ -95,6 +114,21 @@ export interface TriggerAnalysisResponse {
   targetCount: number;
   acceptedCount: number;
   failedCount: number;
+}
+
+export interface SimulationConsistencyReport {
+  status: "ok" | "repaired" | "failed";
+  consistent: boolean;
+  repaired: boolean;
+  simulationDeviceCount: number;
+  databaseDeviceCountBefore: number;
+  databaseDeviceCountAfter: number;
+  deletedCount: number;
+  addedCount: number;
+  extraInDatabase: string[];
+  missingInDatabase: string[];
+  errors: string[];
+  message: string;
 }
 
 export interface WatchlistItem {
@@ -193,6 +227,14 @@ const request = async <T>(
 
 export const fetchDevices = async (): Promise<DeviceData[]> =>
   request<DeviceData[]>("/api/devices");
+
+export const fetchSimulationDeviceData = async (): Promise<SimulationDeviceData[]> =>
+  request<SimulationDeviceData[]>("/api/devices/simulation-data");
+
+export const fetchSimulationConsistency = async (
+  autoRepair = true
+): Promise<SimulationConsistencyReport> =>
+  request<SimulationConsistencyReport>(`/api/devices/simulation-consistency?autoRepair=${autoRepair ? "true" : "false"}`);
 
 let dashboardSummaryCache: DashboardSummary | null = null;
 let dashboardSummaryInFlight: Promise<DashboardSummary> | null = null;
