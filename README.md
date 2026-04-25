@@ -15,6 +15,7 @@ TwinOps 是一个面向数据中心场景的数字孪生运维系统。当前仓
 
 - `frontend/`：前端应用与页面交互
 - `backend/`：后端 API、SQL、seed 脚本、测试
+- `causaltrace-rca/`：独立 Python 根因分析实验模块（AERCA / Granger causal discovery）
 - `data/`：SMD / MSDS 数据集
 - `reports/`：截图与验证产物
 - `openspec/`：需求与规格工件
@@ -31,6 +32,7 @@ TwinOps 是一个面向数据中心场景的数字孪生运维系统。当前仓
 - `/api/devices/simulation-consistency` 会检查并可自动修复仿真设备集合与数据库设备集合一致性
 - Analysis 采用聚合批处理：一次 trigger 只发布 1 条 Kafka job，并最终生成 1 条聚合报告（`deviceCode=AGGREGATED`）
 - LLM 调用默认允许 fallback 到本地 mock，避免演示环境因外部模型不可用而完全失败
+- `causaltrace-rca/` 当前作为独立研究工作区存在，入口为 `causaltrace-rca/main.py`，用于多变量时序异常根因分析实验，支持 `linear`、`nonlinear`、`lorenz96`、`lotka_volterra`、`swat`、`msds` 数据集
 
 ## 环境要求
 
@@ -38,6 +40,7 @@ TwinOps 是一个面向数据中心场景的数字孪生运维系统。当前仓
 - npm 9+
 - JDK 17+
 - Maven 3.9+
+- Python 3.11+
 - MySQL 8+
 - Kafka 3.x
 
@@ -120,6 +123,7 @@ npm run dev
 
 - [frontend/README.md](./frontend/README.md)
 - [backend/README.md](./backend/README.md)
+- [causaltrace-rca/README.md](./causaltrace-rca/README.md)
 
 ## README 维护规则
 
