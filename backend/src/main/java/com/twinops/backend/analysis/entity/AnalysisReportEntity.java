@@ -20,7 +20,14 @@ public class AnalysisReportEntity {
     private String recommendedAction;
     private String status;
     private String errorMessage;
+    private String engine;
+    private String rcaStatus;
+    private String rootCausesJson;
+    private String causalGraphJson;
+    private String modelVersion;
     private String idempotencyKey;
+    private LocalDateTime evidenceWindowStart;
+    private LocalDateTime evidenceWindowEnd;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -42,8 +49,22 @@ public class AnalysisReportEntity {
     public void setStatus(String status) { this.status = status; }
     public String getErrorMessage() { return errorMessage; }
     public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+    public String getEngine() { return engine; }
+    public void setEngine(String engine) { this.engine = engine; }
+    public String getRcaStatus() { return rcaStatus; }
+    public void setRcaStatus(String rcaStatus) { this.rcaStatus = rcaStatus; }
+    public String getRootCausesJson() { return rootCausesJson; }
+    public void setRootCausesJson(String rootCausesJson) { this.rootCausesJson = rootCausesJson; }
+    public String getCausalGraphJson() { return causalGraphJson; }
+    public void setCausalGraphJson(String causalGraphJson) { this.causalGraphJson = causalGraphJson; }
+    public String getModelVersion() { return modelVersion; }
+    public void setModelVersion(String modelVersion) { this.modelVersion = modelVersion; }
     public String getIdempotencyKey() { return idempotencyKey; }
     public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
+    public LocalDateTime getEvidenceWindowStart() { return evidenceWindowStart; }
+    public void setEvidenceWindowStart(LocalDateTime evidenceWindowStart) { this.evidenceWindowStart = evidenceWindowStart; }
+    public LocalDateTime getEvidenceWindowEnd() { return evidenceWindowEnd; }
+    public void setEvidenceWindowEnd(LocalDateTime evidenceWindowEnd) { this.evidenceWindowEnd = evidenceWindowEnd; }
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }

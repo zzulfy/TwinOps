@@ -46,7 +46,7 @@ class AnalysisAutomationTriggerServiceTest {
             device("DEV002", "error", "B1")
         ));
         when(analysisService.createProcessingReport(eq("AGGREGATED"), any(), any()))
-            .thenReturn(new AnalysisReportDto(11L, "AGGREGATED", "x", null, null, null, null, "processing", null, "2026-04-03 12:00:00"));
+            .thenReturn(new AnalysisReportDto(11L, "AGGREGATED", "x", null, null, null, null, null, null, java.util.List.of(), java.util.List.of(), null, null, null, "processing", null, "2026-04-03 12:00:00"));
 
         TriggerAnalysisResponse response = triggerService.triggerManualBatch();
 
@@ -73,7 +73,7 @@ class AnalysisAutomationTriggerServiceTest {
     void shouldMarkReportFailedWhenPublishFails() {
         when(deviceMapper.selectList(any())).thenReturn(List.of(device("DEV001", "warning", "A1")));
         when(analysisService.createProcessingReport(eq("AGGREGATED"), any(), any()))
-            .thenReturn(new AnalysisReportDto(21L, "AGGREGATED", "x", null, null, null, null, "processing", null, "2026-04-03 12:00:00"));
+            .thenReturn(new AnalysisReportDto(21L, "AGGREGATED", "x", null, null, null, null, null, null, java.util.List.of(), java.util.List.of(), null, null, null, "processing", null, "2026-04-03 12:00:00"));
         doThrow(new RuntimeException("mq down")).when(producer).publish(any());
 
         TriggerAnalysisResponse response = triggerService.triggerManualBatch();

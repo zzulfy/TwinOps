@@ -56,7 +56,7 @@ class AnalysisControllerTest {
             new com.twinops.backend.auth.dto.AdminIdentityDto("admin", "System Administrator", "admin")
         );
         when(analysisService.createProcessingReport(any(), any(), any())).thenReturn(
-            new AnalysisReportDto(3L, "DEV001", "cpu=90", null, null, null, null, "processing", null, "2026-04-03 12:00:00")
+            new AnalysisReportDto(3L, "DEV001", "cpu=90", null, null, null, null, null, null, List.of(), List.of(), null, null, null, "processing", null, "2026-04-03 12:00:00")
         );
         mockMvc.perform(post("/api/analysis/reports")
                 .header("Authorization", "Bearer token")
@@ -121,7 +121,7 @@ class AnalysisControllerTest {
             new com.twinops.backend.auth.dto.AdminIdentityDto("admin", "System Administrator", "admin")
         );
         when(analysisService.listReports(5)).thenReturn(List.of(
-            new AnalysisReportDto(1L, "DEV001", "cpu=90", "过热风险", 0.92, "high", "检查散热", "success", null, "2026-04-03 12:00:00")
+            new AnalysisReportDto(1L, "DEV001", "cpu=90", "过热风险", 0.92, "high", "检查散热", "aerca_llm", "success", List.of(), List.of(), "model-v1", null, null, "success", null, "2026-04-03 12:00:00")
         ));
 
         mockMvc.perform(get("/api/analysis/reports").param("limit", "5").header("Authorization", "Bearer token"))
@@ -146,7 +146,7 @@ class AnalysisControllerTest {
             new com.twinops.backend.auth.dto.AdminIdentityDto("admin", "System Administrator", "admin")
         );
         when(analysisService.getReport(2L)).thenReturn(
-            new AnalysisReportDto(2L, "DEV002", "cpu=80", "中风险", 0.61, "medium", "持续观察", "success", null, "2026-04-03 00:00:00")
+            new AnalysisReportDto(2L, "DEV002", "cpu=80", "中风险", 0.61, "medium", "持续观察", "llm_only", "fallback", List.of(), List.of(), null, null, null, "success", null, "2026-04-03 00:00:00")
         );
 
         mockMvc.perform(get("/api/analysis/reports/2").header("Authorization", "Bearer token"))

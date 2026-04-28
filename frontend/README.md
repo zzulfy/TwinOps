@@ -94,6 +94,7 @@ npm run test:unit:scene-centered-dialog
 - Dashboard 标题板会直接显示“演示数 / 数据数”，当前前端演示设备与数据库 seed 设备保持 32:32 的 1:1 对齐。
 - 共享目录只收录户内设备，右侧仿真区展示的名称、类型和短标识都从这份目录读取。
 - 后端 `GET /api/devices/simulation-data` 只返回设备业务数据，Dashboard 在前端完成“固定 UI 配置 + 实时数据”的合并渲染。
+- Analysis 页面在保留原有文本报告基础上，现已支持显示后端返回的 RCA 结构化字段：`engine`、`rcaStatus`、`rootCauses`、`causalEdges`、`modelVersion`、`evidenceWindowStart/End`；当后端走 `llm_only` fallback 时，详情区会显式显示无 RCA 结果而不是崩溃。
 - Dashboard 初始化会先调用 `GET /api/devices/simulation-consistency` 并自动修复；若仍存在不一致，仅记录日志，不在仿真画面叠加提示框。
 - 场景交互节点通过前端固定 `objectId -> deviceCode` 配置绑定；后端一致性服务则独立维护模型/对象映射与数据库设备集合对齐。
 - 用户点击设备节点后，会在仿真画面中央显示设备信息对话框（状态/位置/遥测/告警）。

@@ -8,6 +8,7 @@ TwinOps 后端基于 Spring Boot + MyBatis-Plus + MySQL，采用 modular monolit
 - Maven 3.9+
 - MySQL 8+
 - Kafka（用于 Analysis Automation）
+- Python 3.11+（启用 RCA sidecar 时）
 
 ## 2. 初始化数据库
 
@@ -47,6 +48,7 @@ python scripts/generate_dataset_seeds.py
 
 - `src/main/resources/application.yml`：server、datasource、auth、framework、kafka 等
 - `src/main/resources/llm.yml`：LLM 相关配置
+- `../causaltrace-rca/`：设备级 RCA sidecar（独立进程）
 
 关键配置项：
 
@@ -54,6 +56,7 @@ python scripts/generate_dataset_seeds.py
 - `spring.datasource.url/username/password`
 - `twinops.auth.admin.username/password/display-name`
 - `twinops.analysis.llm.provider/base-url/api-key/model/temperature/max-tokens/fallback-to-mock`（LangChain4j 版本不再使用 `path`）
+- `twinops.analysis.rca.enabled/base-url/profile/timeout-ms`
 - `twinops.simulation.devices-model-path`（仿真设备模型路径，默认 `../frontend/public/models/devices.glb`）
 - `twinops.simulation.seed-devices-sql-path`（设备种子 SQL 路径，默认 `./sql/002_seed_devices.sql`）
 
@@ -93,6 +96,28 @@ Kafka 关键映射：
 - `twinops.analysis.automation.topic: analysis.request`
 - `twinops.analysis.automation.consumer-group: twinops-analysis-consumer`
 
+## 5.1 RCA sidecar（可选增强）
+
+启用设备级 RCA 时，先启动 sidecar：
+
+```bash
+cd ../causaltrace-rca
+pip install -r requirements.txt
+uvicorn service.app:app --host 127.0.0.1 --port 8091
+```
+
+然后在 `application.yml` 中开启：
+
+```yaml
+twinops:
+  analysis:
+    rca:
+      enabled: true
+      base-url: http://127.0.0.1:8091
+      profile: msds_device_stress_v1
+      timeout-ms: 3000
+```
+
 ## 6. API 概览
 
 - `POST /api/auth/login`
@@ -113,6 +138,7 @@ Kafka 关键映射：
 - `GET /api/dashboard/fault-rate/trend?predictMinutes=5`
 - `GET /api/analysis/reports?limit=20`
 - `GET /api/analysis/reports/{id}`
+- `GET /api/analysis/health`
 - `POST /api/analysis/reports/trigger`
 
 ## 7. 鉴权与 Swagger
@@ -140,8 +166,8 @@ Kafka 关键映射：
 
 - 前端触发 `POST /api/analysis/reports/trigger` 时不传 `deviceCode`
 - 后端 Producer 仅发布 1 条 `analysis.request` batch job
-- Consumer 聚合查询全部目标设备数据并执行 1 次 LLM analysis
-- 最终持久化 1 条聚合报告（`deviceCode=AGGREGATED`）
+- Consumer 聚合查询全部目标设备数据；若启用 RCA，会先组装最近时间窗 stress 矩阵并调用 `causaltrace-rca` sidecar，再执行 1 次 LLM analysis
+- 最终持久化 1 条聚合报告（`deviceCode=AGGREGATED`），其中可包含 `engine`、`rca_status`、`root_causes_json`、`causal_graph_json`、`model_version` 和 evidence window
 - 幂等键使用 `batch:slot`（manual 场景为 `batch:manual-yyyyMMddHHmmss`）
 - 若服务中断导致报告长期停留 `processing`，后端在查询报告列表/详情时会将超出 10 分钟的挂起任务自动回收为 `failed` 并写入超时错误信息
 

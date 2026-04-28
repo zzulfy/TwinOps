@@ -19,6 +19,13 @@ const BASE_URL = process.env.SMOKE_URL || "http://127.0.0.1:8090/";
         confidence: 0.9,
         riskLevel: "low",
         recommendedAction: "observe",
+        engine: "llm_only",
+        rcaStatus: "fallback",
+        rootCauses: [],
+        causalEdges: [],
+        modelVersion: null,
+        evidenceWindowStart: null,
+        evidenceWindowEnd: null,
         status: "success",
         errorMessage: null,
         createdAt: "2026-01-01 00:00:00",
@@ -139,6 +146,17 @@ const BASE_URL = process.env.SMOKE_URL || "http://127.0.0.1:8090/";
     const smokeState = await page.evaluate(() => window.__analysisSmoke);
     if (!smokeState || smokeState.reports.length < 2) {
       throw new Error("expected reports list to contain newly generated aggregated report");
+    }
+    const detailText = await page.$eval(".detail", (el) => el.textContent || "");
+    if (!detailText.includes("分析引擎") || !detailText.includes("llm_only")) {
+      throw new Error(`expected analysis engine rendering, got: ${detailText}`);
+    }
+    if (!detailText.includes("RCA 状态") || !detailText.includes("fallback")) {
+      throw new Error(`expected RCA status rendering, got: ${detailText}`);
+    }
+    const fallbackText = await page.$eval(".analysis-rca-section", (el) => el.textContent || "");
+    if (!fallbackText.includes("fallback") && !fallbackText.includes("没有结构化 RCA 结果")) {
+      throw new Error(`expected RCA fallback section, got: ${fallbackText}`);
     }
     if (smokeState.reports[0].deviceCode !== "AGGREGATED") {
       throw new Error(`unexpected first report device code: ${smokeState.reports[0].deviceCode}`);

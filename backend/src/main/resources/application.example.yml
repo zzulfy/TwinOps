@@ -51,6 +51,11 @@ twinops:
       enabled: true
       topic: analysis.request
       consumer-group: twinops-analysis-consumer
+    rca:
+      enabled: false
+      base-url: http://127.0.0.1:8091
+      profile: msds_device_stress_v1
+      timeout-ms: 3000
   simulation:
     devices-model-path: ../frontend/public/models/devices.glb
     seed-devices-sql-path: ./sql/002_seed_devices.sql

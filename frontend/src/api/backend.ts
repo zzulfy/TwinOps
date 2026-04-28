@@ -102,6 +102,21 @@ export interface AnalysisReport {
   confidence: number | null;
   riskLevel: string | null;
   recommendedAction: string | null;
+  engine: string | null;
+  rcaStatus: string | null;
+  rootCauses: Array<{
+    deviceCode: string;
+    score: number | null;
+    rank: number | null;
+  }>;
+  causalEdges: Array<{
+    fromDeviceCode: string;
+    toDeviceCode: string;
+    weight: number | null;
+  }>;
+  modelVersion: string | null;
+  evidenceWindowStart: string | null;
+  evidenceWindowEnd: string | null;
   status: "processing" | "success" | "failed";
   errorMessage: string | null;
   createdAt: string;

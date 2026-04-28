@@ -1,6 +1,10 @@
 package com.twinops.backend.analysis.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.twinops.backend.analysis.dto.AnalysisCausalEdgeDto;
+import com.twinops.backend.analysis.dto.AnalysisRootCauseDto;
+import com.twinops.backend.analysis.dto.RcaInferenceResponseDto;
 import com.twinops.backend.common.logging.LogFields;
 import com.twinops.backend.device.entity.DeviceEntity;
 import com.twinops.backend.device.mapper.DeviceMapper;
@@ -23,15 +27,23 @@ public class AnalysisAggregationService {
     private final DeviceMapper deviceMapper;
     private final TelemetryMapper telemetryMapper;
     private final AnalysisService analysisService;
+    private final RcaFeatureAssembler rcaFeatureAssembler;
+    private final RcaEngineClient rcaEngineClient;
+    private final ObjectMapper objectMapper;
 
     public AnalysisAggregationService(
         DeviceMapper deviceMapper,
         TelemetryMapper telemetryMapper,
-        AnalysisService analysisService
+        AnalysisService analysisService,
+        RcaFeatureAssembler rcaFeatureAssembler,
+        RcaEngineClient rcaEngineClient
     ) {
         this.deviceMapper = deviceMapper;
         this.telemetryMapper = telemetryMapper;
         this.analysisService = analysisService;
+        this.rcaFeatureAssembler = rcaFeatureAssembler;
+        this.rcaEngineClient = rcaEngineClient;
+        this.objectMapper = new ObjectMapper();
     }
 
     public void processAggregatedBatch(String slot, String idempotencyKey) {
@@ -52,7 +64,8 @@ public class AnalysisAggregationService {
             throw new RuntimeException("no warning/error devices found for aggregated analysis slot=" + slot);
         }
 
-        String metricSummary = buildAggregatedMetricSummary(slot, targets);
+        AnalysisRcaPayload rcaPayload = buildRcaPayload(slot, targets);
+        String metricSummary = buildAggregatedMetricSummary(slot, targets, rcaPayload);
         log.info("{}={} {}={} {}={} {}={} slot={} idempotencyKey={} targetCount={}",
             LogFields.REQUEST_ID, safeRequestId(),
             LogFields.MODULE, "analysis",
@@ -62,7 +75,7 @@ public class AnalysisAggregationService {
             idempotencyKey,
             targets.size()
         );
-        analysisService.createReportWithIdempotency(AGGREGATED_DEVICE_CODE, metricSummary, idempotencyKey);
+        analysisService.createReportWithIdempotency(AGGREGATED_DEVICE_CODE, metricSummary, idempotencyKey, rcaPayload);
         log.info("{}={} {}={} {}={} {}={} slot={} idempotencyKey={} targetCount={}",
             LogFields.REQUEST_ID, safeRequestId(),
             LogFields.MODULE, "analysis",
@@ -74,7 +87,30 @@ public class AnalysisAggregationService {
         );
     }
 
-    private String buildAggregatedMetricSummary(String slot, List<DeviceEntity> targets) {
+    private AnalysisRcaPayload buildRcaPayload(String slot, List<DeviceEntity> targets) {
+        return rcaFeatureAssembler.buildWindow(slot, targets)
+            .map(window -> {
+                try {
+                    return rcaEngineClient.infer(window)
+                        .map(response -> AnalysisRcaPayload.success(response, window.windowStart(), window.windowEnd(), objectMapper))
+                        .orElseGet(() -> AnalysisRcaPayload.fallback(window.windowStart(), window.windowEnd()));
+                } catch (Exception ex) {
+                    log.warn("{}={} {}={} {}={} {}={} {}={} slot={} message={}",
+                        LogFields.REQUEST_ID, safeRequestId(),
+                        LogFields.MODULE, "analysis",
+                        LogFields.EVENT, "analysis.automation.rca",
+                        LogFields.RESULT, "fallback",
+                        LogFields.ERROR_CODE, "ANALYSIS_RCA_FALLBACK",
+                        slot,
+                        ex.getMessage()
+                    );
+                    return AnalysisRcaPayload.fallback(window.windowStart(), window.windowEnd());
+                }
+            })
+            .orElseGet(() -> AnalysisRcaPayload.fallback(null, null));
+    }
+
+    private String buildAggregatedMetricSummary(String slot, List<DeviceEntity> targets, AnalysisRcaPayload rcaPayload) {
         List<String> rows = new ArrayList<>();
         for (DeviceEntity device : targets) {
             QueryWrapper<TelemetryEntity> metricQuery = new QueryWrapper<>();
@@ -91,10 +127,41 @@ public class AnalysisAggregationService {
                 decimal(metric == null ? null : metric.getNetworkTraffic())
             ));
         }
-        return "auto-analysis slot=%s mode=aggregated targetCount=%d devices=[%s]".formatted(
+        return "auto-analysis slot=%s mode=aggregated targetCount=%d devices=[%s] rca=[%s]".formatted(
             slot,
             targets.size(),
-            String.join(" | ", rows)
+            String.join(" | ", rows),
+            buildRcaSummary(rcaPayload)
+        );
+    }
+
+    private String buildRcaSummary(AnalysisRcaPayload rcaPayload) {
+        List<AnalysisRootCauseDto> rootCauses = rcaPayload.safeRootCauses();
+        List<AnalysisCausalEdgeDto> causalEdges = rcaPayload.safeCausalEdges();
+        String rootCauseText = rootCauses.isEmpty()
+            ? "none"
+            : rootCauses.stream()
+                .limit(3)
+                .map(item -> "%s:%.2f".formatted(item.deviceCode(), item.score() == null ? 0.0 : item.score()))
+                .reduce((left, right) -> left + "," + right)
+                .orElse("none");
+        String edgeText = causalEdges.isEmpty()
+            ? "none"
+            : causalEdges.stream()
+                .limit(3)
+                .map(item -> "%s->%s:%.2f".formatted(
+                    item.fromDeviceCode(),
+                    item.toDeviceCode(),
+                    item.weight() == null ? 0.0 : item.weight()
+                ))
+                .reduce((left, right) -> left + "," + right)
+                .orElse("none");
+        return "engine=%s,status=%s,model=%s,rootCauses=%s,edges=%s".formatted(
+            nullSafe(rcaPayload.engine()),
+            nullSafe(rcaPayload.rcaStatus()),
+            nullSafe(rcaPayload.modelVersion()),
+            rootCauseText,
+            edgeText
         );
     }
 

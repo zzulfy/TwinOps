@@ -1,7 +1,11 @@
 package com.twinops.backend.analysis.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.twinops.backend.analysis.dto.AnalysisCausalEdgeDto;
 import com.twinops.backend.analysis.dto.AnalysisReportDto;
+import com.twinops.backend.analysis.dto.AnalysisRootCauseDto;
 import com.twinops.backend.analysis.entity.AnalysisReportEntity;
 import com.twinops.backend.analysis.mapper.AnalysisReportMapper;
 import com.twinops.backend.common.exception.NotFoundException;
@@ -32,6 +36,7 @@ public class AnalysisService {
 
     private static final Logger log = LoggerFactory.getLogger(AnalysisService.class);
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private static final ObjectMapper REPORT_OBJECT_MAPPER = new ObjectMapper();
     private static final Duration PROVIDER_TIMEOUT = Duration.ofSeconds(5);
     private static final int MAX_RETRY = 2;
     private static final Duration PROCESSING_STALE_TIMEOUT = Duration.ofMinutes(10);
@@ -71,7 +76,7 @@ public class AnalysisService {
     }
 
     public AnalysisReportDto createReport(String deviceCode, String metricSummary) {
-        return createReportInternal(deviceCode, metricSummary, null);
+        return createReportInternal(deviceCode, metricSummary, null, AnalysisRcaPayload.fallback(null, null));
     }
 
     public AnalysisReportDto createProcessingReport(String deviceCode, String metricSummary, String idempotencyKey) {
@@ -104,13 +109,22 @@ public class AnalysisService {
     }
 
     public AnalysisReportDto createReportWithIdempotency(String deviceCode, String metricSummary, String idempotencyKey) {
+        return createReportWithIdempotency(deviceCode, metricSummary, idempotencyKey, AnalysisRcaPayload.fallback(null, null));
+    }
+
+    public AnalysisReportDto createReportWithIdempotency(
+        String deviceCode,
+        String metricSummary,
+        String idempotencyKey,
+        AnalysisRcaPayload rcaPayload
+    ) {
         if (idempotencyKey != null && !idempotencyKey.isBlank()) {
             QueryWrapper<AnalysisReportEntity> query = new QueryWrapper<>();
             query.eq("idempotency_key", idempotencyKey).last("LIMIT 1");
             AnalysisReportEntity existing = analysisReportMapper.selectOne(query);
             if (existing != null) {
                 if ("processing".equalsIgnoreCase(existing.getStatus())) {
-                    return completeExistingReport(existing, deviceCode, metricSummary);
+                    return completeExistingReport(existing, deviceCode, metricSummary, rcaPayload);
                 }
                 log.info("{}={} {}={} {}={} {}={} {}={} idempotencyKey={} reportId={} deviceCode={}",
                     LogFields.REQUEST_ID, safeRequestId(),
@@ -125,13 +139,19 @@ public class AnalysisService {
                 return toDto(existing);
             }
         }
-        return createReportInternal(deviceCode, metricSummary, idempotencyKey);
+        return createReportInternal(deviceCode, metricSummary, idempotencyKey, rcaPayload);
     }
 
-    private AnalysisReportDto completeExistingReport(AnalysisReportEntity report, String deviceCode, String metricSummary) {
+    private AnalysisReportDto completeExistingReport(
+        AnalysisReportEntity report,
+        String deviceCode,
+        String metricSummary,
+        AnalysisRcaPayload rcaPayload
+    ) {
         long startNanos = System.nanoTime();
         report.setDeviceCode(deviceCode);
         report.setMetricSummary(metricSummary);
+        applyRcaPayload(report, rcaPayload);
         int attempt = 0;
         while (attempt <= MAX_RETRY) {
             try {
@@ -170,7 +190,12 @@ public class AnalysisService {
         return toDto(report);
     }
 
-    private AnalysisReportDto createReportInternal(String deviceCode, String metricSummary, String idempotencyKey) {
+    private AnalysisReportDto createReportInternal(
+        String deviceCode,
+        String metricSummary,
+        String idempotencyKey,
+        AnalysisRcaPayload rcaPayload
+    ) {
         long startNanos = System.nanoTime();
         log.info("{}={} {}={} {}={} {}={} deviceCode={}",
             LogFields.REQUEST_ID, safeRequestId(),
@@ -184,6 +209,7 @@ public class AnalysisService {
         report.setMetricSummary(metricSummary);
         report.setIdempotencyKey(idempotencyKey);
         report.setStatus("processing");
+        applyRcaPayload(report, rcaPayload);
         analysisReportMapper.insert(report);
 
         int attempt = 0;
@@ -327,13 +353,7 @@ public class AnalysisService {
 
     private AnalysisReportDto toDto(AnalysisReportEntity entity) {
         LocalDateTime created = entity.getCreatedAt();
-        String createdAt = created == null
-            ? "--"
-            : created
-                .atZone(storageZoneId)
-                .withZoneSameInstant(displayZoneId)
-                .toLocalDateTime()
-                .format(TIME_FMT);
+        String createdAt = formatDateTime(created);
         Double confidence = entity.getConfidence() == null ? null : entity.getConfidence().doubleValue();
         return new AnalysisReportDto(
             entity.getId(),
@@ -343,10 +363,63 @@ public class AnalysisService {
             confidence,
             entity.getRiskLevel(),
             entity.getRecommendedAction(),
+            entity.getEngine(),
+            entity.getRcaStatus(),
+            parseRootCauses(entity.getRootCausesJson()),
+            parseCausalEdges(entity.getCausalGraphJson()),
+            entity.getModelVersion(),
+            formatDateTime(entity.getEvidenceWindowStart()),
+            formatDateTime(entity.getEvidenceWindowEnd()),
             entity.getStatus(),
             entity.getErrorMessage(),
             createdAt
         );
+    }
+
+    private void applyRcaPayload(AnalysisReportEntity report, AnalysisRcaPayload rcaPayload) {
+        if (rcaPayload == null) {
+            return;
+        }
+        report.setEngine(rcaPayload.engine());
+        report.setRcaStatus(rcaPayload.rcaStatus());
+        report.setRootCausesJson(rcaPayload.rootCausesJson());
+        report.setCausalGraphJson(rcaPayload.causalGraphJson());
+        report.setModelVersion(rcaPayload.modelVersion());
+        report.setEvidenceWindowStart(rcaPayload.evidenceWindowStart());
+        report.setEvidenceWindowEnd(rcaPayload.evidenceWindowEnd());
+    }
+
+    private List<AnalysisRootCauseDto> parseRootCauses(String rawJson) {
+        if (rawJson == null || rawJson.isBlank()) {
+            return List.of();
+        }
+        try {
+            return REPORT_OBJECT_MAPPER.readValue(rawJson, new TypeReference<List<AnalysisRootCauseDto>>() {});
+        } catch (Exception ex) {
+            return List.of();
+        }
+    }
+
+    private List<AnalysisCausalEdgeDto> parseCausalEdges(String rawJson) {
+        if (rawJson == null || rawJson.isBlank()) {
+            return List.of();
+        }
+        try {
+            return REPORT_OBJECT_MAPPER.readValue(rawJson, new TypeReference<List<AnalysisCausalEdgeDto>>() {});
+        } catch (Exception ex) {
+            return List.of();
+        }
+    }
+
+    private String formatDateTime(LocalDateTime dateTime) {
+        if (dateTime == null) {
+            return null;
+        }
+        return dateTime
+            .atZone(storageZoneId)
+            .withZoneSameInstant(displayZoneId)
+            .toLocalDateTime()
+            .format(TIME_FMT);
     }
 
     private ZoneId parseZoneId(String rawZoneId, String property, ZoneId fallback) {

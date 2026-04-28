@@ -17,6 +17,8 @@ export default function AnalysisCenterPage() {
   const [listLoading, setListLoading] = useState(false);
   const [detailLoading, setDetailLoading] = useState(false);
   const detailRequestSeqRef = useRef(0);
+  const detailRootCauses = selectedReport?.rootCauses ?? [];
+  const detailCausalEdges = selectedReport?.causalEdges ?? [];
 
   const formatTriggerStatus = (status: "processing" | "partial" | "failed" | "skipped"): string => {
     if (status === "processing") return "聚合分析任务已受理，正在生成报告。";
@@ -155,6 +157,21 @@ export default function AnalysisCenterPage() {
                 <strong>状态:</strong> {selectedReport.status}
               </p>
               <p>
+                <strong>分析引擎:</strong> {selectedReport.engine ?? "-"}
+              </p>
+              <p>
+                <strong>RCA 状态:</strong> {selectedReport.rcaStatus ?? "-"}
+              </p>
+              <p>
+                <strong>模型版本:</strong> {selectedReport.modelVersion ?? "-"}
+              </p>
+              <p>
+                <strong>证据时间窗:</strong>{" "}
+                {selectedReport.evidenceWindowStart && selectedReport.evidenceWindowEnd
+                  ? `${selectedReport.evidenceWindowStart} ~ ${selectedReport.evidenceWindowEnd}`
+                  : "-"}
+              </p>
+              <p>
                 <strong>置信度:</strong> {selectedReport.confidence ?? "-"}
               </p>
               <p>
@@ -172,6 +189,34 @@ export default function AnalysisCenterPage() {
               <p>
                 <strong>指标摘要:</strong> {selectedReport.metricSummary}
               </p>
+              <div className="analysis-rca-section">
+                <strong>Top Root Causes:</strong>
+                {detailRootCauses.length === 0 ? (
+                  <p>当前报告没有结构化 RCA 结果，可能走了 fallback 路径。</p>
+                ) : (
+                  <ul>
+                    {detailRootCauses.map((item) => (
+                      <li key={`${item.deviceCode}-${item.rank}`}>
+                        #{item.rank ?? "-"} {item.deviceCode} ({item.score ?? 0})
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <div className="analysis-rca-section">
+                <strong>Causal Edges:</strong>
+                {detailCausalEdges.length === 0 ? (
+                  <p>无因果边结果。</p>
+                ) : (
+                  <ul>
+                    {detailCausalEdges.map((item, index) => (
+                      <li key={`${item.fromDeviceCode}-${item.toDeviceCode}-${index}`}>
+                        {item.fromDeviceCode} → {item.toDeviceCode} ({item.weight ?? 0})
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </>
           ) : null}
         </div>

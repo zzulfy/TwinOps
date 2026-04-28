@@ -31,7 +31,7 @@ class AnalysisAutomationConsumerTest {
     @Test
     void shouldConsumeMessageAndCreateReportWithIdempotency() {
         when(analysisService.createReportWithIdempotency("DEV001", "cpu=90", "DEV001:2026040312"))
-            .thenReturn(new AnalysisReportDto(1L, "DEV001", "cpu=90", "高风险", 0.9, "high", "检查冷却", "success", null, "2026-04-03 12:00:00"));
+            .thenReturn(new AnalysisReportDto(1L, "DEV001", "cpu=90", "高风险", 0.9, "high", "检查冷却", "llm_only", "fallback", java.util.List.of(), java.util.List.of(), null, null, null, "success", null, "2026-04-03 12:00:00"));
 
         consumer.onMessage("""
             {"jobType":"analysis-single","deviceCode":"DEV001","metricSummary":"cpu=90","slot":"2026040312","idempotencyKey":"DEV001:2026040312","reportId":1}
