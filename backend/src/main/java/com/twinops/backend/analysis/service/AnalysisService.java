@@ -286,12 +286,26 @@ public class AnalysisService {
     }
 
     public List<AnalysisReportDto> listReports(int limit) {
-        QueryWrapper<AnalysisReportEntity> wrapper = new QueryWrapper<>();
-        wrapper.orderByDesc("created_at").last("LIMIT " + limit);
-        return analysisReportMapper.selectList(wrapper).stream()
-            .map(this::reconcileStaleProcessingReport)
-            .map(this::toDto)
-            .toList();
+        try {
+            QueryWrapper<AnalysisReportEntity> wrapper = new QueryWrapper<>();
+            wrapper.orderByDesc("created_at").last("LIMIT " + limit);
+            return analysisReportMapper.selectList(wrapper).stream()
+                .map(this::reconcileStaleProcessingReport)
+                .map(this::toDto)
+                .toList();
+        } catch (org.springframework.dao.DataAccessException ex) {
+            log.error("{}={} {}={} {}={} {}={} {}={} limit={} message={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "analysis",
+                LogFields.EVENT, "analysis.report.list.db_error",
+                LogFields.RESULT, "failed",
+                LogFields.ERROR_CODE, "DB_ACCESS_ERROR",
+                limit,
+                ex.getMessage(),
+                ex
+            );
+            return List.of();
+        }
     }
 
     public AnalysisReportDto getReport(Long id) {

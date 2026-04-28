@@ -153,3 +153,25 @@ Ensure that the dataset you choose is formatted as expected by the code. Additio
 
 ## 📬 Contact & Support
 For any questions, issues, or contributions, please open an issue on GitHub or contact the repository maintainer.
+
+## Windows 快速启动（PowerShell）
+1. 使用 venv（推荐）或 conda 创建并激活 Python 3.11 环境：
+   python -m venv venv
+   .\venv\Scripts\Activate.ps1
+   # 或使用 conda:
+   conda create -n causaltrace-rca python=3.11 -y
+   conda activate causaltrace-rca
+
+2. 安装轻量服务依赖（不含 PyTorch）：
+   pip install -r requirements-server.txt
+   # PyTorch 请按硬件选择并按官方安装指南执行（见 README 中的说明）。
+
+3. 启动服务（推荐方式）：
+   python -m uvicorn service.app:app --host 127.0.0.1 --port 8091
+   # 如果在 PowerShell 中直接执行 uvicorn 报错 “not recognized”，请使用上面的 `python -m uvicorn` 或运行提供的 start-rca.ps1。
+
+4. 检查健康接口：
+   curl http://127.0.0.1:8091/health
+
+常见问题：
+- uvicorn 未识别：说明 uvicorn 未安装到当前 Python 环境或虚拟环境未激活，使用 `python -m uvicorn` 或激活 venv 即可。
