@@ -2,6 +2,7 @@
 -- This script checks information_schema and adds missing columns one by one.
 
 DELIMITER $$
+DROP PROCEDURE IF EXISTS add_missing_analysis_columns$$
 CREATE PROCEDURE add_missing_analysis_columns()
 BEGIN
   IF NOT EXISTS(SELECT 1 FROM information_schema.COLUMNS WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME='analysis_reports' AND COLUMN_NAME='engine') THEN
@@ -29,4 +30,4 @@ END$$
 DELIMITER ;
 
 CALL add_missing_analysis_columns();
-DROP PROCEDURE add_missing_analysis_columns();
+DROP PROCEDURE IF EXISTS add_missing_analysis_columns;

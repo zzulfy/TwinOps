@@ -3,8 +3,8 @@ Migration scripts for TwinOps backend
 This folder contains migration helpers and SQL files used to keep the database schema in sync with the application.
 
 Files
-- 002_add_analysis_columns.sql: Adds missing RCA/evidence columns to `analysis_reports` table if they do not exist.
-- 002_add_analysis_columns_compat.sql: Compatibility version for MySQL versions that do not support `ADD COLUMN IF NOT EXISTS`.
+- 002_add_analysis_columns.sql: Adds missing RCA/evidence columns to `analysis_reports` table if they do not exist. It uses `information_schema` checks so it is safe for the MySQL 8 Docker deployment.
+- 002_add_analysis_columns_compat.sql: Compatibility copy retained for older migration workflows. It is idempotent and can be executed after `002_add_analysis_columns.sql`.
 - ../scripts/apply_migration.ps1: PowerShell helper to run the migration on Windows.
 - ../scripts/apply_migration.sh: Shell helper to run the migration on Linux/macOS.
 

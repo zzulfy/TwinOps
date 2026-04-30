@@ -1,0 +1,57 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: twinops-backend
+  datasource:
+    url: jdbc:mysql://mysql:3306/twinops?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
+    username: twinops
+    password: twinops123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  config:
+    import: classpath:llm.yml
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: twinops-analysis-consumer
+      auto-offset-reset: latest
+    producer:
+      acks: all
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      id-type: auto
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+twinops:
+  auth:
+    admin:
+      username: admin
+      password: admin123456
+      display-name: System_Administrator
+  analysis:
+    time:
+      storage-zone-id: UTC
+      display-zone-id: Asia/Shanghai
+    automation:
+      enabled: true
+      topic: analysis.request
+      consumer-group: twinops-analysis-consumer
+    rca:
+      enabled: false
+      base-url: http://rca:8091
+      profile: msds_device_stress_v1
+      timeout-ms: 3000
+  simulation:
+    devices-model-path: /app/models/devices.glb
+    seed-devices-sql-path: /app/sql/002_seed_devices.sql
+    object-map-path: /app/sql/007_simulation_object_map.csv

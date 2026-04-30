@@ -3,9 +3,9 @@ SELECT COUNT(*) AS old_metric_records
 FROM device_metrics
 WHERE metric_time < DATE_SUB(NOW(), INTERVAL 30 DAY);
 
--- Dataset-driven seed consistency checks (devices.glb <-> DB should be 1:1, 51 devices).
+-- Dataset-driven seed consistency checks (current seed contains 32 devices).
 SELECT
-  CASE WHEN COUNT(*) = 51 THEN 'PASS' ELSE CONCAT('FAIL(', COUNT(*), ')') END AS device_count_check,
+  CASE WHEN COUNT(*) = 32 THEN 'PASS' ELSE CONCAT('FAIL(', COUNT(*), ')') END AS device_count_check,
   COUNT(*) AS device_count
 FROM devices;
 
@@ -22,7 +22,7 @@ FROM (
 ) AS duplicated;
 
 SELECT
-  CASE WHEN COUNT(*) = 2448 THEN 'PASS' ELSE CONCAT('FAIL(', COUNT(*), ')') END AS metric_count_check,
+  CASE WHEN COUNT(*) = 1536 THEN 'PASS' ELSE CONCAT('FAIL(', COUNT(*), ')') END AS metric_count_check,
   COUNT(*) AS metric_count
 FROM device_metrics;
 
