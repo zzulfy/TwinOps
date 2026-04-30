@@ -17,6 +17,7 @@ public record AnalysisReportDto(
     String evidenceWindowEnd,
     String status,
     String errorMessage,
-    String createdAt
+    String createdAt,
+    String report
 ) {
 }

@@ -160,6 +160,7 @@ public class AnalysisService {
                 report.setConfidence(result.confidence());
                 report.setRiskLevel(result.riskLevel());
                 report.setRecommendedAction(result.recommendedAction());
+                report.setReport(buildReportSafe(report, metricSummary, result));
                 report.setStatus("success");
                 report.setErrorMessage(null);
                 analysisReportMapper.updateById(report);
@@ -214,6 +215,7 @@ public class AnalysisService {
                 report.setConfidence(result.confidence());
                 report.setRiskLevel(result.riskLevel());
                 report.setRecommendedAction(result.recommendedAction());
+                report.setReport(buildReportSafe(report, metricSummary, result));
                 report.setStatus("success");
                 report.setErrorMessage(null);
                 analysisReportMapper.updateById(report);
@@ -255,10 +257,36 @@ public class AnalysisService {
         report.setConfidence(fallback.confidence());
         report.setRiskLevel(fallback.riskLevel());
         report.setRecommendedAction(fallback.recommendedAction());
+        report.setReport(buildReportSafe(report, metricSummary, fallback));
         report.setStatus("success");
         report.setErrorMessage(null);
         analysisReportMapper.updateById(report);
         return toDto(report);
+    }
+
+    private String buildReportSafe(AnalysisReportEntity report, String metricSummary, LlmPredictionResult result) {
+        try {
+            List<AnalysisRootCauseDto> rootCauses = parseRootCauses(report.getRootCausesJson());
+            List<AnalysisCausalEdgeDto> causalEdges = parseCausalEdges(report.getCausalGraphJson());
+            return llmProviderAdapter.generateReport(
+                report.getDeviceCode(), metricSummary, rootCauses, causalEdges,
+                result.prediction(), result.riskLevel(), result.recommendedAction()
+            );
+        } catch (Exception ex) {
+            log.warn("{}={} {}={} {}={} {}={} {}={} reportId={} message={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "analysis",
+                LogFields.EVENT, "analysis.report.generate_failed",
+                LogFields.RESULT, "fallback",
+                LogFields.ERROR_CODE, "REPORT_GENERATE_FAILED",
+                report.getId(),
+                ex.getMessage()
+            );
+            return "## 综合分析报告\n\n报告生成失败，请稍后重试。\n\n### 预测结果\n风险等级: " +
+                (result.riskLevel() != null ? result.riskLevel() : "未知") +
+                "\n预测结论: " + (result.prediction() != null ? result.prediction() : "无") +
+                "\n建议动作: " + (result.recommendedAction() != null ? result.recommendedAction() : "无") + "\n";
+        }
     }
 
     public List<AnalysisReportDto> listReports(int limit) {
@@ -362,7 +390,8 @@ public class AnalysisService {
             formatDateTime(entity.getEvidenceWindowEnd()),
             entity.getStatus(),
             entity.getErrorMessage(),
-            createdAt
+            createdAt,
+            entity.getReport()
         );
     }
 

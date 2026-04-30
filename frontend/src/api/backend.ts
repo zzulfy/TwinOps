@@ -120,6 +120,7 @@ export interface AnalysisReport {
   status: "processing" | "success" | "failed";
   errorMessage: string | null;
   createdAt: string;
+  report: string | null;
 }
 
 export interface TriggerAnalysisResponse {

@@ -25,6 +25,7 @@ public class AnalysisReportEntity {
     private String rootCausesJson;
     private String causalGraphJson;
     private String modelVersion;
+    private String report;
     private String idempotencyKey;
     private LocalDateTime evidenceWindowStart;
     private LocalDateTime evidenceWindowEnd;
@@ -59,6 +60,8 @@ public class AnalysisReportEntity {
     public void setCausalGraphJson(String causalGraphJson) { this.causalGraphJson = causalGraphJson; }
     public String getModelVersion() { return modelVersion; }
     public void setModelVersion(String modelVersion) { this.modelVersion = modelVersion; }
+    public String getReport() { return report; }
+    public void setReport(String report) { this.report = report; }
     public String getIdempotencyKey() { return idempotencyKey; }
     public void setIdempotencyKey(String idempotencyKey) { this.idempotencyKey = idempotencyKey; }
     public LocalDateTime getEvidenceWindowStart() { return evidenceWindowStart; }

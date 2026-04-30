@@ -7,15 +7,37 @@ export default function WidgetPanel04({ dashboardSummaryVersion }: { dashboardSu
   const chartRef = useRef<import("../utils/echartsRuntime").EChartsType | null>(null);
   const [apiError, setApiError] = useState<string | null>(null);
   const [trend, setTrend] = useState<FaultRateTrendResponse | null>(null);
+  const [forecastLoading, setForecastLoading] = useState(false);
+  const forecastEverLoaded = useRef(false);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
-        const data = await fetchFaultRateTrend({ predictMinutes: 5 });
-        if (!cancelled) {
-          setTrend(data);
-          setApiError(null);
+        // Phase 1: history-only, no LLM call — renders immediately
+        const historyResp = await fetchFaultRateTrend({ predictMinutes: 0 });
+        if (cancelled) return;
+        setApiError(null);
+
+        if (forecastEverLoaded.current) {
+          // Already have forecast from a previous load — keep current chart,
+          // let Phase 2 update everything at once without intermediate render
+        } else {
+          // First load: show history immediately while waiting for forecast
+          setTrend(historyResp);
+          setForecastLoading(true);
+        }
+
+        // Phase 2: fetch forecast with AI analysis asynchronously
+        try {
+          const fullResp = await fetchFaultRateTrend({ predictMinutes: 30 });
+          if (cancelled) return;
+          setTrend(fullResp);
+          forecastEverLoaded.current = true;
+        } catch (forecastErr) {
+          console.warn("[WidgetPanel04] forecast fetch failed", forecastErr);
+        } finally {
+          if (!cancelled) setForecastLoading(false);
         }
       } catch (error) {
         if (!cancelled) {
@@ -25,7 +47,9 @@ export default function WidgetPanel04({ dashboardSummaryVersion }: { dashboardSu
       }
     };
     void load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [dashboardSummaryVersion]);
 
   useEffect(() => {
@@ -53,19 +77,67 @@ export default function WidgetPanel04({ dashboardSummaryVersion }: { dashboardSu
         const chart = chartRef.current ?? runtime.init(el);
         chartRef.current = chart;
 
-        const labels = [...trend.history.map((item) => item.time), ...trend.forecast.map((item) => item.time)].map(
-          (label) => label.slice(-5)
-        );
-        const historyValues = [
-          ...trend.history.map((item) => item.value),
-          ...new Array(trend.forecast.length).fill(null),
-        ];
+        const hasForecast = trend.forecast.length > 0;
+
+        const labels = hasForecast
+          ? [...trend.history.map((item) => item.time), ...trend.forecast.map((item) => item.time)].map((label) =>
+              label.slice(-5)
+            )
+          : trend.history.map((item) => item.time).map((label) => label.slice(-5));
+
+        const historyValues = hasForecast
+          ? [...trend.history.map((item) => item.value), ...new Array(trend.forecast.length).fill(null)]
+          : trend.history.map((item) => item.value);
+
         const lastHistory = trend.history[trend.history.length - 1];
-        const forecastValues = [
-          ...new Array(Math.max(0, trend.history.length - 1)).fill(null),
-          lastHistory ? lastHistory.value : null,
-          ...trend.forecast.map((item) => item.value),
+        const forecastValues = hasForecast
+          ? [
+              ...new Array(Math.max(0, trend.history.length - 1)).fill(null),
+              lastHistory ? lastHistory.value : null,
+              ...trend.forecast.map((item) => item.value),
+            ]
+          : [];
+
+        const legendData = hasForecast
+          ? ["历史故障率", `未来${trend.forecast.length}分钟预测故障率(AI)`]
+          : ["历史故障率"];
+
+        const lastHistoryTime = trend.history[trend.history.length - 1]?.time;
+
+        const series: Array<Record<string, unknown>> = [
+          {
+            name: "历史故障率",
+            type: "line",
+            smooth: true,
+            showSymbol: false,
+            lineStyle: { width: 2, color: "#3ea3ff" },
+            areaStyle: { color: "rgba(62,163,255,0.18)" },
+            data: historyValues,
+            markLine: {
+              silent: true,
+              symbol: "none",
+              label: {
+                formatter: "当前",
+                position: "start",
+                fontSize: 10,
+                color: "#ff6b6b",
+              },
+              lineStyle: { color: "#ff6b6b", type: "dashed", width: 1 },
+              data: lastHistoryTime ? [{ xAxis: lastHistoryTime.slice(-5) }] : [],
+            },
+          },
         ];
+
+        if (hasForecast) {
+          series.push({
+            name: `未来${trend.forecast.length}分钟预测故障率(AI)`,
+            type: "line",
+            smooth: true,
+            showSymbol: false,
+            lineStyle: { width: 2, type: "dashed", color: "#f7b955" },
+            data: forecastValues,
+          });
+        }
 
         chart.setOption(
           {
@@ -79,7 +151,7 @@ export default function WidgetPanel04({ dashboardSummaryVersion }: { dashboardSu
               right: 0,
               top: 4,
               textStyle: { color: "#000", fontSize: 11 },
-              data: ["历史故障率", "未来5分钟预测故障率(AI)"],
+              data: legendData,
             },
             grid: { left: 36, right: 14, top: 32, bottom: 42 },
             xAxis: {
@@ -97,28 +169,10 @@ export default function WidgetPanel04({ dashboardSummaryVersion }: { dashboardSu
               splitLine: { lineStyle: { color: "rgba(128,164,211,0.25)" } },
             },
             dataZoom: [
-              { type: "inside", start: 60, end: 100 },
-              { type: "slider", height: 14, bottom: 8, start: 60, end: 100 },
+              { type: "inside", start: 70, end: 100 },
+              { type: "slider", height: 14, bottom: 8, start: 70, end: 100 },
             ],
-            series: [
-              {
-                name: "历史故障率",
-                type: "line",
-                smooth: true,
-                showSymbol: false,
-                lineStyle: { width: 2, color: "#3ea3ff" },
-                areaStyle: { color: "rgba(62,163,255,0.18)" },
-                data: historyValues,
-              },
-              {
-                name: "未来5分钟预测故障率(AI)",
-                type: "line",
-                smooth: true,
-                showSymbol: false,
-                lineStyle: { width: 2, type: "dashed", color: "#f7b955" },
-                data: forecastValues,
-              },
-            ],
+            series,
           },
           true
         );
@@ -160,6 +214,7 @@ export default function WidgetPanel04({ dashboardSummaryVersion }: { dashboardSu
         <div className="fault-rate-chart-wrap">
           <div className="fault-rate-meta">
             最新故障率 {latest ? `${latest.value.toFixed(1)}%` : "-"}
+            {forecastLoading ? <span style={{ marginLeft: 8, color: "#f7b955" }}>AI预测中...</span> : null}
           </div>
           <div ref={chartElRef} className="fault-rate-chart" style={{ minHeight: 180 }}></div>
         </div>

@@ -2,6 +2,8 @@ package com.twinops.backend.analysis.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.twinops.backend.analysis.dto.AnalysisCausalEdgeDto;
+import com.twinops.backend.analysis.dto.AnalysisRootCauseDto;
 import com.twinops.backend.common.logging.LogFields;
 import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
@@ -24,6 +26,7 @@ import java.math.RoundingMode;
 import java.time.Duration;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Collectors;
 
 @Component
 @Primary
@@ -36,12 +39,15 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
 
     private final ObjectMapper objectMapper;
     private volatile ChatModel chatModel;
+    private volatile ChatModel reportChatModel;
     private final Object modelInitLock = new Object();
+    private final Object reportModelInitLock = new Object();
     private final String endpoint;
     private final String apiKey;
     private final String model;
     private final double temperature;
     private final int maxTokens;
+    private final int reportMaxTokens;
     private final boolean fallbackToMock;
 
     @Autowired
@@ -51,6 +57,7 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
         @Value("${twinops.analysis.llm.model:ark-code-latest}") String model,
         @Value("${twinops.analysis.llm.temperature:0.2}") double temperature,
         @Value("${twinops.analysis.llm.max-tokens:512}") int maxTokens,
+        @Value("${twinops.analysis.llm.report-max-tokens:2048}") int reportMaxTokens,
         @Value("${twinops.analysis.llm.fallback-to-mock:true}") boolean fallbackToMock
     ) {
         this.objectMapper = new ObjectMapper();
@@ -60,6 +67,7 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
         this.model = model;
         this.temperature = temperature;
         this.maxTokens = maxTokens;
+        this.reportMaxTokens = reportMaxTokens;
         this.fallbackToMock = fallbackToMock;
     }
 
@@ -79,6 +87,7 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
         this.model = model;
         this.temperature = temperature;
         this.maxTokens = maxTokens;
+        this.reportMaxTokens = 2048;
         this.fallbackToMock = fallbackToMock;
     }
 
@@ -181,6 +190,106 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
         }
     }
 
+    @Override
+    public String generateReport(
+        String deviceCode,
+        String metricSummary,
+        List<AnalysisRootCauseDto> rootCauses,
+        List<AnalysisCausalEdgeDto> causalEdges,
+        String prediction,
+        String riskLevel,
+        String recommendedAction
+    ) {
+        long startNanos = System.nanoTime();
+        try {
+            if (apiKey == null || apiKey.isBlank()) {
+                throw new IllegalStateException("llm api key is missing");
+            }
+            log.info("{}={} {}={} {}={} {}={} provider=openai endpoint={} model={} deviceCode={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "analysis",
+                LogFields.EVENT, "llm.report.start",
+                LogFields.RESULT, "started",
+                endpoint,
+                model,
+                deviceCode
+            );
+
+            String rootCauseText = (rootCauses == null || rootCauses.isEmpty())
+                ? "无显著根因设备"
+                : rootCauses.stream()
+                    .map(rc -> rc.deviceCode() + "（评分:" + String.format("%.2f", rc.score() == null ? 0.0 : rc.score()) + "，排名:#" + rc.rank() + "）")
+                    .collect(Collectors.joining("; "));
+
+            String causalEdgeText = (causalEdges == null || causalEdges.isEmpty())
+                ? "无显著因果边"
+                : causalEdges.stream()
+                    .map(e -> e.fromDeviceCode() + "→" + e.toDeviceCode() + "（权重:" + String.format("%.2f", e.weight() == null ? 0.0 : e.weight()) + "）")
+                    .collect(Collectors.joining("; "));
+
+            ChatResponse response = getOrCreateReportChatModel().chat(List.of(
+                SystemMessage.from("你是一个工业运维分析助手。请基于提供的分析数据生成一份结构化的中文综合报告。使用 Markdown 格式，包含 ## 标题和段落。不要返回 JSON，直接返回报告文本。"),
+                UserMessage.from("""
+                    请基于以下数据生成一份综合运维分析报告，包含以下四个部分：
+                    1. 指标摘要 — 概括当前系统指标状况
+                    2. Top Root Cause 总结 — 解读根因分析结果
+                    3. Causal Edges 总结 — 解读因果传播关系
+                    4. 未来预防和解决措施 — 基于分析给出具体建议
+
+                    设备: %s
+                    指标摘要: %s
+                    Top Root Causes: %s
+                    Causal Edges: %s
+                    LLM 预测: %s
+                    风险等级: %s
+                    建议动作: %s
+
+                    要求：每部分使用 ### 子标题，内容简洁专业，措施具体可操作。
+                    """.formatted(deviceCode, metricSummary, rootCauseText, causalEdgeText,
+                        prediction, riskLevel, recommendedAction))
+            ));
+
+            if (response == null || response.aiMessage() == null || response.aiMessage().text() == null) {
+                throw new RuntimeException("llm report response empty");
+            }
+            String report = response.aiMessage().text().trim();
+            if (report.startsWith("```")) {
+                int firstLineEnd = report.indexOf('\n');
+                int lastFence = report.lastIndexOf("```");
+                if (firstLineEnd > 0 && lastFence > firstLineEnd) {
+                    report = report.substring(firstLineEnd + 1, lastFence).trim();
+                }
+            }
+
+            long latencyMs = (System.nanoTime() - startNanos) / 1_000_000;
+            log.info("{}={} {}={} {}={} {}={} {}={} deviceCode={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "analysis",
+                LogFields.EVENT, "llm.report.complete",
+                LogFields.RESULT, "success",
+                LogFields.LATENCY_MS, latencyMs,
+                deviceCode
+            );
+            return report;
+        } catch (Exception ex) {
+            long latencyMs = (System.nanoTime() - startNanos) / 1_000_000;
+            log.warn("{}={} {}={} {}={} {}={} {}={} {}={} deviceCode={} message={}",
+                LogFields.REQUEST_ID, safeRequestId(),
+                LogFields.MODULE, "analysis",
+                LogFields.EVENT, "llm.report.failed",
+                LogFields.RESULT, "fallback",
+                LogFields.ERROR_CODE, "LLM_REPORT_FAILED",
+                LogFields.LATENCY_MS, latencyMs,
+                deviceCode,
+                ex.getMessage()
+            );
+            return LlmProviderAdapter.super.generateReport(
+                deviceCode, metricSummary, rootCauses, causalEdges,
+                prediction, riskLevel, recommendedAction
+            );
+        }
+    }
+
     private ChatModel getOrCreateChatModel() {
         ChatModel cached = this.chatModel;
         if (cached != null) {
@@ -199,6 +308,27 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
                     .build();
             }
             return this.chatModel;
+        }
+    }
+
+    private ChatModel getOrCreateReportChatModel() {
+        ChatModel cached = this.reportChatModel;
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (reportModelInitLock) {
+            if (this.reportChatModel == null) {
+                this.reportChatModel = OpenAiChatModel.builder()
+                    .baseUrl(toLangChainBaseUrl(this.endpoint))
+                    .apiKey(apiKey)
+                    .modelName(model)
+                    .temperature(temperature)
+                    .maxTokens(reportMaxTokens)
+                    .timeout(HTTP_TIMEOUT)
+                    .maxRetries(0)
+                    .build();
+            }
+            return this.reportChatModel;
         }
     }
 

@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS analysis_reports (
   root_causes_json JSON NULL,
   causal_graph_json JSON NULL,
   model_version VARCHAR(128) NULL,
+  report TEXT NULL,
   status VARCHAR(32) NOT NULL,
   error_message VARCHAR(255) NULL,
   evidence_window_start DATETIME NULL,

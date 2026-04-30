@@ -52,7 +52,7 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (target: str
   };
 
   useAutoRefresh({
-    intervalMs: 20000,
+    intervalMs: 60000,
     runWhenHidden: true,
     onTick: refreshSummary,
   });

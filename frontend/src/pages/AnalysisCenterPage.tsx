@@ -7,6 +7,68 @@ import {
 import type { AnalysisReport } from "../api/backend";
 import useAutoRefresh from "../hooks/useAutoRefresh";
 
+function renderMarkdown(text: string | null) {
+  if (!text) return null;
+  const lines = text.split("\n");
+  const elements: React.ReactNode[] = [];
+  let i = 0;
+  while (i < lines.length) {
+    const line = lines[i];
+    if (line.startsWith("### ")) {
+      elements.push(
+        <h4 key={i} className="report-h3">
+          {line.slice(4)}
+        </h4>
+      );
+      i++;
+    } else if (line.startsWith("## ")) {
+      elements.push(
+        <h3 key={i} className="report-h2">
+          {line.slice(3)}
+        </h3>
+      );
+      i++;
+    } else if (line.startsWith("- ")) {
+      const items: string[] = [];
+      while (i < lines.length && lines[i].startsWith("- ")) {
+        items.push(lines[i].slice(2));
+        i++;
+      }
+      elements.push(
+        <ul key={i} className="report-list">
+          {items.map((item, idx) => (
+            <li key={idx}>{item}</li>
+          ))}
+        </ul>
+      );
+    } else if (line.match(/^\d+\.\s/)) {
+      const items: string[] = [];
+      while (i < lines.length && lines[i].match(/^\d+\.\s/)) {
+        items.push(lines[i].replace(/^\d+\.\s/, ""));
+        i++;
+      }
+      elements.push(
+        <ol key={i} className="report-list">
+          {items.map((item, idx) => (
+            <li key={idx}>{item}</li>
+          ))}
+        </ol>
+      );
+    } else if (line.trim() === "") {
+      elements.push(<div key={i} className="report-spacer" />);
+      i++;
+    } else {
+      elements.push(
+        <p key={i} className="report-para">
+          {line}
+        </p>
+      );
+      i++;
+    }
+  }
+  return elements;
+}
+
 export default function AnalysisCenterPage() {
   const [reports, setReports] = useState<AnalysisReport[]>([]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -150,76 +212,105 @@ export default function AnalysisCenterPage() {
             <>
               <h3 className="detail-title">#{selectedReport.id}</h3>
               <p className="detail-time">生成时间 {selectedReport.createdAt}</p>
-              <p>
-                <strong>设备:</strong> {selectedReport.deviceCode}
-              </p>
-              <p>
-                <strong>状态:</strong> {selectedReport.status}
-              </p>
-              <p>
-                <strong>分析引擎:</strong> {selectedReport.engine ?? "-"}
-              </p>
-              <p>
-                <strong>RCA 状态:</strong> {selectedReport.rcaStatus ?? "-"}
-              </p>
-              <p>
-                <strong>模型版本:</strong> {selectedReport.modelVersion ?? "-"}
-              </p>
-              <p>
-                <strong>证据时间窗:</strong>{" "}
-                {selectedReport.evidenceWindowStart && selectedReport.evidenceWindowEnd
-                  ? `${selectedReport.evidenceWindowStart} ~ ${selectedReport.evidenceWindowEnd}`
-                  : "-"}
-              </p>
-              <p>
-                <strong>置信度:</strong> {selectedReport.confidence ?? "-"}
-              </p>
-              <p>
-                <strong>风险等级:</strong> {selectedReport.riskLevel ?? "-"}
-              </p>
-              <p>
-                <strong>预测结果:</strong> {selectedReport.prediction ?? "-"}
-              </p>
-              <p>
-                <strong>建议动作:</strong> {selectedReport.recommendedAction ?? "-"}
-              </p>
-              <p>
-                <strong>错误信息:</strong> {selectedReport.errorMessage ?? "-"}
-              </p>
-              <p>
-                <strong>指标摘要:</strong> {selectedReport.metricSummary}
-              </p>
-              <div className="analysis-rca-section">
-                <strong>Top Root Causes:</strong>
-                {selectedReport.status === "processing" ? (
-                  <p>分析进行中，请稍候...</p>
-                ) : detailRootCauses.length === 0 ? (
-                  <p>当前报告没有结构化 RCA 结果，可能走了 fallback 路径。</p>
-                ) : (
-                  <ul>
-                    {detailRootCauses.map((item) => (
-                      <li key={`${item.deviceCode}-${item.rank}`}>
-                        #{item.rank ?? "-"} {item.deviceCode} ({item.score ?? 0})
-                      </li>
-                    ))}
-                  </ul>
-                )}
+
+              {selectedReport.status === "processing" ? (
+                <div className="processing-notice">分析进行中，请稍候...</div>
+              ) : null}
+
+              {selectedReport.report ? (
+                <div className="report-card">
+                  <div className="report-card-label">综合报告</div>
+                  <div className="report-card-body">{renderMarkdown(selectedReport.report)}</div>
+                </div>
+              ) : null}
+
+              <div className="detail-meta-grid">
+                <div className="meta-item">
+                  <span className="meta-label">设备</span>
+                  <span className="meta-value">{selectedReport.deviceCode}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">状态</span>
+                  <span className={`meta-value status-tag status-${selectedReport.status}`}>{selectedReport.status}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">分析引擎</span>
+                  <span className="meta-value">{selectedReport.engine ?? "-"}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">RCA 状态</span>
+                  <span className="meta-value">{selectedReport.rcaStatus ?? "-"}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">风险等级</span>
+                  <span className={`meta-value risk-tag risk-${selectedReport.riskLevel ?? "unknown"}`}>
+                    {selectedReport.riskLevel ?? "-"}
+                  </span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">置信度</span>
+                  <span className="meta-value">{selectedReport.confidence ?? "-"}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">模型版本</span>
+                  <span className="meta-value">{selectedReport.modelVersion ?? "-"}</span>
+                </div>
+                <div className="meta-item">
+                  <span className="meta-label">证据时间窗</span>
+                  <span className="meta-value">
+                    {selectedReport.evidenceWindowStart && selectedReport.evidenceWindowEnd
+                      ? `${selectedReport.evidenceWindowStart} ~ ${selectedReport.evidenceWindowEnd}`
+                      : "-"}
+                  </span>
+                </div>
               </div>
-              <div className="analysis-rca-section">
-                <strong>Causal Edges:</strong>
-                {selectedReport.status === "processing" ? (
-                  <p>分析进行中，请稍候...</p>
-                ) : detailCausalEdges.length === 0 ? (
-                  <p>无因果边结果。</p>
-                ) : (
-                  <ul>
-                    {detailCausalEdges.map((item, index) => (
-                      <li key={`${item.fromDeviceCode}-${item.toDeviceCode}-${index}`}>
-                        {item.fromDeviceCode} → {item.toDeviceCode} ({item.weight ?? 0})
-                      </li>
-                    ))}
-                  </ul>
-                )}
+
+              <div className="analysis-rca-grid">
+                <div className="analysis-rca-section">
+                  <strong>Top Root Causes</strong>
+                  {selectedReport.status === "processing" ? (
+                    <p>等待分析完成...</p>
+                  ) : detailRootCauses.length === 0 ? (
+                    <p>当前报告没有结构化 RCA 结果，可能走了 fallback 路径。</p>
+                  ) : (
+                    <ul>
+                      {detailRootCauses.map((item) => (
+                        <li key={`${item.deviceCode}-${item.rank}`}>
+                          <span className="rca-rank">#{item.rank ?? "-"}</span>
+                          <span className="rca-name">{item.deviceCode}</span>
+                          <span className="rca-score">{item.score ?? 0}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                <div className="analysis-rca-section">
+                  <strong>Causal Edges</strong>
+                  {selectedReport.status === "processing" ? (
+                    <p>等待分析完成...</p>
+                  ) : detailCausalEdges.length === 0 ? (
+                    <p>无因果边结果。</p>
+                  ) : (
+                    <ul>
+                      {detailCausalEdges.map((item, index) => (
+                        <li key={`${item.fromDeviceCode}-${item.toDeviceCode}-${index}`}>
+                          <span className="edge-from">{item.fromDeviceCode}</span>
+                          <span className="edge-arrow">→</span>
+                          <span className="edge-to">{item.toDeviceCode}</span>
+                          <span className="edge-weight">{item.weight ?? 0}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+
+              <div className="detail-extra">
+                <p><strong>预测结果:</strong> {selectedReport.prediction ?? "-"}</p>
+                <p><strong>建议动作:</strong> {selectedReport.recommendedAction ?? "-"}</p>
+                {selectedReport.errorMessage ? (
+                  <p><strong>错误信息:</strong> {selectedReport.errorMessage}</p>
+                ) : null}
               </div>
             </>
           ) : null}
@@ -228,4 +319,3 @@ export default function AnalysisCenterPage() {
     </div>
   );
 }
-

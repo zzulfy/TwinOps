@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -68,14 +69,16 @@ public class DashboardService {
     }
 
     public FaultRateTrendDto faultRateTrend(LocalDateTime from, LocalDateTime to, int predictMinutes) {
-        LocalDateTime end = (to == null ? LocalDateTime.now() : to).truncatedTo(ChronoUnit.MINUTES);
+        LocalDateTime end = (to == null ? LocalDateTime.now(ZoneId.of("Asia/Shanghai")) : to).truncatedTo(ChronoUnit.MINUTES);
         LocalDateTime start = (from == null ? end.minusMinutes(180) : from).truncatedTo(ChronoUnit.MINUTES);
         if (start.isAfter(end)) {
             start = end.minusMinutes(60);
         }
-        int boundedPredictMinutes = Math.max(1, Math.min(predictMinutes, 5));
+        int boundedPredictMinutes = Math.max(0, Math.min(predictMinutes, 120));
         List<FaultRateTrendPointDto> history = buildHistorySeries(start, end);
-        List<FaultRateTrendPointDto> forecast = buildForecastSeries(history, end, boundedPredictMinutes);
+        List<FaultRateTrendPointDto> forecast = boundedPredictMinutes == 0
+            ? List.of()
+            : buildForecastSeries(history, end, boundedPredictMinutes);
         return new FaultRateTrendDto(history, forecast, "minute", 1);
     }
 
@@ -196,9 +199,11 @@ public class DashboardService {
         List<BigDecimal> window = historicalValues.subList(historicalValues.size() - windowSize, historicalValues.size());
         BigDecimal first = window.get(0);
         BigDecimal last = window.get(window.size() - 1);
+
         BigDecimal slope = window.size() == 1
             ? BigDecimal.ZERO
             : last.subtract(first).divide(BigDecimal.valueOf(window.size() - 1L), 4, RoundingMode.HALF_UP);
+
         BigDecimal deltaSum = BigDecimal.ZERO;
         for (int i = 1; i < window.size(); i++) {
             deltaSum = deltaSum.add(window.get(i).subtract(window.get(i - 1)));
@@ -206,13 +211,31 @@ public class DashboardService {
         BigDecimal avgDelta = window.size() == 1
             ? BigDecimal.ZERO
             : deltaSum.divide(BigDecimal.valueOf(window.size() - 1L), 4, RoundingMode.HALF_UP);
-        BigDecimal baselineStep = slope.multiply(BigDecimal.valueOf(0.6))
+
+        BigDecimal trendStep = slope.multiply(BigDecimal.valueOf(0.6))
             .add(avgDelta.multiply(BigDecimal.valueOf(0.4)));
+
+        // Base contagion rate: if failures exist, they compound over time
+        BigDecimal baseContagion = BigDecimal.valueOf(0.02);
+        BigDecimal k = trendStep.abs().max(baseContagion);
+
         List<BigDecimal> forecast = new ArrayList<>();
-        BigDecimal base = historicalValues.get(historicalValues.size() - 1);
+        BigDecimal current = historicalValues.get(historicalValues.size() - 1);
+
         for (int i = 1; i <= predictMinutes; i++) {
-            BigDecimal point = base.add(baselineStep.multiply(BigDecimal.valueOf(i)));
-            forecast.add(scaleOne(point.max(BigDecimal.ZERO).min(BigDecimal.valueOf(100))));
+            if (current.compareTo(BigDecimal.ZERO) <= 0) {
+                forecast.add(BigDecimal.ZERO);
+                continue;
+            }
+            // Logistic compounding: dr/dt = k * r * (1 - r/100)
+            // Each failed device can cause more failures, but bounded by total devices
+            BigDecimal remaining = BigDecimal.valueOf(100).subtract(current)
+                .divide(BigDecimal.valueOf(100), 6, RoundingMode.HALF_UP);
+            BigDecimal growth = k.multiply(current).multiply(remaining)
+                .setScale(4, RoundingMode.HALF_UP);
+            current = current.add(growth);
+            current = scaleOne(current.max(BigDecimal.ZERO).min(BigDecimal.valueOf(100)));
+            forecast.add(current);
         }
         return forecast;
     }
@@ -225,7 +248,7 @@ public class DashboardService {
             BigDecimal avg = history.stream().reduce(BigDecimal.ZERO, BigDecimal::add)
                 .divide(BigDecimal.valueOf(history.size()), 4, RoundingMode.HALF_UP);
             String metricSummary = "minute_fault_rate_history=" + history
-                + ";statistical_forecast_next_5m=" + forecast
+                + ";compounding_forecast_logistic=" + forecast
                 + ";latest=" + last
                 + ";avg=" + avg;
             LlmPredictionResult prediction = CompletableFuture

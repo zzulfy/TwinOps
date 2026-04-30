@@ -53,6 +53,7 @@ class OpenAiLlmProviderAdapterTest {
             "demo-model",
             0.2,
             512,
+            2048,
             true
         );
 

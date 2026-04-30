@@ -131,8 +131,11 @@ class DashboardServiceTest {
         assertEquals(33.3, trend.history().get(2).value());
         assertEquals(5, trend.forecast().size());
         assertEquals("10:04", trend.forecast().get(0).time());
-        assertEquals(33.3, trend.forecast().get(0).value());
+        // Compounding logistic growth from 33.3% base, k=0.02
+        assertEquals(33.7, trend.forecast().get(0).value());
         assertEquals(80.0, trend.forecast().get(0).confidence());
+        assertTrue(trend.forecast().get(4).value() > trend.forecast().get(0).value(),
+            "forecast should compound upward when failures persist");
     }
 
     @Test
