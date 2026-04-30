@@ -33,30 +33,8 @@ export default defineConfig({
             return 'vendor-3d-core'
           }
 
-          if (id.includes('zrender')) {
-            return 'vendor-zrender'
-          }
-
-          if (id.includes('echarts/core') || id.includes('echarts/lib/core')) {
-            return 'vendor-echarts-core'
-          }
-
-          if (id.includes('echarts/charts') || id.includes('echarts/lib/chart')) {
-            return 'vendor-echarts-charts'
-          }
-
-          if (
-            id.includes('echarts/components') ||
-            id.includes('echarts/renderers') ||
-            id.includes('echarts/lib/component') ||
-            id.includes('echarts/lib/renderer') ||
-            id.includes('echarts/lib/export')
-          ) {
-            return 'vendor-echarts-runtime'
-          }
-
-          if (id.includes('echarts')) {
-            return 'vendor-charts-deferred'
+          if (id.includes('zrender') || id.includes('echarts')) {
+            return 'vendor-echarts'
           }
 
           if (id.includes('react')) {

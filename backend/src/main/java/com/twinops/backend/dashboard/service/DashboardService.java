@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 @Service
@@ -226,7 +228,15 @@ public class DashboardService {
                 + ";statistical_forecast_next_5m=" + forecast
                 + ";latest=" + last
                 + ";avg=" + avg;
-            LlmPredictionResult prediction = llmProviderAdapter.predict("dashboard-fault-rate", metricSummary);
+            LlmPredictionResult prediction = CompletableFuture
+                .supplyAsync(() -> {
+                    try {
+                        return llmProviderAdapter.predict("dashboard-fault-rate", metricSummary);
+                    } catch (Exception ex) {
+                        throw new RuntimeException(ex.getMessage(), ex);
+                    }
+                })
+                .get(2, TimeUnit.SECONDS);
             riskLevel = prediction.riskLevel();
             if (prediction.confidence() != null) {
                 rawConfidence = prediction.confidence();
