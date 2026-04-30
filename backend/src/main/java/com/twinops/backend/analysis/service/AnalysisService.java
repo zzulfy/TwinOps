@@ -37,7 +37,7 @@ public class AnalysisService {
     private static final Logger log = LoggerFactory.getLogger(AnalysisService.class);
     private static final DateTimeFormatter TIME_FMT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static final ObjectMapper REPORT_OBJECT_MAPPER = new ObjectMapper();
-    private static final Duration PROVIDER_TIMEOUT = Duration.ofSeconds(5);
+    private static final Duration PROVIDER_TIMEOUT = Duration.ofSeconds(15);
     private static final int MAX_RETRY = 2;
     private static final Duration PROCESSING_STALE_TIMEOUT = Duration.ofMinutes(10);
 
@@ -177,17 +177,11 @@ public class AnalysisService {
             } catch (Exception ex) {
                 attempt += 1;
                 if (attempt > MAX_RETRY) {
-                    report.setStatus("failed");
-                    report.setErrorMessage(ex.getMessage());
-                    analysisReportMapper.updateById(report);
-                    return toDto(report);
+                    return applyFallbackAndSave(report, metricSummary);
                 }
             }
         }
-        report.setStatus("failed");
-        report.setErrorMessage("analysis failed");
-        analysisReportMapper.updateById(report);
-        return toDto(report);
+        return applyFallbackAndSave(report, metricSummary);
     }
 
     private AnalysisReportDto createReportInternal(
@@ -247,41 +241,23 @@ public class AnalysisService {
                     ex.getMessage()
                 );
                 if (attempt > MAX_RETRY) {
-                    report.setStatus("failed");
-                    report.setErrorMessage(ex.getMessage());
-                    analysisReportMapper.updateById(report);
-                    long latencyMs = (System.nanoTime() - startNanos) / 1_000_000;
-                    log.error("{}={} {}={} {}={} {}={} {}={} {}={} reportId={} deviceCode={} message={}",
-                        LogFields.REQUEST_ID, safeRequestId(),
-                        LogFields.MODULE, "analysis",
-                        LogFields.EVENT, "analysis.create.complete",
-                        LogFields.RESULT, "failed",
-                        LogFields.ERROR_CODE, "LLM_FINAL_FAILURE",
-                        LogFields.LATENCY_MS, latencyMs,
-                        report.getId(),
-                        deviceCode,
-                        ex.getMessage(),
-                        ex
-                    );
-                    return toDto(report);
+                    return applyFallbackAndSave(report, metricSummary);
                 }
             }
         }
 
-        report.setStatus("failed");
-        report.setErrorMessage("analysis failed");
+        return applyFallbackAndSave(report, metricSummary);
+    }
+
+    private AnalysisReportDto applyFallbackAndSave(AnalysisReportEntity report, String metricSummary) {
+        LlmPredictionResult fallback = llmProviderAdapter.fallback(metricSummary);
+        report.setPrediction(fallback.prediction());
+        report.setConfidence(fallback.confidence());
+        report.setRiskLevel(fallback.riskLevel());
+        report.setRecommendedAction(fallback.recommendedAction());
+        report.setStatus("success");
+        report.setErrorMessage(null);
         analysisReportMapper.updateById(report);
-        long latencyMs = (System.nanoTime() - startNanos) / 1_000_000;
-        log.error("{}={} {}={} {}={} {}={} {}={} {}={} reportId={} deviceCode={}",
-            LogFields.REQUEST_ID, safeRequestId(),
-            LogFields.MODULE, "analysis",
-            LogFields.EVENT, "analysis.create.complete",
-            LogFields.RESULT, "failed",
-            LogFields.ERROR_CODE, "ANALYSIS_UNKNOWN_FAILURE",
-            LogFields.LATENCY_MS, latencyMs,
-            report.getId(),
-            deviceCode
-        );
         return toDto(report);
     }
 

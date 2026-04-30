@@ -2,9 +2,9 @@ twinops:
   analysis:
     llm:
       provider: openai
-      base-url: https://api.openai.com/v1
-      api-key:
-      model:
+      base-url: "https://api.deepseek.com"
+      api-key: "sk-dcc950fe952a4012af18662d9c73b249"
+      model: "deepseek-v4-pro"
       temperature: 0.2
       max-tokens: 512
       fallback-to-mock: true

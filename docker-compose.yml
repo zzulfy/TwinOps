@@ -92,7 +92,6 @@ services:
     restart: unless-stopped
 
   rca:
-    profiles: ["rca"]
     build:
       context: ./causaltrace-rca
     volumes:

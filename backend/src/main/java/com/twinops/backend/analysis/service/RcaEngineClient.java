@@ -11,6 +11,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.net.http.HttpClient.Version;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
@@ -39,6 +40,7 @@ public class RcaEngineClient {
         this.timeout = Duration.ofMillis(timeoutMs);
         this.httpClient = HttpClient.newBuilder()
             .connectTimeout(this.timeout)
+            .version(HttpClient.Version.HTTP_1_1)
             .build();
         this.objectMapper = new ObjectMapper();
     }

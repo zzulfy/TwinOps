@@ -74,7 +74,7 @@ export default function AnalysisCenterPage() {
   };
 
   useAutoRefresh({
-    intervalMs: 20000,
+    intervalMs: 1000,
     runWhenHidden: true,
     onTick: async () => {
       setTriggerMessage("");
@@ -191,7 +191,9 @@ export default function AnalysisCenterPage() {
               </p>
               <div className="analysis-rca-section">
                 <strong>Top Root Causes:</strong>
-                {detailRootCauses.length === 0 ? (
+                {selectedReport.status === "processing" ? (
+                  <p>分析进行中，请稍候...</p>
+                ) : detailRootCauses.length === 0 ? (
                   <p>当前报告没有结构化 RCA 结果，可能走了 fallback 路径。</p>
                 ) : (
                   <ul>
@@ -205,7 +207,9 @@ export default function AnalysisCenterPage() {
               </div>
               <div className="analysis-rca-section">
                 <strong>Causal Edges:</strong>
-                {detailCausalEdges.length === 0 ? (
+                {selectedReport.status === "processing" ? (
+                  <p>分析进行中，请稍候...</p>
+                ) : detailCausalEdges.length === 0 ? (
                   <p>无因果边结果。</p>
                 ) : (
                   <ul>

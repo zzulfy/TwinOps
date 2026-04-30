@@ -47,7 +47,7 @@ twinops:
       topic: analysis.request
       consumer-group: twinops-analysis-consumer
     rca:
-      enabled: false
+      enabled: true
       base-url: http://rca:8091
       profile: msds_device_stress_v1
       timeout-ms: 3000
