@@ -40,11 +40,10 @@ npm run smoke:analysis-trigger # smoke test — analysis pipeline
 ### Docker Compose (full-stack deployment)
 
 ```bash
-docker compose up -d --build   # start all services
+docker compose up -d --build   # start all services (MySQL, Kafka, Backend, Frontend, RCA)
 docker compose down            # stop, keep data volumes
 docker compose down -v         # full reset (wipes DB + Kafka data)
 docker compose logs --tail=120 <service>
-docker compose --profile rca up -d --build  # include RCA sidecar
 ```
 
 ### RCA Sidecar (Python 3.11, FastAPI)
@@ -97,5 +96,5 @@ Backend `GET /api/devices/simulation-consistency?autoRepair=true` compares simul
 - Alarm statuses: `new` | `resolved`.
 - Fault rate = `error` devices / total devices × 100, at 1-minute granularity, formatted as `HH:mm`.
 - OpenSpec (`openspec/`) manages change proposals with schema: proposal → design → specs → tasks. Archived changes in `openspec/changes/archive/`.
-- `docker-compose.yml` uses profiles — RCA is excluded from default `up`, included with `--profile rca`.
+- `docker-compose.yml` starts all services by default: MySQL, Kafka, Backend, Frontend, RCA.
 - Backend config: `application.yml` imports `llm.yml` via `spring.config.import`. `llm.yml` is gitignored; `llm.example.yml` is the template.

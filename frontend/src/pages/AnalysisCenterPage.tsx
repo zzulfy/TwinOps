@@ -235,11 +235,13 @@ export default function AnalysisCenterPage() {
             >
               <div className="item-head">
                 <div className="report-id">#{report.id}</div>
-                <div className="report-time">{report.createdAt}</div>
-              </div>
-              <div className="meta">
-                <span>{report.status}</span>
-                <span>{report.riskLevel || "-"}</span>
+                <div className="item-meta-row">
+                  <div className="report-time">{report.createdAt}</div>
+                  <div className="meta-tags">
+                    <span className={`tag-status tag-${report.status}`}>{report.status}</span>
+                    <span className={`tag-risk tag-${report.riskLevel ?? "unknown"}`}>{report.riskLevel || "-"}</span>
+                  </div>
+                </div>
               </div>
             </div>
           ))}
