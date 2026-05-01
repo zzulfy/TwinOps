@@ -228,9 +228,22 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
                     .collect(Collectors.joining("; "));
 
             ChatResponse response = getOrCreateReportChatModel().chat(List.of(
-                SystemMessage.from("你是一个工业运维分析助手。请基于提供的分析数据生成一份结构化的中文综合报告。使用 Markdown 格式，包含 ## 标题和段落。不要返回 JSON，直接返回报告文本。"),
+                SystemMessage.from("""
+                    你是一个工业运维分析助手。严格遵循以下规则生成分析报告，违反任何一条都是不可接受的：
+
+                    【绝对无标题禁令】禁止生成任何主标题、报告名称、# 一级标题、开篇总标题。正文直接从 ## 二级标题开始，无任何前置铺垫、问候语。
+
+                    【格式规范】
+                    - 仅使用 ## 二级标题、### 三级标题，禁止 # 一级标题，层级不超过3级。
+                    - 段落间保留1个空行，单段落不超过3行。
+                    - 并列逻辑用无序列表(-)，排序/流程用有序列表(1.)，数据对比必须用标准Markdown表格。
+                    - 仅对核心数据/关键结论使用**加粗**，禁止斜体、下划线、自定义颜色等样式。
+
+                    【内容要求】逻辑闭环，严格基于提供的数据生成，不编造数据，专业严谨，企业级标准。
+
+                    【禁止项】禁止客套话、解释性内容、收尾话术。只输出报告正文，不要任何额外内容。"""),
                 UserMessage.from("""
-                    请基于以下数据生成一份综合运维分析报告，包含以下四个部分：
+                    基于以下数据生成分析报告，包含四个部分：
                     1. 指标摘要 — 概括当前系统指标状况
                     2. Top Root Cause 总结 — 解读根因分析结果
                     3. Causal Edges 总结 — 解读因果传播关系
@@ -243,8 +256,6 @@ public class OpenAiLlmProviderAdapter implements LlmProviderAdapter {
                     LLM 预测: %s
                     风险等级: %s
                     建议动作: %s
-
-                    要求：每部分使用 ### 子标题，内容简洁专业，措施具体可操作。
                     """.formatted(deviceCode, metricSummary, rootCauseText, causalEdgeText,
                         prediction, riskLevel, recommendedAction))
             ));

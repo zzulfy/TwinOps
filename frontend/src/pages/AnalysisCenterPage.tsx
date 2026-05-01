@@ -7,6 +7,16 @@ import {
 import type { AnalysisReport } from "../api/backend";
 import useAutoRefresh from "../hooks/useAutoRefresh";
 
+function parseInline(text: string): React.ReactNode {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith("**") && part.endsWith("**")) {
+      return <strong key={idx}>{part.slice(2, -2)}</strong>;
+    }
+    return part;
+  });
+}
+
 function renderMarkdown(text: string | null) {
   if (!text) return null;
   const lines = text.split("\n");
@@ -17,17 +27,45 @@ function renderMarkdown(text: string | null) {
     if (line.startsWith("### ")) {
       elements.push(
         <h4 key={i} className="report-h3">
-          {line.slice(4)}
+          {parseInline(line.slice(4))}
         </h4>
       );
       i++;
     } else if (line.startsWith("## ")) {
       elements.push(
         <h3 key={i} className="report-h2">
-          {line.slice(3)}
+          {parseInline(line.slice(3))}
         </h3>
       );
       i++;
+    } else if (line.startsWith("|-") || line.startsWith("| ")) {
+      const rows: string[][] = [];
+      let headerPassed = false;
+      while (i < lines.length && lines[i].startsWith("|")) {
+        const cells = lines[i].split("|").slice(1, -1).map(c => c.trim());
+        if (cells.length > 0 && !cells.every(c => /^-+$/.test(c))) {
+          rows.push(cells);
+        } else {
+          headerPassed = true;
+        }
+        i++;
+      }
+      if (rows.length > 0) {
+        const header = rows[0];
+        const body = rows.slice(1);
+        elements.push(
+          <table key={i} className="report-table">
+            <thead>
+              <tr>{header.map((cell, ci) => <th key={ci}>{parseInline(cell)}</th>)}</tr>
+            </thead>
+            <tbody>
+              {body.map((row, ri) => (
+                <tr key={ri}>{row.map((cell, ci) => <td key={ci}>{parseInline(cell)}</td>)}</tr>
+              ))}
+            </tbody>
+          </table>
+        );
+      }
     } else if (line.startsWith("- ")) {
       const items: string[] = [];
       while (i < lines.length && lines[i].startsWith("- ")) {
@@ -37,7 +75,7 @@ function renderMarkdown(text: string | null) {
       elements.push(
         <ul key={i} className="report-list">
           {items.map((item, idx) => (
-            <li key={idx}>{item}</li>
+            <li key={idx}>{parseInline(item)}</li>
           ))}
         </ul>
       );
@@ -50,7 +88,7 @@ function renderMarkdown(text: string | null) {
       elements.push(
         <ol key={i} className="report-list">
           {items.map((item, idx) => (
-            <li key={idx}>{item}</li>
+            <li key={idx}>{parseInline(item)}</li>
           ))}
         </ol>
       );
@@ -60,7 +98,7 @@ function renderMarkdown(text: string | null) {
     } else {
       elements.push(
         <p key={i} className="report-para">
-          {line}
+          {parseInline(line)}
         </p>
       );
       i++;
