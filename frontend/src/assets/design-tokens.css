@@ -1,70 +1,94 @@
 :root {
-  --tw-font-title: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  /* ── Typography ── */
+  --tw-font-display: "Furore", "PangMenZhengDao", system-ui, sans-serif;
+  --tw-font-title: "Furore", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --tw-font-body: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif;
+  --tw-font-mono: "Sarasa Mono", "Cascadia Code", "Fira Code", monospace;
+  --tw-font-digital: "DsDigital", "Sarasa Mono", monospace;
 
-  --tw-color-text-primary: #24292f;
-  --tw-color-text-secondary: #57606a;
-  --tw-color-text-muted: #6e7781;
-  --tw-color-text-on-dark: #24292f;
-  --tw-color-text-on-dark-secondary: #57606a;
-  --tw-color-text-on-dark-muted: #6e7781;
-  --tw-color-text-on-light: #24292f;
-  --tw-color-text-on-light-secondary: #57606a;
-  --tw-color-text-on-light-muted: #6e7781;
+  /* ── Text ── */
+  --tw-color-text-primary: #e4ecf5;
+  --tw-color-text-secondary: #8b949e;
+  --tw-color-text-muted: #5c6670;
+  --tw-color-text-on-dark: #e4ecf5;
+  --tw-color-text-on-dark-secondary: #8b949e;
+  --tw-color-text-on-dark-muted: #5c6670;
+  --tw-color-text-on-light: #0d131c;
+  --tw-color-text-on-light-secondary: #3d4652;
+  --tw-color-text-on-light-muted: #5c6670;
 
-  --tw-bg-ink: #ffffff;
-  --tw-bg-deep: #f6f8fa;
-  --tw-bg-haze: #f3f4f6;
-  --tw-bg-panel-start: #ffffff;
-  --tw-bg-panel-end: #ffffff;
-  --tw-bg-footer-start: #f6f8fa;
-  --tw-bg-footer-end: #f6f8fa;
+  /* ── Background layers ── */
+  --tw-bg-ink: #080c12;
+  --tw-bg-deep: #0c1119;
+  --tw-bg-haze: #101720;
+  --tw-bg-panel-start: rgba(15, 22, 34, 0.88);
+  --tw-bg-panel-end: rgba(18, 27, 41, 0.92);
+  --tw-bg-surface: rgba(20, 30, 46, 0.78);
+  --tw-bg-field: rgba(16, 24, 37, 0.85);
+  --tw-bg-footer-start: rgba(10, 17, 28, 0.96);
+  --tw-bg-footer-end: rgba(14, 22, 36, 0.94);
 
-  --tw-state-normal: #0969da;
-  --tw-state-warning: #9a6700;
-  --tw-state-danger: #cf222e;
-  --tw-state-success: #1a7f37;
+  /* ── Accent system ── */
+  --tw-accent-primary: #38bdf8;
+  --tw-accent-primary-soft: rgba(56, 189, 248, 0.12);
+  --tw-accent-teal: #2dd4bf;
+  --tw-accent-teal-soft: rgba(45, 212, 191, 0.12);
+  --tw-state-normal: #38bdf8;
+  --tw-state-warning: #f59e0b;
+  --tw-state-danger: #ef4444;
+  --tw-state-success: #22c55e;
 
-  --tw-border-soft: #d0d7de;
-  --tw-border-panel: #d0d7de;
-  --tw-border-strong: #8c959f;
-  --tw-panel-edge: #d0d7de;
+  /* ── Borders ── */
+  --tw-border-soft: rgba(56, 189, 248, 0.10);
+  --tw-border-panel: rgba(56, 189, 248, 0.14);
+  --tw-border-strong: rgba(56, 189, 248, 0.22);
+  --tw-panel-edge: rgba(56, 189, 248, 0.14);
 
-  --tw-glow-cyan: rgba(9, 105, 218, 0.08);
-  --tw-glow-lime: rgba(26, 127, 55, 0.08);
-  --tw-noise-alpha: 0;
+  /* ── Glow & atmosphere ── */
+  --tw-glow-cyan: rgba(56, 189, 248, 0.06);
+  --tw-glow-teal: rgba(45, 212, 191, 0.05);
+  --tw-glow-amber: rgba(245, 158, 11, 0.04);
+  --tw-noise-alpha: 0.028;
 
-  --tw-cta-start: #2da44e;
-  --tw-cta-end: #2c974b;
-  --tw-cta-border: rgba(27, 31, 36, 0.15);
-  --tw-cta-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
-  --tw-status-bg: #f6f8fa;
-  --tw-status-border: #d0d7de;
-  --tw-status-error: #ffebe9;
-  --tw-alarm-row-bg-1: #dafbe1;
-  --tw-alarm-row-bg-2: #fff8c5;
-  --tw-alarm-row-bg-3: #ffebe9;
+  /* ── Interactive ── */
+  --tw-cta-start: #38bdf8;
+  --tw-cta-end: #0ea5e9;
+  --tw-cta-border: rgba(56, 189, 248, 0.3);
+  --tw-cta-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --tw-status-bg: rgba(20, 30, 46, 0.78);
+  --tw-status-border: rgba(56, 189, 248, 0.14);
+  --tw-status-error: rgba(239, 68, 68, 0.10);
 
-  --tw-radius-sm: 8px;
-  --tw-radius-md: 12px;
+  /* ── Alarm severity rows ── */
+  --tw-alarm-row-bg-1: rgba(34, 197, 94, 0.08);
+  --tw-alarm-row-bg-2: rgba(245, 158, 11, 0.08);
+  --tw-alarm-row-bg-3: rgba(239, 68, 68, 0.08);
+
+  /* ── Radii ── */
+  --tw-radius-sm: 6px;
+  --tw-radius-md: 10px;
   --tw-radius-lg: 14px;
 
+  /* ── Spacing ── */
   --tw-space-1: 4px;
   --tw-space-2: 8px;
   --tw-space-3: 12px;
   --tw-space-4: 16px;
   --tw-space-5: 20px;
 
-  --tw-shadow-panel: 0 1px 0 rgba(27, 31, 36, 0.04);
-  --tw-shadow-panel-hover: 0 3px 12px rgba(140, 149, 159, 0.2);
-  --tw-shadow-elevated: 0 8px 24px rgba(140, 149, 159, 0.2);
+  /* ── Shadows ── */
+  --tw-shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.32), 0 4px 12px rgba(0, 0, 0, 0.18);
+  --tw-shadow-panel-hover: 0 2px 4px rgba(0, 0, 0, 0.34), 0 8px 24px rgba(0, 0, 0, 0.24);
+  --tw-shadow-elevated: 0 4px 8px rgba(0, 0, 0, 0.38), 0 12px 32px rgba(0, 0, 0, 0.26);
 
-  --tw-motion-duration-fast: 180ms;
-  --tw-motion-duration-base: 300ms;
-  --tw-motion-duration-enter: 560ms;
-  --tw-motion-duration-enter-slow: 620ms;
+  /* ── Motion ── */
+  --tw-motion-duration-fast: 160ms;
+  --tw-motion-duration-base: 280ms;
+  --tw-motion-duration-enter: 520ms;
+  --tw-motion-duration-enter-slow: 640ms;
   --tw-motion-stagger-1: 60ms;
   --tw-motion-stagger-2: 100ms;
   --tw-motion-ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
   --tw-motion-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --tw-motion-ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
