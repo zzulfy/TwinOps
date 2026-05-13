@@ -2,6 +2,7 @@ twinops:
   analysis:
     llm:
       provider: openai
+      # 只有 base-url 和 api-key 数据需要双引号，其余都不要
       base-url:
       api-key:
       model:
